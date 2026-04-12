@@ -752,7 +752,7 @@ button:active  { transform: scale(0.97); }
   text-decoration: line-through;
   text-decoration-color: #ff3333;
   font-size: 1em;
-  font-weight: bold;
+
   margin-right: 2px;
 }
 
