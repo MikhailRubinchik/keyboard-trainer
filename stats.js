@@ -106,6 +106,8 @@ const Stats = (() => {
       seconds:      record.seconds,
       cpm:          record.cpm,
       errorsDetail: record.errorsDetail || [],
+      intervalMap:  record.intervalMap  || {},
+      bigramStats:  record.bigramStats  || {},
     };
 
     runs.push(entry);
