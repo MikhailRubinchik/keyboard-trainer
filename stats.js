@@ -167,11 +167,15 @@ const Stats = (() => {
       });
     }
 
+    // Pre-compute absolute records across all days
+    const validRows = rows.filter(r => r.avgCpm !== null);
+    const globalMaxAvg    = validRows.length ? Math.max(...validRows.map(r => r.avgCpm))    : -1;
+    const globalMaxMax    = validRows.length ? Math.max(...validRows.map(r => r.maxCpm))    : -1;
+    const globalMinAvgErr = validRows.length ? Math.min(...validRows.map(r => r.avgErrors)) : Infinity;
+    const globalMinMaxErr = validRows.length ? Math.min(...validRows.map(r => r.maxErrors)) : Infinity;
+    let foundAvg = false, foundMax = false, foundAvgErr = false, foundMaxErr = false;
+
     // Color flags + record labels — computed on oldest-first array
-    let maxDayAvg = -1;
-    let maxDayMax = -1;
-    let minDayAvgErr = Infinity;
-    let minDayMaxErr = Infinity;
     rows.forEach((row, i) => {
       const yellow = row.count >= 5;
       const green  = yellow && i >= 4 &&
@@ -183,14 +187,10 @@ const Stats = (() => {
       row.countClass = row.count >= 10 ? 'cell--green' : '';
 
       if (row.avgCpm !== null) {
-        row.avgLabel    = row.avgCpm    > maxDayAvg    ? 'record' : row.avgCpm    === maxDayAvg    ? 'repeat' : '';
-        row.maxLabel    = row.maxCpm    > maxDayMax    ? 'record' : row.maxCpm    === maxDayMax    ? 'repeat' : '';
-        row.avgErrLabel = row.avgErrors < minDayAvgErr ? 'record' : row.avgErrors === minDayAvgErr ? 'repeat' : '';
-        row.maxErrLabel = row.maxErrors < minDayMaxErr ? 'record' : row.maxErrors === minDayMaxErr ? 'repeat' : '';
-        if (row.avgCpm    > maxDayAvg)    maxDayAvg    = row.avgCpm;
-        if (row.maxCpm    > maxDayMax)    maxDayMax    = row.maxCpm;
-        if (row.avgErrors < minDayAvgErr) minDayAvgErr = row.avgErrors;
-        if (row.maxErrors < minDayMaxErr) minDayMaxErr = row.maxErrors;
+        if (row.avgCpm === globalMaxAvg)       { row.avgLabel    = foundAvg    ? 'repeat' : 'record'; foundAvg    = true; } else { row.avgLabel    = ''; }
+        if (row.maxCpm === globalMaxMax)       { row.maxLabel    = foundMax    ? 'repeat' : 'record'; foundMax    = true; } else { row.maxLabel    = ''; }
+        if (row.avgErrors === globalMinAvgErr) { row.avgErrLabel = foundAvgErr ? 'repeat' : 'record'; foundAvgErr = true; } else { row.avgErrLabel = ''; }
+        if (row.maxErrors === globalMinMaxErr) { row.maxErrLabel = foundMaxErr ? 'repeat' : 'record'; foundMaxErr = true; } else { row.maxErrLabel = ''; }
       } else {
         row.avgLabel = row.maxLabel = row.avgErrLabel = row.maxErrLabel = '';
       }
@@ -210,15 +210,15 @@ const Stats = (() => {
   }
 
   function computeErrorRecords(allRuns) {
-    // Fewer errors = better. Returns parallel array '' | 'record' | 'repeat'
-    // Runs without error data (r.errors == null) are skipped entirely.
-    let minErrors = Infinity;
+    // Fewer errors = better. Shows 'record' only on the absolute best run(s).
+    const valid = allRuns.filter(r => r.errors != null);
+    if (!valid.length) return allRuns.map(() => '');
+    const minE = Math.min(...valid.map(r => r.errors));
+    let found = false;
     return allRuns.map(r => {
-      if (r.errors == null) return '';
-      const e = r.errors;
-      const label = e < minErrors ? 'record' : e === minErrors ? 'repeat' : '';
-      if (e < minErrors) minErrors = e;
-      return label;
+      if (r.errors == null || r.errors !== minE) return '';
+      if (!found) { found = true; return 'record'; }
+      return 'repeat';
     });
   }
 
