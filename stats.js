@@ -546,11 +546,16 @@ const Stats = (() => {
     return `${m}:${String(s).padStart(2, '0')}`;
   }
 
+  function getTodayRunCount() {
+    const today = todayStr();
+    return runs.filter(r => r.date === today).length;
+  }
+
   function getWeekAvgCpm() {
     const wr = weekRuns(runs);
     if (!wr.length) return 0;
     return Math.round(wr.reduce((s, r) => s + r.cpm, 0) / wr.length);
   }
 
-  return { init, saveRun, renderStats, formatTime, getWeekAvgCpm, getRecordLabel };
+  return { init, saveRun, renderStats, formatTime, getWeekAvgCpm, getRecordLabel, getTodayRunCount };
 })();

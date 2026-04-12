@@ -604,6 +604,20 @@ async function finishRun() {
     errors:       errorCount,
     errorsDetail,
   });
+
+  const todayCount = Stats.getTodayRunCount();
+  if (todayCount === 5 || todayCount === 10) {
+    const text = todayCount === 5
+      ? 'Задача минимум на день сделана'
+      : '10 за день сделано';
+    if (window.speechSynthesis) {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'ru-RU';
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utter);
+    }
+  }
+
   updateLevelProgressHint();
 }
 
