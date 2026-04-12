@@ -277,6 +277,8 @@ const Stats = (() => {
       bigramStats:    record.bigramStats    || {},
       text:           record.text           || '',
       errorPositions: record.errorPositions || {},
+      idleSeconds:    record.idleSeconds    || 0,
+      lazy:           record.lazy           || false,
     };
 
     runs.push(entry);
@@ -415,14 +417,15 @@ const Stats = (() => {
         : el === 'repeat'
         ? ' <span class="run-badge-sm run-badge--repeat">П</span>'
         : '';
+      const lazyBadge = r.lazy ? ' <span class="run-badge run-badge--lazy">лень</span>' : '';
       return `
-      <tr>
+      <tr${r.lazy ? ' class="row--lazy"' : ''}>
         <td>${r.date}</td>
         <td>${r.time}</td>
         <td>${r.level ?? r.exercise ?? '—'}</td>
         <td>${r.chars}</td>
         <td>${r.errors ?? '—'}${errBadge}</td>
-        <td>${formatTime(r.seconds)}</td>
+        <td>${formatTime(r.seconds)}${lazyBadge}</td>
         <td>${r.cpm} зн/мин${cpmBadge}</td>
       </tr>`;
     }).join('');
@@ -834,7 +837,7 @@ const Stats = (() => {
 
   function getTodayRunCount() {
     const today = todayStr();
-    return runs.filter(r => r.date === today).length;
+    return runs.filter(r => r.date === today && !r.lazy).length;
   }
 
   function getRecentAvgCpm() {

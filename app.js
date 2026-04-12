@@ -150,6 +150,9 @@ let lastCorrectTime = null;  // timestamp of last correct keypress
 let lastCorrectChar = null;  // char typed at lastCorrectTime
 let runBigramRaw    = {};    // bigram → [deltaMs, ...]
 
+let runIdleMs    = 0;      // accumulated idle time (gaps > 5s) in ms
+let isAbortedRun = false;  // true when auto-stopped due to idle
+
 // ── Screens ───────────────────────────────────────────────────
 
 function showScreen(name) {
@@ -180,6 +183,8 @@ function startExercise(level) {
   lastCorrectTime = null;
   lastCorrectChar = null;
   runBigramRaw    = {};
+  runIdleMs       = 0;
+  isAbortedRun    = false;
 
   exerciseLevelLabel.textContent = `Уровень ${level}`;
   liveTimer.textContent = '0:00';
@@ -387,8 +392,13 @@ wordInput.addEventListener('keydown', (e) => {
 
   const now = Date.now();
   if (lastKeyTime !== null) {
-    const tenths = Math.round((now - lastKeyTime) / 100);
+    const deltaMs = now - lastKeyTime;
+    const tenths  = Math.round(deltaMs / 100);
     if (tenths > 0) runIntervalMap[tenths] = (runIntervalMap[tenths] || 0) + 1;
+    if (deltaMs > 5000) {
+      runIdleMs += deltaMs - 5000;
+      if (runIdleMs >= 180_000) { abandonRun(); return; }
+    }
   }
   lastKeyTime = now;
 
@@ -602,6 +612,23 @@ function handleBackspace() {
 
 // ── Run completion ────────────────────────────────────────────
 
+function abandonRun() {
+  stopTimer();
+  clearIdleTimer();
+  wordInput.disabled = true;
+  isAbortedRun = true;
+
+  document.querySelector('.result-title').textContent = 'Заезд прерван';
+  const recordEl = document.getElementById('result-record-label');
+  if (recordEl) { recordEl.textContent = 'Перерыв больше 3 минут — заезд не засчитан'; recordEl.className = 'result-record-label result-record-label--aborted'; }
+  resultTime.textContent   = Stats.formatTime(elapsedSeconds);
+  resultCpm.textContent    = '—';
+  resultChars.textContent  = '—';
+  resultErrors.textContent = '—';
+  btnNext.textContent      = 'Понятно';
+  resultOverlay.classList.remove('hidden');
+}
+
 async function finishRun() {
   stopTimer();
   clearIdleTimer();
@@ -620,12 +647,20 @@ async function finishRun() {
   resultChars.textContent  = totalChars;
   resultErrors.textContent = errorCount;
 
+  const idleSeconds = Math.round(runIdleMs / 1000);
+  const lazy        = idleSeconds >= 60;
+
   const recordEl = document.getElementById('result-record-label');
   if (recordEl) {
-    recordEl.textContent  = recordLabel === 'record' ? 'Рекорд!' : recordLabel === 'repeat' ? 'Повтор!' : '';
-    recordEl.className    = 'result-record-label'
-      + (recordLabel === 'record' ? ' result-record-label--record' : '')
-      + (recordLabel === 'repeat' ? ' result-record-label--repeat' : '');
+    if (lazy) {
+      recordEl.textContent = `Ленивый заезд (простой ${Stats.formatTime(idleSeconds)}) — не засчитывается`;
+      recordEl.className   = 'result-record-label result-record-label--lazy';
+    } else {
+      recordEl.textContent  = recordLabel === 'record' ? 'Рекорд!' : recordLabel === 'repeat' ? 'Повтор!' : '';
+      recordEl.className    = 'result-record-label'
+        + (recordLabel === 'record' ? ' result-record-label--record' : '')
+        + (recordLabel === 'repeat' ? ' result-record-label--repeat' : '');
+    }
   }
   playFanfare();
 
@@ -673,6 +708,8 @@ async function finishRun() {
     bigramStats,
     text:           chars.join(''),
     errorPositions,
+    idleSeconds,
+    lazy,
   });
 
   const todayCount = Stats.getTodayRunCount();
@@ -703,7 +740,14 @@ btnBack.addEventListener('click', () => {
 
 function doNext() {
   resultOverlay.classList.add('hidden');
-  startExercise(currentLevel);
+  if (isAbortedRun) {
+    isAbortedRun = false;
+    document.querySelector('.result-title').textContent = 'Заезд завершён!';
+    btnNext.textContent = 'Следующий →';
+    showScreen('list');
+  } else {
+    startExercise(currentLevel);
+  }
 }
 
 btnNext.addEventListener('click', doNext);

@@ -712,6 +712,15 @@ button:active  { transform: scale(0.97); }
   color: #854d0e;
 }
 
+.run-badge--lazy {
+  background: #ffedd5;
+  color: #b45309;
+}
+
+.row--lazy td {
+  opacity: 0.55;
+}
+
 .run-badge-sm {
   font-size: 0.68rem;
   font-weight: 700;
@@ -733,6 +742,8 @@ button:active  { transform: scale(0.97); }
 
 .result-record-label--record { color: #15803d; }
 .result-record-label--repeat { color: #854d0e; }
+.result-record-label--aborted { color: #b91c1c; }
+.result-record-label--lazy    { color: #b45309; }
 
 .run-text-wrap {
   font-family: var(--font-mono, 'Courier New', monospace);
