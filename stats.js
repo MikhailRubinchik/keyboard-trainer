@@ -6,7 +6,8 @@
 const Stats = (() => {
   const LS_KEY = 'klavagonki_stats';
 
-  let runs = [];  // all loaded run records
+  let runs = [];   // all loaded run records
+  let tableMode = 'runs';  // 'runs' | 'days'
 
   // ── Utilities ──────────────────────────────────────────────
 
@@ -67,6 +68,21 @@ const Stats = (() => {
     const btnExport = document.getElementById('btn-export-stats');
     btnExport.addEventListener('click', exportTxt);
 
+    const btnRuns = document.getElementById('btn-view-runs');
+    const btnDays = document.getElementById('btn-view-days');
+    btnRuns.addEventListener('click', () => {
+      tableMode = 'runs';
+      btnRuns.classList.add('active');
+      btnDays.classList.remove('active');
+      renderTable(runs);
+    });
+    btnDays.addEventListener('click', () => {
+      tableMode = 'days';
+      btnDays.classList.add('active');
+      btnRuns.classList.remove('active');
+      renderTable(runs);
+    });
+
     runs = lsRead();
     renderStats(runs);
   }
@@ -101,6 +117,100 @@ const Stats = (() => {
   function max(arr) {
     if (!arr.length) return 0;
     return Math.max(...arr);
+  }
+
+  function avg1(arr) {
+    if (!arr.length) return '—';
+    return (arr.reduce((s, v) => s + v, 0) / arr.length).toFixed(1);
+  }
+
+  function groupByDay(allRuns) {
+    const map = {};
+    for (const r of allRuns) {
+      if (!map[r.date]) map[r.date] = [];
+      map[r.date].push(r);
+    }
+    return Object.entries(map)
+      .sort(([a], [b]) => parseRuDate(b) - parseRuDate(a))
+      .map(([date, dayRuns]) => ({
+        date,
+        count:    dayRuns.length,
+        avgLevel: avg1(dayRuns.map(r => r.level ?? 0)),
+        chars:    dayRuns.reduce((s, r) => s + r.chars, 0),
+        errors:   dayRuns.reduce((s, r) => s + (r.errors ?? 0), 0),
+        seconds:  dayRuns.reduce((s, r) => s + r.seconds, 0),
+        avgCpm:   avg(dayRuns.map(r => r.cpm)),
+      }));
+  }
+
+  function renderTableRuns(allRuns) {
+    const rows = [...allRuns].reverse().map(r => `
+      <tr>
+        <td>${r.date}</td>
+        <td>${r.time}</td>
+        <td>${r.level ?? r.exercise ?? '—'}</td>
+        <td>${r.chars}</td>
+        <td>${r.errors ?? '—'}</td>
+        <td>${formatTime(r.seconds)}</td>
+        <td>${r.cpm} зн/мин</td>
+      </tr>
+    `).join('');
+
+    return `
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th>Время</th>
+            <th>Уровень</th>
+            <th>Символов</th>
+            <th>Ошибок</th>
+            <th>Длительность</th>
+            <th>Скорость</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  function renderTableDays(allRuns) {
+    const rows = groupByDay(allRuns).map(d => `
+      <tr>
+        <td>${d.date}</td>
+        <td>${d.avgLevel}</td>
+        <td>${d.count}</td>
+        <td>${d.chars}</td>
+        <td>${d.errors}</td>
+        <td>${formatTime(d.seconds)}</td>
+        <td>${d.avgCpm} зн/мин</td>
+      </tr>
+    `).join('');
+
+    return `
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th>Уровень</th>
+            <th>Текстов</th>
+            <th>Символов</th>
+            <th>Ошибок</th>
+            <th>Длительность</th>
+            <th>Скорость</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  function renderTable(allRuns) {
+    const tableWrap = document.getElementById('stats-table-wrap');
+    if (!tableWrap) return;
+    tableWrap.innerHTML = tableMode === 'days'
+      ? renderTableDays(allRuns)
+      : renderTableRuns(allRuns);
   }
 
   function renderStats(allRuns) {
@@ -145,6 +255,10 @@ const Stats = (() => {
         <div class="summary-group-title">За неделю</div>
         <div class="summary-row">
           <div class="summary-item">
+            <span class="summary-label">Макс. скорость</span>
+            <span class="summary-value">${max(weekCpm)} зн/мин</span>
+          </div>
+          <div class="summary-item">
             <span class="summary-label">Средняя скорость</span>
             <span class="summary-value">${avg(weekCpm)} зн/мин</span>
           </div>
@@ -174,35 +288,7 @@ const Stats = (() => {
       </div>` : ''}
     `;
 
-    // Table — chronological, newest first
-    const rows = [...allRuns].reverse().map(r => `
-      <tr>
-        <td>${r.date}</td>
-        <td>${r.time}</td>
-        <td>${r.level ?? r.exercise ?? '—'}</td>
-        <td>${r.chars}</td>
-        <td>${r.errors ?? '—'}</td>
-        <td>${formatTime(r.seconds)}</td>
-        <td>${r.cpm} зн/мин</td>
-      </tr>
-    `).join('');
-
-    tableWrap.innerHTML = `
-      <table class="stats-table">
-        <thead>
-          <tr>
-            <th>Дата</th>
-            <th>Время</th>
-            <th>Уровень</th>
-            <th>Символов</th>
-            <th>Ошибок</th>
-            <th>Длительность</th>
-            <th>Скорость</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    `;
+    renderTable(allRuns);
   }
 
   function formatTime(seconds) {

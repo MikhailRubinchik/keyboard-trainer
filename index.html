@@ -24,8 +24,14 @@
     <div id="stats-section">
       <h2 class="stats-title">Статистика</h2>
       <div id="stats-summary"></div>
-      <div id="stats-file-controls">
-        <button id="btn-export-stats">Экспорт .txt</button>
+      <div id="stats-table-controls">
+        <div class="stats-view-toggle">
+          <button id="btn-view-runs" class="stats-view-btn active">Заезды</button>
+          <button id="btn-view-days" class="stats-view-btn">Дни</button>
+        </div>
+        <div id="stats-file-controls">
+          <button id="btn-export-stats">Экспорт .txt</button>
+        </div>
       </div>
       <div id="stats-table-wrap"></div>
     </div>
