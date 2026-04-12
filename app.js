@@ -136,6 +136,9 @@ let elapsedSeconds = 0;
 let errorCount     = 0;
 let idleTimer      = null;
 
+let samePosMistakes = 0;  // consecutive "first errors" at the same cursor position
+let lastMistakePos  = -1;
+
 // ── Screens ───────────────────────────────────────────────────
 
 function showScreen(name) {
@@ -158,6 +161,8 @@ function startExercise(level) {
   startTime  = null;
   elapsedSeconds = 0;
   errorCount = 0;
+  samePosMistakes = 0;
+  lastMistakePos  = -1;
 
   exerciseLevelLabel.textContent = `Уровень ${level}`;
   liveTimer.textContent = '0:00';
@@ -398,6 +403,15 @@ function playOy() {
   speechSynthesis.speak(utter);
 }
 
+function playCheckFinger() {
+  if (!window.speechSynthesis) return;
+  const utter = new SpeechSynthesisUtterance('Проверь палец');
+  utter.lang = 'ru-RU';
+  utter.rate = 1.0;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
+}
+
 // ── Single character handler ──────────────────────────────────
 //
 // A correct character is only accepted when junkBuffer is empty.
@@ -421,14 +435,27 @@ function handleChar(key) {
   if (key !== expected) {
     junkBuffer += key;
     errorCount++;
-    playOy();
+    // Track consecutive first-errors at the same position
+    if (cursor === lastMistakePos) {
+      samePosMistakes++;
+    } else {
+      lastMistakePos  = cursor;
+      samePosMistakes = 1;
+    }
+    if (samePosMistakes % 3 === 0) {
+      playCheckFinger();
+    } else {
+      playOy();
+    }
     updateWordDisplay();
     updateDisplay();
     updateFingerHint();
     return;
   }
 
-  // Correct character
+  // Correct character — reset position streak
+  samePosMistakes = 0;
+  lastMistakePos  = -1;
   charStates[cursor] = 'correct';
   cursor++;
 
