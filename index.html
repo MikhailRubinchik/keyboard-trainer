@@ -41,13 +41,17 @@
     <details id="sync-section" class="sync-section">
       <summary class="sync-summary">Синхронизация с GitHub Gist</summary>
       <div class="sync-body">
+        <p class="sync-hint">
+          <b>На компе дочки:</b> вставьте токен → «Создать гист». ID заполнится сам, дальше всё автоматически.<br>
+          <b>На вашем компе:</b> вставьте токен и ID гиста → «Загрузить».
+        </p>
         <div class="sync-row">
           <label class="sync-label">GitHub-токен (скоуп: gist)</label>
           <input id="sync-token" type="password" class="sync-input" placeholder="ghp_...">
         </div>
         <div class="sync-row">
           <label class="sync-label">ID гиста</label>
-          <input id="sync-gist-id" class="sync-input" placeholder="вставьте или создайте новый">
+          <input id="sync-gist-id" class="sync-input" placeholder="заполнится после «Создать гист»">
         </div>
         <div class="sync-actions">
           <button id="btn-create-gist" class="btn-sync">Создать гист</button>

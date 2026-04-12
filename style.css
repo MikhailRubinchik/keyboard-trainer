@@ -863,6 +863,16 @@ details[open] .sync-summary::before { content: '▼ '; }
   gap: 12px;
 }
 
+.sync-hint {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--accent);
+}
+
 .sync-row {
   display: flex;
   flex-direction: column;
