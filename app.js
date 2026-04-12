@@ -134,6 +134,7 @@ let startTime      = null;
 let timerInterval  = null;
 let elapsedSeconds = 0;
 let errorCount     = 0;
+let idleTimer      = null;
 
 // ── Screens ───────────────────────────────────────────────────
 
@@ -350,6 +351,7 @@ wordInput.addEventListener('keydown', (e) => {
 
   if (e.key === 'Backspace') {
     e.preventDefault();
+    resetIdleTimer();
     handleBackspace();
     return;
   }
@@ -357,11 +359,32 @@ wordInput.addEventListener('keydown', (e) => {
   if (e.key.length !== 1) return;
 
   e.preventDefault();
+  resetIdleTimer();
 
   if (!startTime) startTimer();
 
   handleChar(e.key);
 });
+
+// ── Idle reminder ────────────────────────────────────────────
+
+function resetIdleTimer() {
+  clearTimeout(idleTimer);
+  if (!startTime || wordInput.disabled) return;
+  idleTimer = setTimeout(() => {
+    if (!window.speechSynthesis) return;
+    const utter = new SpeechSynthesisUtterance('Диана, перебирай все кнопки на пальце');
+    utter.lang = 'ru-RU';
+    utter.onend = resetIdleTimer;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utter);
+  }, 3000);
+}
+
+function clearIdleTimer() {
+  clearTimeout(idleTimer);
+  idleTimer = null;
+}
 
 // ── Error sound ───────────────────────────────────────────────
 
@@ -451,6 +474,7 @@ function handleBackspace() {
 
 async function finishRun() {
   stopTimer();
+  clearIdleTimer();
   wordInput.disabled = true;
   updateWordDisplay();
   updateDisplay();
@@ -479,6 +503,7 @@ async function finishRun() {
 
 btnBack.addEventListener('click', () => {
   stopTimer();
+  clearIdleTimer();
   resultOverlay.classList.add('hidden');
   wordInput.disabled = true;
   showScreen('list');
