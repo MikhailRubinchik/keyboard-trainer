@@ -834,33 +834,39 @@ button:active  { transform: scale(0.97); }
   background: #eef2f7;
 }
 
-/* ── Sync section ────────────────────────────────────────── */
+/* ── Sync admin overlay ──────────────────────────────────── */
 
-.sync-section {
-  max-width: 860px;
-  margin: 32px auto 0;
-  padding: 0 24px 32px;
+.sync-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
 }
 
-.sync-summary {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-dim);
-  cursor: pointer;
-  user-select: none;
-  padding: 8px 0;
-  list-style: none;
-}
-.sync-summary::-webkit-details-marker { display: none; }
-.sync-summary::before { content: '▶ '; font-size: 0.65rem; }
-details[open] .sync-summary::before { content: '▼ '; }
-
-.sync-body {
-  margin-top: 16px;
+.sync-panel {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 28px 32px;
+  width: min(480px, 92vw);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+.sync-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sync-panel-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .sync-hint {
@@ -868,7 +874,7 @@ details[open] .sync-summary::before { content: '▼ '; }
   color: var(--text-dim);
   line-height: 1.6;
   padding: 10px 12px;
-  background: var(--bg-card);
+  background: var(--bg);
   border-radius: var(--radius);
   border-left: 3px solid var(--accent);
 }
@@ -888,7 +894,7 @@ details[open] .sync-summary::before { content: '▼ '; }
   padding: 8px 10px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
-  background: var(--bg-card);
+  background: var(--bg);
   color: var(--text);
   font-size: 0.9rem;
   font-family: var(--font-mono);
@@ -902,12 +908,12 @@ details[open] .sync-summary::before { content: '▼ '; }
 }
 
 .btn-sync {
-  padding: 7px 14px;
+  padding: 8px 16px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-card);
   color: var(--text);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: border-color 0.12s, background 0.12s;
 }

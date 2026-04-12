@@ -180,27 +180,74 @@ const Stats = (() => {
       if (e.target === overlay) overlay.classList.add('hidden');
     });
 
-    // Sync section
+    // Sync panel (opened by keyboard shortcut)
+    const syncOverlay = document.getElementById('sync-overlay');
+
+    function openSyncPanel(mode) {
+      const tokenInput = document.getElementById('sync-token');
+      const gistInput  = document.getElementById('sync-gist-id');
+      const rowGistId  = document.getElementById('sync-row-gist-id');
+      const btnCreate  = document.getElementById('btn-create-gist');
+      const btnPull    = document.getElementById('btn-pull-gist');
+      const titleEl    = document.getElementById('sync-panel-title');
+      const hintEl     = document.getElementById('sync-hint-text');
+
+      const cfg = getSyncConfig();
+      tokenInput.value = cfg.token;
+      gistInput.value  = cfg.gistId;
+
+      if (mode === 'daughter') {
+        titleEl.textContent  = 'Настройка синхронизации';
+        hintEl.innerHTML     = 'Введите токен GitHub (скоуп: <b>gist</b>) и нажмите «Создать гист». ID сохранится сам — передайте его папе.';
+        rowGistId.style.display = cfg.gistId ? '' : 'none';
+        btnCreate.style.display = '';
+        btnPull.style.display   = 'none';
+      } else {
+        titleEl.textContent  = 'Статистика дочки';
+        hintEl.innerHTML     = 'Введите токен GitHub и ID гиста, затем нажмите «Загрузить».';
+        rowGistId.style.display = '';
+        btnCreate.style.display = 'none';
+        btnPull.style.display   = '';
+      }
+
+      setSyncStatus('');
+      syncOverlay.classList.remove('hidden');
+      tokenInput.focus();
+    }
+
+    function closeSyncPanel() {
+      syncOverlay.classList.add('hidden');
+    }
+
+    document.getElementById('btn-close-sync').addEventListener('click', closeSyncPanel);
+    syncOverlay.addEventListener('click', (e) => {
+      if (e.target === syncOverlay) closeSyncPanel();
+    });
+
     const tokenInput = document.getElementById('sync-token');
     const gistInput  = document.getElementById('sync-gist-id');
-    const { token, gistId } = getSyncConfig();
-    if (tokenInput) tokenInput.value = token;
-    if (gistInput)  gistInput.value  = gistId;
-
     const saveConfig = () =>
       saveSyncConfig(tokenInput?.value.trim() || '', gistInput?.value.trim() || '');
     tokenInput?.addEventListener('blur', saveConfig);
     gistInput?.addEventListener('blur',  saveConfig);
 
-    document.getElementById('btn-create-gist')?.addEventListener('click', () => {
+    document.getElementById('btn-create-gist').addEventListener('click', () => {
       saveConfig();
-      const t = tokenInput?.value.trim();
+      const t = tokenInput.value.trim();
       if (!t) { setSyncStatus('Введите токен', true); return; }
-      createGist(t);
+      createGist(t).then(() => {
+        document.getElementById('sync-row-gist-id').style.display = '';
+      });
     });
-    document.getElementById('btn-pull-gist')?.addEventListener('click', () => {
+    document.getElementById('btn-pull-gist').addEventListener('click', () => {
       saveConfig();
       pullFromGist();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'D') { e.preventDefault(); openSyncPanel('daughter'); }
+      if (e.ctrlKey && e.shiftKey && e.key === 'P') { e.preventDefault(); openSyncPanel('dad'); }
+      if (e.key === 'Escape') closeSyncPanel();
     });
 
     runs = lsRead();

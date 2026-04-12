@@ -37,29 +37,6 @@
       <div id="stats-table-wrap"></div>
     </div>
 
-    <!-- ======= Gist sync section ======= -->
-    <details id="sync-section" class="sync-section">
-      <summary class="sync-summary">Синхронизация с GitHub Gist</summary>
-      <div class="sync-body">
-        <p class="sync-hint">
-          <b>На компе дочки:</b> вставьте токен → «Создать гист». ID заполнится сам, дальше всё автоматически.<br>
-          <b>На вашем компе:</b> вставьте токен и ID гиста → «Загрузить».
-        </p>
-        <div class="sync-row">
-          <label class="sync-label">GitHub-токен (скоуп: gist)</label>
-          <input id="sync-token" type="password" class="sync-input" placeholder="ghp_...">
-        </div>
-        <div class="sync-row">
-          <label class="sync-label">ID гиста</label>
-          <input id="sync-gist-id" class="sync-input" placeholder="заполнится после «Создать гист»">
-        </div>
-        <div class="sync-actions">
-          <button id="btn-create-gist" class="btn-sync">Создать гист</button>
-          <button id="btn-pull-gist"   class="btn-sync">Загрузить</button>
-        </div>
-        <p id="sync-status" class="sync-status"></p>
-      </div>
-    </details>
   </div>
 
   <!-- ======= Exercise screen ======= -->
@@ -119,6 +96,30 @@
       <div class="result-actions">
         <button id="btn-next" class="btn-primary">Следующий →</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ======= Sync admin overlay ======= -->
+  <div id="sync-overlay" class="sync-overlay hidden">
+    <div class="sync-panel">
+      <div class="sync-panel-header">
+        <h3 id="sync-panel-title" class="sync-panel-title"></h3>
+        <button id="btn-close-sync" class="btn-ghost">✕</button>
+      </div>
+      <p id="sync-hint-text" class="sync-hint"></p>
+      <div class="sync-row">
+        <label class="sync-label">GitHub-токен (скоуп: gist)</label>
+        <input id="sync-token" type="password" class="sync-input" placeholder="ghp_...">
+      </div>
+      <div id="sync-row-gist-id" class="sync-row">
+        <label class="sync-label">ID гиста</label>
+        <input id="sync-gist-id" class="sync-input" placeholder="заполнится после «Создать гист»">
+      </div>
+      <div class="sync-actions">
+        <button id="btn-create-gist" class="btn-sync">Создать гист</button>
+        <button id="btn-pull-gist"   class="btn-sync">Загрузить</button>
+      </div>
+      <p id="sync-status" class="sync-status"></p>
     </div>
   </div>
 
