@@ -415,39 +415,61 @@ function clearIdleTimer() {
   idleTimer = null;
 }
 
-// ── Fanfare ───────────────────────────────────────────────────
+// ── Fanfare (pre-rendered WAV blob) ───────────────────────────
 
-// Shared AudioContext — created once, unlocked on first keydown
-let _audioCtx = null;
-function getAudioCtx() {
-  if (!_audioCtx) {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return null;
-    _audioCtx = new AC();
+let _fanfareUrl = null;
+
+(async () => {
+  if (!window.OfflineAudioContext) return;
+  const sr    = 22050;
+  const total = 1.2;
+  const oac   = new OfflineAudioContext(1, Math.ceil(sr * total), sr);
+
+  // Each note = 4 sine harmonics to sound like a brass instrument
+  function note(freq, t, dur) {
+    [1, 2, 3, 4].forEach((h, i) => {
+      const osc  = oac.createOscillator();
+      const gain = oac.createGain();
+      osc.connect(gain);
+      gain.connect(oac.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq * h;
+      const amp = [0.45, 0.22, 0.13, 0.08][i];
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(amp, t + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      osc.start(t);
+      osc.stop(t + dur + 0.02);
+    });
   }
-  return _audioCtx;
-}
-document.addEventListener('keydown', () => {
-  const ctx = getAudioCtx();
-  if (ctx && ctx.state === 'suspended') ctx.resume();
-}, { once: true });
+
+  // G4 → C5 → E5 → G5
+  note(392, 0.00, 0.18);
+  note(523, 0.20, 0.18);
+  note(659, 0.40, 0.18);
+  note(784, 0.60, 0.55);
+
+  const buf  = await oac.startRendering();
+  const data = buf.getChannelData(0);
+  const wav  = new ArrayBuffer(44 + data.length * 2);
+  const dv   = new DataView(wav);
+  const str  = (s, off) => s.split('').forEach((c, i) => dv.setUint8(off + i, c.charCodeAt(0)));
+  str('RIFF', 0); dv.setUint32(4, wav.byteLength - 8, true);
+  str('WAVE', 8); str('fmt ', 12);
+  dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true);
+  dv.setUint16(32, 2, true);  dv.setUint16(34, 16, true);
+  str('data', 36); dv.setUint32(40, data.length * 2, true);
+  for (let i = 0; i < data.length; i++) {
+    const s = Math.max(-1, Math.min(1, data[i]));
+    dv.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  _fanfareUrl = URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }));
+})();
 
 function playFanfare() {
-  const ctx = getAudioCtx();
-  if (!ctx) return;
-  // Three rising notes: G4 → C5 → E5
-  [[392, 0, 0.14], [523, 0.16, 0.16], [659, 0.34, 0.42]].forEach(([freq, when, dur]) => {
-    const osc  = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'triangle';
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.4, ctx.currentTime + when);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + when + dur);
-    osc.start(ctx.currentTime + when);
-    osc.stop(ctx.currentTime + when + dur + 0.05);
-  });
+  if (!_fanfareUrl) return;
+  new Audio(_fanfareUrl).play().catch(() => {});
 }
 
 // ── Error sound ───────────────────────────────────────────────
