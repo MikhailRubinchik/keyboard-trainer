@@ -245,8 +245,8 @@ const Stats = (() => {
     });
 
     document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'D') { e.preventDefault(); openSyncPanel('daughter'); }
-      if (e.ctrlKey && e.shiftKey && e.key === 'P') { e.preventDefault(); openSyncPanel('dad'); }
+      if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && e.key === 'D') { e.preventDefault(); openSyncPanel('daughter'); }
+      if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && e.key === 'P') { e.preventDefault(); openSyncPanel('dad'); }
       if (e.key === 'Escape') closeSyncPanel();
     });
 
