@@ -690,6 +690,35 @@ button:active  { transform: scale(0.97); }
   color: #fff;
 }
 
+.freq-divider {
+  border-top: 1px solid var(--border);
+  margin: 20px 0 14px;
+}
+
+.freq-section-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.freq-total {
+  color: var(--text-dim);
+  font-size: 0.9em;
+}
+
+/* ── Clickable summary cards ─────────────────────────────── */
+
+.clickable-card {
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+
+.clickable-card:hover {
+  border-color: var(--accent);
+}
+
 /* ── Clickable table rows ────────────────────────────────── */
 
 .clickable-row {

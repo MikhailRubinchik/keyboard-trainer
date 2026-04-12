@@ -259,42 +259,86 @@ const Stats = (() => {
     }
   }
 
-  function showRunDetail(run) {
-    const overlay = document.getElementById('error-detail-overlay');
-    const body    = document.getElementById('error-detail-body');
-    const title   = document.getElementById('error-detail-title');
+  // ── Error frequency helpers ────────────────────────────────
 
-    title.textContent = `${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`;
+  // Builds { expected → { total, attempts: { char → count } } }
+  function buildErrorFreq(runsArray) {
+    const freq = {};
+    for (const run of runsArray) {
+      if (!run.errorsDetail) continue;
+      for (const entry of run.errorsDetail) {
+        if (!freq[entry.expected]) freq[entry.expected] = { total: 0, attempts: {} };
+        const ef = freq[entry.expected];
+        for (const a of entry.attempts) {
+          ef.total++;
+          ef.attempts[a] = (ef.attempts[a] || 0) + 1;
+        }
+      }
+    }
+    return freq;
+  }
+
+  function renderFreqHtml(freq) {
+    const rows = Object.entries(freq)
+      .sort(([, a], [, b]) => b.total - a.total);
+
+    if (!rows.length) return '<p class="error-detail-empty">Ошибок нет!</p>';
+
+    return rows.map(([expected, info]) => {
+      const keyLabel = expected === ' ' ? '␣' : expected;
+      const attemptsStr = Object.entries(info.attempts)
+        .sort(([, a], [, b]) => b - a)
+        .map(([ch, cnt]) => {
+          const display = ch === ' ' ? '␣' : ch;
+          return `${display}&nbsp;(${cnt})`;
+        }).join(', ');
+      return `<div class="error-entry">
+        <span class="eword"><b>${keyLabel}</b> <span class="freq-total">(${info.total})</span></span>
+        <span class="error-arrow">→</span>
+        <span class="error-attempts">${attemptsStr}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function showErrorModal(title, html) {
+    document.getElementById('error-detail-title').textContent = title;
+    document.getElementById('error-detail-body').innerHTML = html;
+    document.getElementById('error-detail-overlay').classList.remove('hidden');
+  }
+
+  // ── Run detail ─────────────────────────────────────────────
+
+  function showRunDetail(run) {
+    const finger = (ch) => (typeof getFinger === 'function' ? getFinger(ch) : '');
+
+    let html = '';
 
     if (!run.errorsDetail) {
-      body.innerHTML = '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>';
-      overlay.classList.remove('hidden');
+      html = '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>';
+      showErrorModal(`${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`, html);
       return;
     }
 
     if (!run.errorsDetail.length) {
-      body.innerHTML = '<p class="error-detail-empty">Ошибок нет!</p>';
-      overlay.classList.remove('hidden');
+      showErrorModal(`${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`,
+        '<p class="error-detail-empty">Ошибок нет!</p>');
       return;
     }
 
-    const expectedFinger = (ch) => (typeof getFinger === 'function' ? getFinger(ch) : '');
-
-    const lines = run.errorsDetail.map(entry => {
-      // Word with the error char highlighted
+    // Per-word list (unique attempts for display)
+    const perWord = run.errorsDetail.map(entry => {
       const wordHtml = entry.word.split('').map((ch, i) =>
         i === entry.charInWord
           ? `<span class="eword--error">${ch}</span>`
           : `<span>${ch}</span>`
       ).join('');
 
-      // Attempts: same finger → red, different finger → red + olive bg
-      const ef = expectedFinger(entry.expected);
-      const attemptsHtml = entry.attempts.map(a => {
-        const af = expectedFinger(a);
+      const ef = finger(entry.expected);
+      const unique = [...new Set(entry.attempts)];
+      const attemptsHtml = unique.map(a => {
+        const af = finger(a);
         const same = ef && af && af === ef;
-        const display = a === ' ' ? '␣' : a;
-        return `<span class="${same ? 'attempt--same' : 'attempt--diff'}">${display}</span>`;
+        return `<span class="${same ? 'attempt--same' : 'attempt--diff'}">${a === ' ' ? '␣' : a}</span>`;
       }).join(', ');
 
       return `<div class="error-entry">
@@ -304,8 +348,16 @@ const Stats = (() => {
       </div>`;
     }).join('');
 
-    body.innerHTML = lines;
-    overlay.classList.remove('hidden');
+    // Frequency summary for this run
+    const freq = buildErrorFreq([run]);
+    const freqHtml = renderFreqHtml(freq);
+
+    html = perWord
+      + '<div class="freq-divider"></div>'
+      + '<p class="freq-section-title">Сводка по клавишам</p>'
+      + freqHtml;
+
+    showErrorModal(`${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`, html);
   }
 
   function renderStats(allRuns) {
@@ -328,7 +380,7 @@ const Stats = (() => {
     const weekCpm    = weekR.map(r => r.cpm);
 
     summaryEl.innerHTML = `
-      <div class="summary-group">
+      <div class="summary-group clickable-card" data-period="all">
         <div class="summary-group-title">За всё время</div>
         <div class="summary-row">
           <div class="summary-item">
@@ -346,7 +398,7 @@ const Stats = (() => {
         </div>
       </div>
       ${weekR.length ? `
-      <div class="summary-group">
+      <div class="summary-group clickable-card" data-period="week">
         <div class="summary-group-title">За неделю</div>
         <div class="summary-row">
           <div class="summary-item">
@@ -364,7 +416,7 @@ const Stats = (() => {
         </div>
       </div>` : ''}
       ${todayRuns.length ? `
-      <div class="summary-group">
+      <div class="summary-group clickable-card" data-period="today">
         <div class="summary-group-title">Сегодня</div>
         <div class="summary-row">
           <div class="summary-item">
@@ -382,6 +434,18 @@ const Stats = (() => {
         </div>
       </div>` : ''}
     `;
+
+    // Click summary cards to show aggregated error frequency
+    summaryEl.querySelectorAll('.clickable-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const period = card.dataset.period;
+        let subset, label;
+        if (period === 'all')   { subset = allRuns;    label = 'За всё время'; }
+        if (period === 'week')  { subset = weekR;      label = 'За неделю'; }
+        if (period === 'today') { subset = todayRuns;  label = 'Сегодня'; }
+        showErrorModal(label, renderFreqHtml(buildErrorFreq(subset)));
+      });
+    });
 
     renderTable(allRuns);
   }

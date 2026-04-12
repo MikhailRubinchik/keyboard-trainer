@@ -536,7 +536,7 @@ async function finishRun() {
     .map(([posStr, info]) => {
       const pos = Number(posStr);
       if (chars[pos] === ' ') {
-        return { word: '␣', charInWord: 0, expected: ' ', attempts: [...new Set(info.attempts)] };
+        return { word: '␣', charInWord: 0, expected: ' ', attempts: info.attempts };
       }
       let start = pos;
       while (start > 0 && chars[start - 1] !== ' ') start--;
