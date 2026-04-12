@@ -145,6 +145,7 @@ const Stats = (() => {
       saveSyncConfig(token, gistId);
       const el = document.getElementById('sync-gist-id');
       if (el) el.value = gistId;
+      document.getElementById('btn-refresh-gist')?.classList.remove('hidden');
       setSyncStatus('Гист создан: ' + gistId);
     } catch (e) {
       setSyncStatus('Ошибка: ' + e.message, true);
@@ -249,6 +250,10 @@ const Stats = (() => {
       if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && e.code === 'KeyP') { e.preventDefault(); openSyncPanel('dad'); }
       if (e.key === 'Escape') closeSyncPanel();
     });
+
+    const btnRefresh = document.getElementById('btn-refresh-gist');
+    if (getSyncConfig().gistId) btnRefresh.classList.remove('hidden');
+    btnRefresh.addEventListener('click', () => pullFromGist());
 
     runs = lsRead();
     renderStats(runs);
