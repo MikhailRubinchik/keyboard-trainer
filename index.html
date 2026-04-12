@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Клавагонки</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ======= Home screen ======= -->
+  <div id="screen-list" class="screen active">
+    <h1 class="app-title">Клавагонки</h1>
+
+    <div class="level-select-section">
+      <p class="level-select-label">Уровень сложности</p>
+      <div id="level-buttons-main" class="level-buttons"></div>
+      <p class="level-chars-hint" id="level-chars-hint"></p>
+    </div>
+
+    <button id="btn-start" class="btn-primary btn-start">Начать</button>
+
+    <div id="stats-section">
+      <h2 class="stats-title">Статистика</h2>
+      <div id="stats-summary"></div>
+      <div id="stats-file-controls">
+        <button id="btn-open-stats">Открыть файл статистики</button>
+        <button id="btn-export-stats" class="hidden">Экспорт .txt</button>
+      </div>
+      <div id="stats-table-wrap"></div>
+    </div>
+  </div>
+
+  <!-- ======= Exercise screen ======= -->
+  <div id="screen-exercise" class="screen">
+    <div class="exercise-header">
+      <button id="btn-back" class="btn-ghost">← Назад</button>
+      <span id="exercise-level-label" class="exercise-title-label"></span>
+      <span id="live-timer" class="live-timer">0:00</span>
+    </div>
+
+    <div id="finger-hint" class="finger-hint"></div>
+
+    <div id="text-display" class="text-display"></div>
+
+    <div class="input-row">
+      <input
+        id="word-input"
+        class="word-input"
+        type="text"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="печатай здесь…"
+        disabled
+      >
+    </div>
+
+    <div class="hand-image-row">
+      <img id="hand-image" class="hand-image" src="" alt="">
+    </div>
+  </div>
+
+  <!-- ======= Result overlay ======= -->
+  <div id="result-overlay" class="result-overlay hidden">
+    <div class="result-card">
+      <h2 class="result-title">Заезд завершён!</h2>
+      <div class="result-stats">
+        <div class="result-stat">
+          <span class="result-stat-label">Время</span>
+          <span id="result-time" class="result-stat-value">—</span>
+        </div>
+        <div class="result-stat">
+          <span class="result-stat-label">Скорость</span>
+          <span id="result-cpm" class="result-stat-value">—</span>
+        </div>
+        <div class="result-stat">
+          <span class="result-stat-label">Символов</span>
+          <span id="result-chars" class="result-stat-value">—</span>
+        </div>
+      </div>
+      <div class="result-actions">
+        <button id="btn-next" class="btn-primary">Следующий →</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="texts.js"></script>
+  <script src="fingers.js"></script>
+  <script src="stats.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

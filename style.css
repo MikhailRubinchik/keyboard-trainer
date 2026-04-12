@@ -1,0 +1,507 @@
+/* ============================================================
+   Klavagonki — styles
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:          #f5f5f0;
+  --bg-card:     #ffffff;
+  --bg-input:    #ffffff;
+  --accent:      #d63651;
+  --accent-dim:  #a8293f;
+  --text:        #1a1a2e;
+  --text-dim:    #6b7280;
+  --correct:     #15803d;
+  --wrong-bg:    #fee2e2;
+  --wrong-text:  #b91c1c;
+  --current-bg:  #d63651;
+  --current-text:#ffffff;
+  --border:      #d1d5db;
+  --radius:      8px;
+  --font-mono:   'Courier New', Courier, monospace;
+  --font-ui:     system-ui, -apple-system, sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  line-height: 1.6;
+}
+
+/* ── Screens ─────────────────────────────────────────────── */
+
+.screen {
+  display: none;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.screen.active {
+  display: block;
+}
+
+/* ── List screen ─────────────────────────────────────────── */
+
+.app-title {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+  margin-bottom: 32px;
+}
+
+/* ── Level selector (main screen) ───────────────────────── */
+
+.level-select-section {
+  margin-bottom: 28px;
+}
+
+.level-select-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.level-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.level-btn-item {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.level-btn-item:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.level-btn-item.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.level-chars-hint {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  min-height: 20px;
+}
+
+.btn-start {
+  margin-bottom: 48px;
+  padding: 12px 40px;
+  font-size: 1.05rem;
+}
+
+/* ── Level button in exercise header ────────────────────── */
+
+.level-btn-wrap {
+  flex: 1;
+  position: relative;
+}
+
+.btn-level {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+
+.btn-level:hover {
+  border-color: var(--accent);
+}
+
+.level-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  width: 280px;
+  z-index: 50;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.level-panel .level-btn-item {
+  width: 38px;
+  height: 38px;
+  font-size: 0.9rem;
+}
+
+/* ── Exercise screen ─────────────────────────────────────── */
+
+.exercise-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.exercise-title-label {
+  flex: 1;
+  font-size: 1rem;
+  color: var(--text-dim);
+}
+
+.live-timer {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  color: var(--accent);
+  min-width: 48px;
+  text-align: right;
+}
+
+/* ── Finger hint ─────────────────────────────────────────── */
+
+.finger-hint {
+  min-height: 44px;
+  margin-bottom: 16px;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+/* ── Text display ────────────────────────────────────────── */
+
+.text-display {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  line-height: 2;
+  letter-spacing: 0.02em;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Character states */
+.char--pending {
+  color: var(--text);
+}
+
+.char--correct {
+  color: var(--correct);
+}
+
+.char--wrong {
+  color: var(--wrong-text);
+  background: var(--wrong-bg);
+  border-radius: 2px;
+}
+
+.char--current {
+  color: var(--current-text);
+  background: var(--current-bg);
+  border-radius: 3px;
+  animation: blink-cursor 1s step-end infinite;
+}
+
+/* Typed characters — dimmed */
+.char--correct {
+  opacity: 0.45;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+
+/* ── Word input ──────────────────────────────────────────── */
+
+.input-row {
+  display: flex;
+  justify-content: center;
+}
+
+.word-input {
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg-input);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  padding: 12px 18px;
+  outline: none;
+  transition: border-color 0.15s;
+  text-align: center;
+}
+
+.word-input:focus {
+  border-color: var(--accent);
+}
+
+.word-input.input-error {
+  border-color: var(--accent-dim);
+  background: var(--wrong-bg);
+  color: var(--wrong-text);
+}
+
+/* ── Result overlay ──────────────────────────────────────── */
+
+.result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.result-overlay.hidden {
+  display: none;
+}
+
+.result-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 40px 48px;
+  text-align: center;
+  min-width: 320px;
+}
+
+.result-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 28px;
+}
+
+.result-stats {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 32px;
+}
+
+.result-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.result-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.result-stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.result-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+
+button {
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  border-radius: var(--radius);
+  padding: 8px 20px;
+  transition: opacity 0.15s, transform 0.1s;
+  border: none;
+}
+
+button:hover   { opacity: 0.85; }
+button:active  { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  padding: 10px 28px;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+
+.btn-ghost:hover {
+  color: var(--text);
+  border-color: var(--text-dim);
+}
+
+/* ── Statistics section ──────────────────────────────────── */
+
+.stats-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text-dim);
+}
+
+#stats-file-controls {
+  margin-bottom: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+#stats-file-controls button {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+#stats-file-controls button:hover {
+  border-color: var(--accent);
+}
+
+#stats-summary {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.summary-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+}
+
+.summary-group-title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.summary-row {
+  display: flex;
+  gap: 24px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summary-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+.summary-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--accent);
+}
+
+/* Stats table */
+#stats-table-wrap {
+  overflow-x: auto;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.stats-table th {
+  text-align: left;
+  padding: 8px 12px;
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+}
+
+.stats-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+}
+
+.stats-table tr:last-child td {
+  border-bottom: none;
+}
+
+.stats-table tr:hover td {
+  background: var(--bg-card);
+}
+
+/* ── Hand image ──────────────────────────────────────────── */
+
+.hand-image-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.hand-image {
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  display: block;
+}
+
+/* ── Utilities ───────────────────────────────────────────── */
+
+.hidden {
+  display: none !important;
+}
