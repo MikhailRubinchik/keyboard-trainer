@@ -197,10 +197,25 @@ const Stats = (() => {
     return allRuns.map((r, i) => {
       let label = '';
       if (i > 0) {
-        if (r.cpm > maxCpm)      label = 'record';
+        if (r.cpm > maxCpm)        label = 'record';
         else if (r.cpm === maxCpm) label = 'repeat';
       }
       if (r.cpm > maxCpm) maxCpm = r.cpm;
+      return label;
+    });
+  }
+
+  function computeErrorRecords(allRuns) {
+    // Fewer errors = better. Returns parallel array '' | 'record' | 'repeat'
+    let minErrors = Infinity;
+    return allRuns.map((r, i) => {
+      const e = r.errors ?? 0;
+      let label = '';
+      if (i > 0) {
+        if (e < minErrors)      label = 'record';
+        else if (e === minErrors) label = 'repeat';
+      }
+      if (e < minErrors) minErrors = e;
       return label;
     });
   }
@@ -215,12 +230,18 @@ const Stats = (() => {
   }
 
   function renderTableRuns(allRuns) {
-    const labels = computeRecords(allRuns);
-    const rows = [...allRuns].map((r, i) => ({ r, label: labels[i] })).reverse().map(({ r, label }) => {
-      const badge = label === 'record'
+    const cpmLabels = computeRecords(allRuns);
+    const errLabels = computeErrorRecords(allRuns);
+    const rows = [...allRuns].map((r, i) => ({ r, cl: cpmLabels[i], el: errLabels[i] })).reverse().map(({ r, cl, el }) => {
+      const cpmBadge = cl === 'record'
         ? ' <span class="run-badge run-badge--record">Рекорд</span>'
-        : label === 'repeat'
+        : cl === 'repeat'
         ? ' <span class="run-badge run-badge--repeat">Повтор</span>'
+        : '';
+      const errBadge = el === 'record'
+        ? ' <span class="run-badge-sm run-badge--record">Р</span>'
+        : el === 'repeat'
+        ? ' <span class="run-badge-sm run-badge--repeat">П</span>'
         : '';
       return `
       <tr>
@@ -228,9 +249,9 @@ const Stats = (() => {
         <td>${r.time}</td>
         <td>${r.level ?? r.exercise ?? '—'}</td>
         <td>${r.chars}</td>
-        <td>${r.errors ?? '—'}</td>
+        <td>${r.errors ?? '—'}${errBadge}</td>
         <td>${formatTime(r.seconds)}</td>
-        <td>${r.cpm} зн/мин${badge}</td>
+        <td>${r.cpm} зн/мин${cpmBadge}</td>
       </tr>`;
     }).join('');
 

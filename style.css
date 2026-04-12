@@ -712,6 +712,16 @@ button:active  { transform: scale(0.97); }
   color: #854d0e;
 }
 
+.run-badge-sm {
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  border-radius: 3px;
+  padding: 1px 4px;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
 .result-record-label {
   min-height: 28px;
   font-size: 1.4rem;
