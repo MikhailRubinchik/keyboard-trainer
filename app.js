@@ -43,8 +43,19 @@ const FINGER_IMAGE = {
 const LEVEL_COUNT  = 10;
 const LS_LEVEL_KEY = 'klavagonki_level';
 
+// Min avg cpm required to move TO level n (index 0 = threshold for level 2)
+const LEVEL_THRESHOLDS = [30, 45, 60, 75, 90, 105, 120, 135, 150];
+
 let currentLevel   = 1;
 let lastStartIndex = -1;
+let levelUnlocked  = false;  // level buttons locked by default
+
+function getRecommendedLevel(avgCpm) {
+  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (avgCpm >= LEVEL_THRESHOLDS[i]) return i + 2;
+  }
+  return 1;
+}
 
 function loadLevel() {
   const saved = parseInt(localStorage.getItem(LS_LEVEL_KEY), 10);
@@ -70,15 +81,41 @@ function renderLevelButtons(containerId, onPick) {
     btn.className = 'level-btn-item';
     btn.textContent = i;
     btn.dataset.level = i;
-    btn.addEventListener('click', () => onPick(i));
+    btn.addEventListener('click', () => {
+      if (!levelUnlocked) return;
+      onPick(i);
+    });
     container.appendChild(btn);
   }
 }
 
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'KeyL' && e.shiftKey && !e.metaKey && !e.ctrlKey) {
+    if (screenList.classList.contains('active')) {
+      toggleLevelLock();
+    }
+  }
+});
+
 function updateLevelButtonsActive() {
   document.querySelectorAll('.level-btn-item').forEach(btn => {
     btn.classList.toggle('active', Number(btn.dataset.level) === currentLevel);
+    btn.classList.toggle('locked', !levelUnlocked);
   });
+}
+
+function updateLockHint() {
+  const hint = document.getElementById('level-lock-hint');
+  if (!hint) return;
+  hint.textContent = levelUnlocked
+    ? 'Ручной режим — Shift+L для блокировки'
+    : 'Уровень определён автоматически — Shift+L для изменения';
+}
+
+function toggleLevelLock() {
+  levelUnlocked = !levelUnlocked;
+  updateLevelButtonsActive();
+  updateLockHint();
 }
 
 // ── Current run state ────────────────────────────────────────
@@ -474,11 +511,18 @@ async function init() {
     updateLevelHint();
   });
 
-  updateLevelButtonsActive();
-  updateLevelHint();
-
   showScreen('list');
   await Stats.init();
+
+  // Set level based on last week's average speed
+  const weekAvg = Stats.getWeekAvgCpm();
+  if (weekAvg > 0) {
+    saveLevel(getRecommendedLevel(weekAvg));
+  }
+
+  updateLevelButtonsActive();
+  updateLevelHint();
+  updateLockHint();
 }
 
 init();

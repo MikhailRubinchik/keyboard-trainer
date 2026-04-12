@@ -30,6 +30,19 @@ const Stats = (() => {
     return new Date().toLocaleDateString('ru-RU');
   }
 
+  // Parse Russian date string dd.mm.yyyy → Date
+  function parseRuDate(str) {
+    const [d, m, y] = str.split('.').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function weekRuns(allRuns) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7);
+    cutoff.setHours(0, 0, 0, 0);
+    return allRuns.filter(r => r.date && parseRuDate(r.date) >= cutoff);
+  }
+
   function lsRead() {
     return parseLines(localStorage.getItem(LS_KEY) || '');
   }
@@ -102,10 +115,12 @@ const Stats = (() => {
       return;
     }
 
-    const today     = todayStr();
-    const todayRuns = allRuns.filter(r => r.date === today);
-    const allCpm    = allRuns.map(r => r.cpm);
-    const todCpm    = todayRuns.map(r => r.cpm);
+    const today      = todayStr();
+    const todayRuns  = allRuns.filter(r => r.date === today);
+    const weekR      = weekRuns(allRuns);
+    const allCpm     = allRuns.map(r => r.cpm);
+    const todCpm     = todayRuns.map(r => r.cpm);
+    const weekCpm    = weekR.map(r => r.cpm);
 
     summaryEl.innerHTML = `
       <div class="summary-group">
@@ -125,6 +140,20 @@ const Stats = (() => {
           </div>
         </div>
       </div>
+      ${weekR.length ? `
+      <div class="summary-group">
+        <div class="summary-group-title">За неделю</div>
+        <div class="summary-row">
+          <div class="summary-item">
+            <span class="summary-label">Средняя скорость</span>
+            <span class="summary-value">${avg(weekCpm)} зн/мин</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Заездов</span>
+            <span class="summary-value">${weekR.length}</span>
+          </div>
+        </div>
+      </div>` : ''}
       ${todayRuns.length ? `
       <div class="summary-group">
         <div class="summary-group-title">Сегодня</div>
@@ -182,5 +211,11 @@ const Stats = (() => {
     return `${m}:${String(s).padStart(2, '0')}`;
   }
 
-  return { init, saveRun, renderStats, formatTime };
+  function getWeekAvgCpm() {
+    const wr = weekRuns(runs);
+    if (!wr.length) return 0;
+    return Math.round(wr.reduce((s, r) => s + r.cpm, 0) / wr.length);
+  }
+
+  return { init, saveRun, renderStats, formatTime, getWeekAvgCpm };
 })();

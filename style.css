@@ -108,11 +108,33 @@ html, body {
   color: #fff;
 }
 
+.level-btn-item.locked {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.level-btn-item.locked:hover {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.level-btn-item.active.locked {
+  opacity: 1;
+  color: #fff;
+}
+
 .level-chars-hint {
   margin-top: 10px;
   font-size: 0.85rem;
   color: var(--text-dim);
   min-height: 20px;
+}
+
+.level-lock-hint {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  min-height: 18px;
 }
 
 .btn-start {
