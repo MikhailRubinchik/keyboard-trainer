@@ -163,11 +163,13 @@ const Stats = (() => {
         errors:   dayRuns.reduce((s, r) => s + (r.errors ?? 0), 0),
         seconds:  dayRuns.reduce((s, r) => s + r.seconds, 0),
         avgCpm:   dayRuns.length ? avg(dayRuns.map(r => r.cpm)) : null,
+        maxCpm:   dayRuns.length ? Math.max(...dayRuns.map(r => r.cpm)) : null,
       });
     }
 
     // Color flags + record labels — computed on oldest-first array
-    let maxDayCpm = -1;
+    let maxDayAvg = -1;
+    let maxDayMax = -1;
     rows.forEach((row, i) => {
       const yellow = row.count >= 5;
       const green  = yellow && i >= 4 &&
@@ -179,13 +181,16 @@ const Stats = (() => {
       row.countClass = row.count >= 10 ? 'cell--green' : '';
 
       if (i > 0 && row.avgCpm !== null) {
-        if (row.avgCpm > maxDayCpm)       row.recordLabel = 'record';
-        else if (row.avgCpm === maxDayCpm) row.recordLabel = 'repeat';
-        else                               row.recordLabel = '';
+        row.avgLabel = row.avgCpm > maxDayAvg ? 'record' : row.avgCpm === maxDayAvg ? 'repeat' : '';
+        row.maxLabel = row.maxCpm > maxDayMax ? 'record' : row.maxCpm === maxDayMax ? 'repeat' : '';
       } else {
-        row.recordLabel = '';
+        row.avgLabel = '';
+        row.maxLabel = '';
       }
-      if (row.avgCpm !== null && row.avgCpm > maxDayCpm) maxDayCpm = row.avgCpm;
+      if (row.avgCpm !== null) {
+        if (row.avgCpm > maxDayAvg) maxDayAvg = row.avgCpm;
+        if (row.maxCpm > maxDayMax) maxDayMax = row.maxCpm;
+      }
     });
 
     return rows.reverse();  // newest first for display
@@ -273,6 +278,12 @@ const Stats = (() => {
     `;
   }
 
+  function dayBadge(label, size = '') {
+    if (label === 'record') return ` <span class="run-badge${size} run-badge--record">Рекорд</span>`;
+    if (label === 'repeat') return ` <span class="run-badge${size} run-badge--repeat">Повтор</span>`;
+    return '';
+  }
+
   function renderTableDays(allRuns) {
     const rows = groupByDay(allRuns).map(d => `
       <tr>
@@ -282,7 +293,8 @@ const Stats = (() => {
         <td>${d.count ? d.chars : '—'}</td>
         <td>${d.count ? d.errors : '—'}</td>
         <td>${d.count ? formatTime(d.seconds) : '—'}</td>
-        <td>${d.avgCpm !== null ? d.avgCpm + ' зн/мин' : '—'}${d.recordLabel === 'record' ? ' <span class="run-badge run-badge--record">Рекорд</span>' : d.recordLabel === 'repeat' ? ' <span class="run-badge run-badge--repeat">Повтор</span>' : ''}</td>
+        <td>${d.maxCpm !== null ? d.maxCpm + ' зн/мин' : '—'}${dayBadge(d.maxLabel)}</td>
+        <td>${d.avgCpm !== null ? d.avgCpm + ' зн/мин' : '—'}${dayBadge(d.avgLabel)}</td>
       </tr>
     `).join('');
 
@@ -296,7 +308,8 @@ const Stats = (() => {
             <th>Символов</th>
             <th>Ошибок</th>
             <th>Длительность</th>
-            <th>Скорость</th>
+            <th>Макс.</th>
+            <th>Средняя</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
