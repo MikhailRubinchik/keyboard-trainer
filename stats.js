@@ -257,6 +257,19 @@ const Stats = (() => {
         tr.addEventListener('click', () => showRunDetail(reversed[i]));
       });
     }
+
+    if (tableMode === 'days') {
+      const dayRows = groupByDay(allRuns);
+      tableWrap.querySelectorAll('tbody tr').forEach((tr, i) => {
+        if (!dayRows[i] || dayRows[i].count === 0) return;
+        tr.classList.add('clickable-row');
+        tr.addEventListener('click', () => {
+          const date = dayRows[i].date;
+          const dayRuns = allRuns.filter(r => r.date === date);
+          showErrorModal(date, renderFreqHtml(buildErrorFreq(dayRuns)));
+        });
+      });
+    }
   }
 
   // ── Error frequency helpers ────────────────────────────────
