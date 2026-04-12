@@ -396,32 +396,37 @@ function clearIdleTimer() {
 
 // ── Fanfare ───────────────────────────────────────────────────
 
+// Shared AudioContext — created once, unlocked on first keydown
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    _audioCtx = new AC();
+  }
+  return _audioCtx;
+}
+document.addEventListener('keydown', () => {
+  const ctx = getAudioCtx();
+  if (ctx && ctx.state === 'suspended') ctx.resume();
+}, { once: true });
+
 function playFanfare() {
-  const AC = window.AudioContext || window.webkitAudioContext;
-  if (!AC) return;
-  const ctx = new AC();
-
-  function scheduleNotes() {
-    // Three rising notes: G4 → C5 → E5
-    [[392, 0, 0.14], [523, 0.16, 0.16], [659, 0.34, 0.42]].forEach(([freq, when, dur]) => {
-      const osc  = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'triangle';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.4, ctx.currentTime + when);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + when + dur);
-      osc.start(ctx.currentTime + when);
-      osc.stop(ctx.currentTime + when + dur + 0.05);
-    });
-  }
-
-  if (ctx.state === 'suspended') {
-    ctx.resume().then(scheduleNotes);
-  } else {
-    scheduleNotes();
-  }
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  // Three rising notes: G4 → C5 → E5
+  [[392, 0, 0.14], [523, 0.16, 0.16], [659, 0.34, 0.42]].forEach(([freq, when, dur]) => {
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.4, ctx.currentTime + when);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + when + dur);
+    osc.start(ctx.currentTime + when);
+    osc.stop(ctx.currentTime + when + dur + 0.05);
+  });
 }
 
 // ── Error sound ───────────────────────────────────────────────
