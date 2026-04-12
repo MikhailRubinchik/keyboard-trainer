@@ -19,8 +19,10 @@
   --correct:     #15803d;
   --wrong-bg:    #fee2e2;
   --wrong-text:  #b91c1c;
-  --current-bg:  #d63651;
-  --current-text:#ffffff;
+  --current-ok-bg:    #dcfce7;
+  --current-ok-text:  #14532d;
+  --current-err-bg:   #d63651;
+  --current-err-text: #ffffff;
   --border:      #d1d5db;
   --radius:      8px;
   --font-mono:   'Courier New', Courier, monospace;
@@ -230,9 +232,16 @@ html, body {
   border-radius: 2px;
 }
 
-.char--current {
-  color: var(--current-text);
-  background: var(--current-bg);
+.char--current-ok {
+  color: var(--current-ok-text);
+  background: var(--current-ok-bg);
+  border-radius: 3px;
+  animation: blink-cursor 1s step-end infinite;
+}
+
+.char--current-error {
+  color: var(--current-err-text);
+  background: var(--current-err-bg);
   border-radius: 3px;
   animation: blink-cursor 1s step-end infinite;
 }
@@ -255,29 +264,51 @@ html, body {
   justify-content: center;
 }
 
-.word-input {
+/* Capture input — kept off-screen so keydown events still fire */
+.word-input-hidden {
+  position: fixed;
+  left: -9999px;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+/* Visible word display — styled like the old input */
+.word-display {
   width: 100%;
   max-width: 480px;
+  min-height: 52px;
   background: var(--bg-input);
   border: 2px solid var(--border);
   border-radius: var(--radius);
-  color: var(--text);
   font-family: var(--font-mono);
   font-size: 1.2rem;
   padding: 12px 18px;
-  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  cursor: text;
   transition: border-color 0.15s;
-  text-align: center;
+  letter-spacing: 0.02em;
 }
 
-.word-input:focus {
+.word-display.focused {
   border-color: var(--accent);
 }
 
-.word-input.input-error {
+.word-display.has-error {
   border-color: var(--accent-dim);
-  background: var(--wrong-bg);
+}
+
+.wchar--wrong {
   color: var(--wrong-text);
+  background: var(--wrong-bg);
+  border-radius: 2px;
+}
+
+.wchar--placeholder {
+  color: var(--text-dim);
 }
 
 /* ── Result overlay ──────────────────────────────────────── */

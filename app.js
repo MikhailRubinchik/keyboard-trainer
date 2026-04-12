@@ -22,6 +22,7 @@ const btnBack  = document.getElementById('btn-back');
 const btnNext  = document.getElementById('btn-next');
 const btnStart = document.getElementById('btn-start');
 const exerciseLevelLabel = document.getElementById('exercise-level-label');
+const wordDisplay = document.getElementById('word-display');
 
 const FINGER_IMAGE = {
   'Левый мизинец':        '_1.png',
@@ -125,7 +126,7 @@ function startExercise(level) {
 
   wordInput.value = '';
   wordInput.disabled = false;
-  wordInput.classList.remove('input-error');
+  updateWordDisplay();
 
   resultOverlay.classList.add('hidden');
   showScreen('exercise');
@@ -161,7 +162,7 @@ function updateDisplay() {
   spans.forEach((span, i) => {
     span.className = '';
     if (i === cursor) {
-      span.classList.add('char--current');
+      span.classList.add(junkBuffer.length > 0 ? 'char--current-error' : 'char--current-ok');
     } else if (i < cursor) {
       span.classList.add('char--correct');
     } else {
@@ -210,6 +211,40 @@ function updateScroll() {
   const first = getFirstShownLine();
   textDisplay.scrollTop = lineOffsetTops[first] - lineOffsetTops[0];
 }
+
+// ── Word display (styled char-by-char) ───────────────────────
+
+function updateWordDisplay() {
+  wordDisplay.innerHTML = '';
+
+  if (wordInput.disabled || (wordSoFar === '' && junkBuffer === '')) {
+    const ph = document.createElement('span');
+    ph.className = 'wchar--placeholder';
+    ph.textContent = 'печатай здесь…';
+    wordDisplay.appendChild(ph);
+    wordDisplay.classList.remove('has-error');
+    return;
+  }
+
+  for (const ch of wordSoFar) {
+    const span = document.createElement('span');
+    span.textContent = ch;
+    wordDisplay.appendChild(span);
+  }
+
+  for (const ch of junkBuffer) {
+    const span = document.createElement('span');
+    span.className = 'wchar--wrong';
+    span.textContent = ch === ' ' ? '\u00A0' : ch;
+    wordDisplay.appendChild(span);
+  }
+
+  wordDisplay.classList.toggle('has-error', junkBuffer.length > 0);
+}
+
+wordInput.addEventListener('focus', () => wordDisplay.classList.add('focused'));
+wordInput.addEventListener('blur',  () => wordDisplay.classList.remove('focused'));
+wordDisplay.addEventListener('click', () => wordInput.focus());
 
 // ── Finger hint + hand image ──────────────────────────────────
 
@@ -282,6 +317,18 @@ wordInput.addEventListener('keydown', (e) => {
   handleChar(e.key);
 });
 
+// ── Error sound ───────────────────────────────────────────────
+
+function playOy() {
+  if (!window.speechSynthesis) return;
+  const utter = new SpeechSynthesisUtterance('ой');
+  utter.lang = 'ru-RU';
+  utter.rate = 1.8;
+  utter.volume = 0.9;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
+}
+
 // ── Single character handler ──────────────────────────────────
 //
 // A correct character is only accepted when junkBuffer is empty.
@@ -292,7 +339,8 @@ wordInput.addEventListener('keydown', (e) => {
 function handleChar(key) {
   if (junkBuffer.length > 0) {
     junkBuffer += key;
-    wordInput.value = wordSoFar + junkBuffer;
+    updateWordDisplay();
+    updateDisplay();
     return;
   }
 
@@ -300,8 +348,9 @@ function handleChar(key) {
 
   if (key !== expected) {
     junkBuffer += key;
-    wordInput.value = wordSoFar + junkBuffer;
-    wordInput.classList.add('input-error');
+    playOy();
+    updateWordDisplay();
+    updateDisplay();
     return;
   }
 
@@ -316,8 +365,7 @@ function handleChar(key) {
     wordSoFar += expected;
   }
 
-  wordInput.value = wordSoFar;
-  wordInput.classList.remove('input-error');
+  updateWordDisplay();
   updateDisplay();
   updateFingerHint();
 
@@ -331,8 +379,8 @@ function handleChar(key) {
 function handleBackspace() {
   if (junkBuffer.length > 0) {
     junkBuffer = junkBuffer.slice(0, -1);
-    wordInput.value = wordSoFar + junkBuffer;
-    if (junkBuffer.length === 0) wordInput.classList.remove('input-error');
+    updateWordDisplay();
+    updateDisplay();
     return;
   }
 
@@ -342,7 +390,7 @@ function handleBackspace() {
   cursor--;
   charStates[cursor] = 'pending';
   wordSoFar = wordSoFar.slice(0, -1);
-  wordInput.value = wordSoFar;
+  updateWordDisplay();
   updateDisplay();
   updateFingerHint();
 }
@@ -352,7 +400,7 @@ function handleBackspace() {
 async function finishRun() {
   stopTimer();
   wordInput.disabled = true;
-  wordInput.value = '';
+  updateWordDisplay();
   updateDisplay();
   fingerHint.textContent = '';
 
