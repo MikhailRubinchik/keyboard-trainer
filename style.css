@@ -439,6 +439,12 @@ button:active  { transform: scale(0.97); }
   color: var(--text-dim);
 }
 
+.level-progress-hint {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+}
+
 #stats-table-controls {
   display: flex;
   align-items: center;

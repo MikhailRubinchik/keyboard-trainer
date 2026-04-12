@@ -524,6 +524,7 @@ async function finishRun() {
     cpm,
     errors:  errorCount,
   });
+  updateLevelProgressHint();
 }
 
 // ── Navigation buttons ────────────────────────────────────────
@@ -561,6 +562,34 @@ function updateLevelHint() {
   if (hint) hint.textContent = `~${currentLevel * 100} символов`;
 }
 
+// ── Level progress hint below stats summary ───────────────────
+
+function updateLevelProgressHint() {
+  const hint = document.getElementById('level-progress-hint');
+  if (!hint) return;
+
+  if (currentLevel >= LEVEL_COUNT) {
+    hint.textContent = 'Максимальный уровень достигнут!';
+    return;
+  }
+
+  const nextLevel = currentLevel + 1;
+  const threshold = LEVEL_THRESHOLDS[currentLevel - 1];
+  const weekAvg   = Stats.getWeekAvgCpm();
+
+  if (weekAvg === 0) {
+    hint.textContent = `Для перехода на уровень ${nextLevel} нужна средняя скорость ${threshold} зн/мин за неделю`;
+    return;
+  }
+
+  const remaining = threshold - weekAvg;
+  if (remaining <= 0) {
+    hint.textContent = `Средняя скорость за неделю уже достаточна для уровня ${nextLevel}!`;
+  } else {
+    hint.textContent = `Для перехода на уровень ${nextLevel} нужна скорость ${threshold} зн/мин — осталось ${remaining} зн/мин`;
+  }
+}
+
 // ── Initialization ────────────────────────────────────────────
 
 async function init() {
@@ -584,6 +613,7 @@ async function init() {
   updateLevelButtonsActive();
   updateLevelHint();
   updateLockHint();
+  updateLevelProgressHint();
 }
 
 init();
