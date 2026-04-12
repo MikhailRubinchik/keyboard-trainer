@@ -9,9 +9,9 @@
 }
 
 :root {
-  --bg:          #ede8d8;
-  --bg-card:     #f7f3e9;
-  --bg-input:    #f7f3e9;
+  --bg:          #f5f5f0;
+  --bg-card:     #ffffff;
+  --bg-input:    #ffffff;
   --accent:      #4f7ea7;
   --accent-dim:  #365a78;
   --text:        #1a1a2e;
@@ -739,7 +739,7 @@ button:active  { transform: scale(0.97); }
   font-size: 1.05rem;
   line-height: 2.1;
   word-break: break-all;
-  background: var(--bg-input, #181825);
+  background: #f5edd8;
   border-radius: 8px;
   padding: 12px 14px;
   margin-bottom: 4px;
