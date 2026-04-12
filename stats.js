@@ -337,13 +337,18 @@ const Stats = (() => {
 
     if (!rows.length) return '<p class="error-detail-empty">Ошибок нет!</p>';
 
+    const finger = (ch) => (typeof getFinger === 'function' ? getFinger(ch) : '');
+
     return rows.map(([expected, info]) => {
       const keyLabel = expected === ' ' ? '␣' : expected;
+      const ef = finger(expected);
       const attemptsStr = Object.entries(info.attempts)
         .sort(([, a], [, b]) => b - a)
         .map(([ch, cnt]) => {
+          const af = finger(ch);
+          const same = ef && af && af === ef;
           const display = ch === ' ' ? '␣' : ch;
-          return `${display}&nbsp;(${cnt})`;
+          return `<span class="${same ? 'attempt--same' : 'attempt--diff'}">${display}</span>&nbsp;(${cnt})`;
         }).join(', ');
       return `<div class="error-entry">
         <span class="eword"><b>${keyLabel}</b> <span class="freq-total">(${info.total})</span></span>
