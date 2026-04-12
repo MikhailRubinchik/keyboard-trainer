@@ -627,7 +627,7 @@ async function finishRun() {
       + (recordLabel === 'record' ? ' result-record-label--record' : '')
       + (recordLabel === 'repeat' ? ' result-record-label--repeat' : '');
   }
-  if (recordLabel) playFanfare();
+  playFanfare();
 
   resultOverlay.classList.remove('hidden');
 
