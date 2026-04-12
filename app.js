@@ -656,15 +656,23 @@ async function finishRun() {
     bigramStats[bigram] = { avg: Math.round(sum / times.length), count: times.length };
   }
 
+  const errorPositions = {};
+  for (const [pos, info] of Object.entries(runErrors)) {
+    const unique = [...new Set(info.attempts)];
+    if (unique.length) errorPositions[Number(pos)] = unique;
+  }
+
   await Stats.saveRun({
-    level:        currentLevel,
-    chars:        totalChars,
-    seconds:      elapsedSeconds,
+    level:          currentLevel,
+    chars:          totalChars,
+    seconds:        elapsedSeconds,
     cpm,
-    errors:       errorCount,
+    errors:         errorCount,
     errorsDetail,
-    intervalMap:  runIntervalMap,
+    intervalMap:    runIntervalMap,
     bigramStats,
+    text:           chars.join(''),
+    errorPositions,
   });
 
   const todayCount = Stats.getTodayRunCount();

@@ -105,9 +105,11 @@ const Stats = (() => {
       errors:       record.errors,
       seconds:      record.seconds,
       cpm:          record.cpm,
-      errorsDetail: record.errorsDetail || [],
-      intervalMap:  record.intervalMap  || {},
-      bigramStats:  record.bigramStats  || {},
+      errorsDetail:   record.errorsDetail   || [],
+      intervalMap:    record.intervalMap    || {},
+      bigramStats:    record.bigramStats    || {},
+      text:           record.text           || '',
+      errorPositions: record.errorPositions || {},
     };
 
     runs.push(entry);
@@ -488,20 +490,38 @@ const Stats = (() => {
 
   // ── Run detail ─────────────────────────────────────────────
 
+  function escHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function buildTextWithErrorsHtml(text, errorPositions) {
+    return '<div class="run-text-wrap">'
+      + text.split('').map((ch, i) => {
+          const errs = errorPositions[i];
+          const disp = ch === ' ' ? '\u00A0' : escHtml(ch);
+          if (!errs || !errs.length) return `<span class="tx-ok">${disp}</span>`;
+          const dels = errs.map(e => `<del class="tx-err">${e === ' ' ? '␣' : escHtml(e)}</del>`).join('');
+          return `<span class="tx-wrong">${dels}<span class="tx-correct">${disp}</span></span>`;
+        }).join('')
+      + '</div>';
+  }
+
   function showRunDetail(run) {
     const finger = (ch) => (typeof getFinger === 'function' ? getFinger(ch) : '');
+    const title  = `${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`;
 
-    let html = '';
+    const textBlock = run.text
+      ? buildTextWithErrorsHtml(run.text, run.errorPositions || {})
+      + '<div class="freq-divider"></div>'
+      : '';
 
     if (!run.errorsDetail) {
-      html = '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>';
-      showErrorModal(`${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`, html);
+      showErrorModal(title, textBlock + '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>');
       return;
     }
 
     if (!run.errorsDetail.length) {
-      showErrorModal(`${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`,
-        '<p class="error-detail-empty">Ошибок нет!</p>');
+      showErrorModal(title, textBlock + '<p class="error-detail-empty">Ошибок нет!</p>');
       return;
     }
 
@@ -529,13 +549,12 @@ const Stats = (() => {
     }).join('');
 
     // Frequency summary for this run
-    const freq = buildErrorFreq([run]);
-    const freqHtml = renderFreqHtml(freq);
-
+    const freqHtml   = renderFreqHtml(buildErrorFreq([run]));
     const iHtml      = renderIntervalHtml(mergeIntervalMaps([run]));
     const bigramHtml = renderBigramHtml(run.bigramStats || {});
 
-    html = perWord
+    showErrorModal(title, textBlock
+      + perWord
       + '<div class="freq-divider"></div>'
       + '<p class="freq-section-title">Сводка по клавишам</p>'
       + freqHtml
@@ -544,9 +563,7 @@ const Stats = (() => {
       + iHtml
       + '<div class="freq-divider"></div>'
       + '<p class="freq-section-title">Медленные биграммы (топ-30)</p>'
-      + bigramHtml;
-
-    showErrorModal(`${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`, html);
+      + bigramHtml);
   }
 
   function renderStats(allRuns) {
