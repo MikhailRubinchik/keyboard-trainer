@@ -404,7 +404,6 @@ const Stats = (() => {
 
   function renderBigramHtml(bigramStats) {
     const entries = Object.entries(bigramStats)
-      .filter(([, { count }]) => count >= 2)
       .sort(([, a], [, b]) => b.avg - a.avg)
       .slice(0, 30);
 
