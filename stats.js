@@ -171,6 +171,8 @@ const Stats = (() => {
     // Color flags + record labels — computed on oldest-first array
     let maxDayAvg = -1;
     let maxDayMax = -1;
+    let minDayAvgErr = Infinity;
+    let minDayMaxErr = Infinity;
     rows.forEach((row, i) => {
       const yellow = row.count >= 5;
       const green  = yellow && i >= 4 &&
@@ -182,15 +184,16 @@ const Stats = (() => {
       row.countClass = row.count >= 10 ? 'cell--green' : '';
 
       if (row.avgCpm !== null) {
-        row.avgLabel = row.avgCpm > maxDayAvg ? 'record' : row.avgCpm === maxDayAvg ? 'repeat' : '';
-        row.maxLabel = row.maxCpm > maxDayMax ? 'record' : row.maxCpm === maxDayMax ? 'repeat' : '';
+        row.avgLabel    = row.avgCpm    > maxDayAvg    ? 'record' : row.avgCpm    === maxDayAvg    ? 'repeat' : '';
+        row.maxLabel    = row.maxCpm    > maxDayMax    ? 'record' : row.maxCpm    === maxDayMax    ? 'repeat' : '';
+        row.avgErrLabel = row.avgErrors < minDayAvgErr ? 'record' : row.avgErrors === minDayAvgErr ? 'repeat' : '';
+        row.maxErrLabel = row.maxErrors < minDayMaxErr ? 'record' : row.maxErrors === minDayMaxErr ? 'repeat' : '';
+        if (row.avgCpm    > maxDayAvg)    maxDayAvg    = row.avgCpm;
+        if (row.maxCpm    > maxDayMax)    maxDayMax    = row.maxCpm;
+        if (row.avgErrors < minDayAvgErr) minDayAvgErr = row.avgErrors;
+        if (row.maxErrors < minDayMaxErr) minDayMaxErr = row.maxErrors;
       } else {
-        row.avgLabel = '';
-        row.maxLabel = '';
-      }
-      if (row.avgCpm !== null) {
-        if (row.avgCpm > maxDayAvg) maxDayAvg = row.avgCpm;
-        if (row.maxCpm > maxDayMax) maxDayMax = row.maxCpm;
+        row.avgLabel = row.maxLabel = row.avgErrLabel = row.maxErrLabel = '';
       }
     });
 
@@ -284,8 +287,8 @@ const Stats = (() => {
         <td>${d.avgLevel}</td>
         <td class="${d.countClass}">${d.count}</td>
         <td>${d.count ? d.chars : '—'}</td>
-        <td>${d.maxErrors !== null ? d.maxErrors : '—'}</td>
-        <td>${d.avgErrors !== null ? d.avgErrors : '—'}</td>
+        <td>${d.maxErrors !== null ? d.maxErrors : '—'}${dayBadge(d.maxErrLabel, '-sm')}</td>
+        <td>${d.avgErrors !== null ? d.avgErrors : '—'}${dayBadge(d.avgErrLabel, '-sm')}</td>
         <td>${d.count ? formatTime(d.seconds) : '—'}</td>
         <td>${d.maxCpm !== null ? d.maxCpm + ' зн/мин' : '—'}${dayBadge(d.maxLabel)}</td>
         <td>${d.avgCpm !== null ? d.avgCpm + ' зн/мин' : '—'}${dayBadge(d.avgLabel)}</td>
