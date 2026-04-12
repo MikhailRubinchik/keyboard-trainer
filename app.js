@@ -289,6 +289,12 @@ wordDisplay.addEventListener('click', () => wordInput.focus());
 // ── Finger hint + hand image ──────────────────────────────────
 
 function updateFingerHint() {
+  if (junkBuffer.length > 0) {
+    fingerHint.textContent = 'Backspace';
+    handImage.src = '__red_10.png';
+    return;
+  }
+
   if (cursor >= chars.length) {
     fingerHint.textContent = '';
     handImage.src = '';
@@ -383,6 +389,7 @@ function handleChar(key) {
     playOy();
     updateWordDisplay();
     updateDisplay();
+    updateFingerHint();
     return;
   }
 
@@ -394,6 +401,7 @@ function handleChar(key) {
     playOy();
     updateWordDisplay();
     updateDisplay();
+    updateFingerHint();
     return;
   }
 
@@ -424,6 +432,7 @@ function handleBackspace() {
     junkBuffer = junkBuffer.slice(0, -1);
     updateWordDisplay();
     updateDisplay();
+    updateFingerHint();
     return;
   }
 
