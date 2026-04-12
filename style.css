@@ -236,14 +236,12 @@ html, body {
   color: var(--current-ok-text);
   background: var(--current-ok-bg);
   border-radius: 3px;
-  animation: blink-cursor 1s step-end infinite;
 }
 
 .char--current-error {
   color: var(--current-err-text);
   background: var(--current-err-bg);
   border-radius: 3px;
-  animation: blink-cursor 1s step-end infinite;
 }
 
 /* Typed characters — dimmed */
