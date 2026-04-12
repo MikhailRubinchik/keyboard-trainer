@@ -40,11 +40,11 @@ const FINGER_IMAGE = {
 
 // ── Levels ───────────────────────────────────────────────────
 
-const LEVEL_COUNT  = 10;
+const LEVEL_COUNT  = 20;
 const LS_LEVEL_KEY = 'klavagonki_level';
 
 // Min avg cpm required to move TO level n (index 0 = threshold for level 2)
-const LEVEL_THRESHOLDS = [30, 45, 60, 75, 90, 105, 120, 135, 150];
+const LEVEL_THRESHOLDS = [20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200];
 
 let currentLevel   = 1;
 let lastStartIndex = -1;
@@ -669,16 +669,16 @@ function updateLevelProgressHint() {
 
   const nextLevel = currentLevel + 1;
   const threshold = LEVEL_THRESHOLDS[currentLevel - 1];
-  const weekAvg   = Stats.getWeekAvgCpm();
+  const recentAvg = Stats.getRecentAvgCpm();
 
-  if (weekAvg === 0) {
-    hint.textContent = `Для перехода на уровень ${nextLevel} нужна средняя скорость ${threshold} зн/мин за неделю`;
+  if (recentAvg === 0) {
+    hint.textContent = `Для перехода на уровень ${nextLevel} нужна средняя скорость ${threshold} зн/мин`;
     return;
   }
 
-  const remaining = threshold - weekAvg;
+  const remaining = threshold - recentAvg;
   if (remaining <= 0) {
-    hint.textContent = `Средняя скорость за неделю уже достаточна для уровня ${nextLevel}!`;
+    hint.textContent = `Средняя скорость за последние 15 заездов уже достаточна для уровня ${nextLevel}!`;
   } else {
     hint.textContent = `Для перехода на уровень ${nextLevel} нужна скорость ${threshold} зн/мин — осталось ${remaining} зн/мин`;
   }
@@ -698,10 +698,10 @@ async function init() {
   showScreen('list');
   await Stats.init();
 
-  // Set level based on last week's average speed
-  const weekAvg = Stats.getWeekAvgCpm();
-  if (weekAvg > 0) {
-    saveLevel(getRecommendedLevel(weekAvg));
+  // Set level based on recent average speed
+  const recentAvg = Stats.getRecentAvgCpm();
+  if (recentAvg > 0) {
+    saveLevel(getRecommendedLevel(recentAvg));
   }
 
   updateLevelButtonsActive();

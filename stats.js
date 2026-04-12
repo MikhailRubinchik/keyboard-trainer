@@ -37,11 +37,8 @@ const Stats = (() => {
     return new Date(y, m - 1, d);
   }
 
-  function weekRuns(allRuns) {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 7);
-    cutoff.setHours(0, 0, 0, 0);
-    return allRuns.filter(r => r.date && parseRuDate(r.date) >= cutoff);
+  function last15Runs(allRuns) {
+    return allRuns.slice(-15);
   }
 
   function lsRead() {
@@ -212,9 +209,11 @@ const Stats = (() => {
 
   function computeErrorRecords(allRuns) {
     // Fewer errors = better. Returns parallel array '' | 'record' | 'repeat'
+    // Runs without error data (r.errors == null) are skipped entirely.
     let minErrors = Infinity;
     return allRuns.map(r => {
-      const e = r.errors ?? 0;
+      if (r.errors == null) return '';
+      const e = r.errors;
       const label = e < minErrors ? 'record' : e === minErrors ? 'repeat' : '';
       if (e < minErrors) minErrors = e;
       return label;
@@ -464,10 +463,10 @@ const Stats = (() => {
 
     const today      = todayStr();
     const todayRuns  = allRuns.filter(r => r.date === today);
-    const weekR      = weekRuns(allRuns);
+    const last15R    = last15Runs(allRuns);
     const allCpm     = allRuns.map(r => r.cpm);
     const todCpm     = todayRuns.map(r => r.cpm);
-    const weekCpm    = weekR.map(r => r.cpm);
+    const last15Cpm  = last15R.map(r => r.cpm);
 
     summaryEl.innerHTML = `
       <div class="summary-group clickable-card" data-period="all">
@@ -487,21 +486,21 @@ const Stats = (() => {
           </div>
         </div>
       </div>
-      ${weekR.length ? `
-      <div class="summary-group clickable-card" data-period="week">
-        <div class="summary-group-title">За неделю</div>
+      ${last15R.length > 1 ? `
+      <div class="summary-group clickable-card" data-period="last15">
+        <div class="summary-group-title">Последние ${last15R.length}</div>
         <div class="summary-row">
           <div class="summary-item">
             <span class="summary-label">Макс. скорость</span>
-            <span class="summary-value">${max(weekCpm)} зн/мин</span>
+            <span class="summary-value">${max(last15Cpm)} зн/мин</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">Средняя скорость</span>
-            <span class="summary-value">${avg(weekCpm)} зн/мин</span>
+            <span class="summary-value">${avg(last15Cpm)} зн/мин</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">Заездов</span>
-            <span class="summary-value">${weekR.length}</span>
+            <span class="summary-value">${last15R.length}</span>
           </div>
         </div>
       </div>` : ''}
@@ -530,9 +529,9 @@ const Stats = (() => {
       card.addEventListener('click', () => {
         const period = card.dataset.period;
         let subset, label;
-        if (period === 'all')   { subset = allRuns;    label = 'За всё время'; }
-        if (period === 'week')  { subset = weekR;      label = 'За неделю'; }
-        if (period === 'today') { subset = todayRuns;  label = 'Сегодня'; }
+        if (period === 'all')    { subset = allRuns;   label = 'За всё время'; }
+        if (period === 'last15') { subset = last15R;   label = `Последние ${last15R.length}`; }
+        if (period === 'today')  { subset = todayRuns; label = 'Сегодня'; }
         showErrorModal(label, renderFreqHtml(buildErrorFreq(subset)));
       });
     });
@@ -551,11 +550,11 @@ const Stats = (() => {
     return runs.filter(r => r.date === today).length;
   }
 
-  function getWeekAvgCpm() {
-    const wr = weekRuns(runs);
-    if (!wr.length) return 0;
-    return Math.round(wr.reduce((s, r) => s + r.cpm, 0) / wr.length);
+  function getRecentAvgCpm() {
+    const recent = last15Runs(runs);
+    if (!recent.length) return 0;
+    return Math.round(recent.reduce((s, r) => s + r.cpm, 0) / recent.length);
   }
 
-  return { init, saveRun, renderStats, formatTime, getWeekAvgCpm, getRecordLabel, getTodayRunCount };
+  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount };
 })();
