@@ -339,6 +339,7 @@ function playOy() {
 function handleChar(key) {
   if (junkBuffer.length > 0) {
     junkBuffer += key;
+    playOy();
     updateWordDisplay();
     updateDisplay();
     return;

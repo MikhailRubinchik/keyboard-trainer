@@ -12,8 +12,8 @@
   --bg:          #f5f5f0;
   --bg-card:     #ffffff;
   --bg-input:    #ffffff;
-  --accent:      #d63651;
-  --accent-dim:  #a8293f;
+  --accent:      #4f7ea7;
+  --accent-dim:  #365a78;
   --text:        #1a1a2e;
   --text-dim:    #6b7280;
   --correct:     #15803d;
@@ -298,7 +298,9 @@ html, body {
 }
 
 .word-display.has-error {
-  border-color: var(--accent-dim);
+  border-color: #d63651;
+  border-width: 3px;
+  box-shadow: 0 0 0 3px rgba(214, 54, 81, 0.25);
 }
 
 .wchar--wrong {
