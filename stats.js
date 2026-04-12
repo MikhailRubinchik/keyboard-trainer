@@ -379,7 +379,6 @@ const Stats = (() => {
         const pct = Math.round(count / total * 100);
         return `<div class="interval-row">
           <span class="interval-label">${label}</span>
-          <div class="interval-bar-wrap"><div class="interval-bar-fill" style="width:${pct}%"></div></div>
           <span class="interval-pct">${pct}%</span>
         </div>`;
       }).join('');
@@ -415,10 +414,8 @@ const Stats = (() => {
     return entries.map(([bigram, { avg, count }]) => {
       const label = bigram.replace(/ /g, '·');
       const secs  = (avg / 1000).toFixed(2);
-      const pct   = Math.round(avg / maxAvg * 100);
       return `<div class="interval-row">
         <span class="interval-label">${label}</span>
-        <div class="interval-bar-wrap"><div class="interval-bar-fill" style="width:${pct}%"></div></div>
         <span class="interval-pct">${secs}с&thinsp;<span class="freq-total">(${count})</span></span>
       </div>`;
     }).join('');
