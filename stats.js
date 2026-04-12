@@ -166,7 +166,8 @@ const Stats = (() => {
       });
     }
 
-    // Color flags — computed on oldest-first array so look-back is simple
+    // Color flags + record labels — computed on oldest-first array
+    let maxDayCpm = -1;
     rows.forEach((row, i) => {
       const yellow = row.count >= 5;
       const green  = yellow && i >= 4 &&
@@ -176,6 +177,15 @@ const Stats = (() => {
         rows[i - 4].count >= 5;
       row.dateClass  = green ? 'cell--green' : yellow ? 'cell--yellow' : '';
       row.countClass = row.count >= 10 ? 'cell--green' : '';
+
+      if (i > 0 && row.avgCpm !== null) {
+        if (row.avgCpm > maxDayCpm)       row.recordLabel = 'record';
+        else if (row.avgCpm === maxDayCpm) row.recordLabel = 'repeat';
+        else                               row.recordLabel = '';
+      } else {
+        row.recordLabel = '';
+      }
+      if (row.avgCpm !== null && row.avgCpm > maxDayCpm) maxDayCpm = row.avgCpm;
     });
 
     return rows.reverse();  // newest first for display
@@ -251,7 +261,7 @@ const Stats = (() => {
         <td>${d.count ? d.chars : '—'}</td>
         <td>${d.count ? d.errors : '—'}</td>
         <td>${d.count ? formatTime(d.seconds) : '—'}</td>
-        <td>${d.avgCpm !== null ? d.avgCpm + ' зн/мин' : '—'}</td>
+        <td>${d.avgCpm !== null ? d.avgCpm + ' зн/мин' : '—'}${d.recordLabel === 'record' ? ' <span class="run-badge run-badge--record">Рекорд</span>' : d.recordLabel === 'repeat' ? ' <span class="run-badge run-badge--repeat">Повтор</span>' : ''}</td>
       </tr>
     `).join('');
 
