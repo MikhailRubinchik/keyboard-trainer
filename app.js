@@ -143,6 +143,8 @@ let samePosMistakes = 0;  // consecutive "first errors" at the same cursor posit
 let lastMistakePos  = -1;
 
 let runErrors = {};  // cursorPos → { expected, attempts[] }
+let lastKeyTime    = null;  // timestamp of last character keydown
+let runIntervalMap = {};    // tenths-of-second → count
 
 // ── Screens ───────────────────────────────────────────────────
 
@@ -169,6 +171,8 @@ function startExercise(level) {
   samePosMistakes = 0;
   lastMistakePos  = -1;
   runErrors       = {};
+  lastKeyTime     = null;
+  runIntervalMap  = {};
 
   exerciseLevelLabel.textContent = `Уровень ${level}`;
   liveTimer.textContent = '0:00';
@@ -373,6 +377,13 @@ wordInput.addEventListener('keydown', (e) => {
   resetIdleTimer();
 
   if (!startTime) startTimer();
+
+  const now = Date.now();
+  if (lastKeyTime !== null) {
+    const tenths = Math.round((now - lastKeyTime) / 100);
+    if (tenths > 0) runIntervalMap[tenths] = (runIntervalMap[tenths] || 0) + 1;
+  }
+  lastKeyTime = now;
 
   handleChar(e.key);
 });
@@ -606,6 +617,7 @@ async function finishRun() {
     cpm,
     errors:       errorCount,
     errorsDetail,
+    intervalMap:  runIntervalMap,
   });
 
   const todayCount = Stats.getTodayRunCount();

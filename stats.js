@@ -337,10 +337,50 @@ const Stats = (() => {
         tr.addEventListener('click', () => {
           const date = dayRows[i].date;
           const dayRuns = allRuns.filter(r => r.date === date);
-          showErrorModal(date, renderFreqHtml(buildErrorFreq(dayRuns)));
+          showErrorModal(date, buildDetailHtml(dayRuns));
         });
       });
     }
+  }
+
+  // ── Interval map helpers ───────────────────────────────────
+
+  function mergeIntervalMaps(runsArray) {
+    const merged = {};
+    for (const run of runsArray) {
+      if (!run.intervalMap) continue;
+      for (const [k, v] of Object.entries(run.intervalMap)) {
+        merged[k] = (merged[k] || 0) + v;
+      }
+    }
+    return merged;
+  }
+
+  function renderIntervalHtml(map) {
+    const CAP = 50; // tenths → 5 seconds
+    const entries = Object.entries(map);
+    if (!entries.length) return '<p class="error-detail-empty">Нет данных об интервалах</p>';
+
+    // Bucket everything >= CAP into one entry
+    const bucketed = {};
+    for (const [k, v] of entries) {
+      const t = Math.min(Number(k), CAP);
+      bucketed[t] = (bucketed[t] || 0) + v;
+    }
+
+    const total = Object.values(bucketed).reduce((s, v) => s + v, 0);
+
+    return Object.entries(bucketed)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([t, count]) => {
+        const label = Number(t) >= CAP ? '≥5.0с' : (Number(t) / 10).toFixed(1) + 'с';
+        const pct = Math.round(count / total * 100);
+        return `<div class="interval-row">
+          <span class="interval-label">${label}</span>
+          <div class="interval-bar-wrap"><div class="interval-bar-fill" style="width:${pct}%"></div></div>
+          <span class="interval-pct">${pct}%</span>
+        </div>`;
+      }).join('');
   }
 
   // ── Error frequency helpers ────────────────────────────────
@@ -387,6 +427,16 @@ const Stats = (() => {
         <span class="error-attempts">${attemptsStr}</span>
       </div>`;
     }).join('');
+  }
+
+  function buildDetailHtml(runsArray) {
+    const freqHtml = renderFreqHtml(buildErrorFreq(runsArray));
+    const iMap     = mergeIntervalMaps(runsArray);
+    const iHtml    = renderIntervalHtml(iMap);
+    return freqHtml
+      + '<div class="freq-divider"></div>'
+      + '<p class="freq-section-title">Интервалы между нажатиями</p>'
+      + iHtml;
   }
 
   function showErrorModal(title, html) {
@@ -441,10 +491,16 @@ const Stats = (() => {
     const freq = buildErrorFreq([run]);
     const freqHtml = renderFreqHtml(freq);
 
+    const iMap  = mergeIntervalMaps([run]);
+    const iHtml = renderIntervalHtml(iMap);
+
     html = perWord
       + '<div class="freq-divider"></div>'
       + '<p class="freq-section-title">Сводка по клавишам</p>'
-      + freqHtml;
+      + freqHtml
+      + '<div class="freq-divider"></div>'
+      + '<p class="freq-section-title">Интервалы между нажатиями</p>'
+      + iHtml;
 
     showErrorModal(`${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`, html);
   }
@@ -532,7 +588,7 @@ const Stats = (() => {
         if (period === 'all')    { subset = allRuns;   label = 'За всё время'; }
         if (period === 'last15') { subset = last15R;   label = `Последние ${last15R.length}`; }
         if (period === 'today')  { subset = todayRuns; label = 'Сегодня'; }
-        showErrorModal(label, renderFreqHtml(buildErrorFreq(subset)));
+        showErrorModal(label, buildDetailHtml(subset));
       });
     });
 
