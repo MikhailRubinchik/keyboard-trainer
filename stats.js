@@ -383,6 +383,46 @@ const Stats = (() => {
       }).join('');
   }
 
+  // ── Bigram timing helpers ──────────────────────────────────
+
+  function mergeBigramStats(runsArray) {
+    const acc = {};  // bigram → { totalMs, count }
+    for (const run of runsArray) {
+      if (!run.bigramStats) continue;
+      for (const [bigram, { avg, count }] of Object.entries(run.bigramStats)) {
+        if (!acc[bigram]) acc[bigram] = { totalMs: 0, count: 0 };
+        acc[bigram].totalMs += avg * count;
+        acc[bigram].count   += count;
+      }
+    }
+    const result = {};
+    for (const [bigram, { totalMs, count }] of Object.entries(acc)) {
+      result[bigram] = { avg: Math.round(totalMs / count), count };
+    }
+    return result;
+  }
+
+  function renderBigramHtml(bigramStats) {
+    const entries = Object.entries(bigramStats)
+      .filter(([, { count }]) => count >= 2)
+      .sort(([, a], [, b]) => b.avg - a.avg)
+      .slice(0, 30);
+
+    if (!entries.length) return '<p class="error-detail-empty">Недостаточно данных о биграммах</p>';
+
+    const maxAvg = entries[0][1].avg;
+    return entries.map(([bigram, { avg, count }]) => {
+      const label = bigram.replace(/ /g, '·');
+      const secs  = (avg / 1000).toFixed(2);
+      const pct   = Math.round(avg / maxAvg * 100);
+      return `<div class="interval-row">
+        <span class="interval-label">${label}</span>
+        <div class="interval-bar-wrap"><div class="interval-bar-fill" style="width:${pct}%"></div></div>
+        <span class="interval-pct">${secs}с&thinsp;<span class="freq-total">(${count})</span></span>
+      </div>`;
+    }).join('');
+  }
+
   // ── Error frequency helpers ────────────────────────────────
 
   // Builds { expected → { total, attempts: { char → count } } }
@@ -430,13 +470,16 @@ const Stats = (() => {
   }
 
   function buildDetailHtml(runsArray) {
-    const freqHtml = renderFreqHtml(buildErrorFreq(runsArray));
-    const iMap     = mergeIntervalMaps(runsArray);
-    const iHtml    = renderIntervalHtml(iMap);
+    const freqHtml    = renderFreqHtml(buildErrorFreq(runsArray));
+    const iHtml       = renderIntervalHtml(mergeIntervalMaps(runsArray));
+    const bigramHtml  = renderBigramHtml(mergeBigramStats(runsArray));
     return freqHtml
       + '<div class="freq-divider"></div>'
       + '<p class="freq-section-title">Интервалы между нажатиями</p>'
-      + iHtml;
+      + iHtml
+      + '<div class="freq-divider"></div>'
+      + '<p class="freq-section-title">Медленные биграммы (топ-30)</p>'
+      + bigramHtml;
   }
 
   function showErrorModal(title, html) {
@@ -491,8 +534,8 @@ const Stats = (() => {
     const freq = buildErrorFreq([run]);
     const freqHtml = renderFreqHtml(freq);
 
-    const iMap  = mergeIntervalMaps([run]);
-    const iHtml = renderIntervalHtml(iMap);
+    const iHtml      = renderIntervalHtml(mergeIntervalMaps([run]));
+    const bigramHtml = renderBigramHtml(run.bigramStats || {});
 
     html = perWord
       + '<div class="freq-divider"></div>'
@@ -500,7 +543,10 @@ const Stats = (() => {
       + freqHtml
       + '<div class="freq-divider"></div>'
       + '<p class="freq-section-title">Интервалы между нажатиями</p>'
-      + iHtml;
+      + iHtml
+      + '<div class="freq-divider"></div>'
+      + '<p class="freq-section-title">Медленные биграммы (топ-30)</p>'
+      + bigramHtml;
 
     showErrorModal(`${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`, html);
   }

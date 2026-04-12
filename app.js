@@ -146,6 +146,10 @@ let runErrors = {};  // cursorPos → { expected, attempts[] }
 let lastKeyTime    = null;  // timestamp of last character keydown
 let runIntervalMap = {};    // tenths-of-second → count
 
+let lastCorrectTime = null;  // timestamp of last correct keypress
+let lastCorrectChar = null;  // char typed at lastCorrectTime
+let runBigramRaw    = {};    // bigram → [deltaMs, ...]
+
 // ── Screens ───────────────────────────────────────────────────
 
 function showScreen(name) {
@@ -173,6 +177,9 @@ function startExercise(level) {
   runErrors       = {};
   lastKeyTime     = null;
   runIntervalMap  = {};
+  lastCorrectTime = null;
+  lastCorrectChar = null;
+  runBigramRaw    = {};
 
   exerciseLevelLabel.textContent = `Уровень ${level}`;
   liveTimer.textContent = '0:00';
@@ -520,6 +527,17 @@ function handleChar(key) {
   samePosMistakes = 0;
   lastMistakePos  = -1;
   charStates[cursor] = 'correct';
+
+  const correctNow = Date.now();
+  if (lastCorrectTime !== null) {
+    const bigram = lastCorrectChar + expected;
+    const delta  = correctNow - lastCorrectTime;
+    if (!runBigramRaw[bigram]) runBigramRaw[bigram] = [];
+    runBigramRaw[bigram].push(delta);
+  }
+  lastCorrectTime = correctNow;
+  lastCorrectChar = expected;
+
   cursor++;
 
   if (expected === ' ') {
@@ -610,6 +628,12 @@ async function finishRun() {
       };
     });
 
+  const bigramStats = {};
+  for (const [bigram, times] of Object.entries(runBigramRaw)) {
+    const sum = times.reduce((s, t) => s + t, 0);
+    bigramStats[bigram] = { avg: Math.round(sum / times.length), count: times.length };
+  }
+
   await Stats.saveRun({
     level:        currentLevel,
     chars:        totalChars,
@@ -618,6 +642,7 @@ async function finishRun() {
     errors:       errorCount,
     errorsDetail,
     intervalMap:  runIntervalMap,
+    bigramStats,
   });
 
   const todayCount = Stats.getTodayRunCount();
