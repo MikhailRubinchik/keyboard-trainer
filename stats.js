@@ -59,6 +59,98 @@ const Stats = (() => {
     URL.revokeObjectURL(url);
   }
 
+  // ── Gist sync ──────────────────────────────────────────────
+
+  const GIST_TOKEN_KEY = 'klavogonki_gist_token';
+  const GIST_ID_KEY    = 'klavogonki_gist_id';
+  const GIST_FILE      = 'klavogonki-stats.json';
+
+  function getSyncConfig() {
+    return {
+      token:  localStorage.getItem(GIST_TOKEN_KEY) || '',
+      gistId: localStorage.getItem(GIST_ID_KEY)    || '',
+    };
+  }
+
+  function saveSyncConfig(token, gistId) {
+    localStorage.setItem(GIST_TOKEN_KEY, token);
+    localStorage.setItem(GIST_ID_KEY,    gistId);
+  }
+
+  function setSyncStatus(msg, isError) {
+    const el = document.getElementById('sync-status');
+    if (!el) return;
+    el.textContent = msg;
+    el.className   = 'sync-status' + (isError ? ' sync-status--error' : '');
+  }
+
+  async function gistFetch(method, gistId, token, body) {
+    const url = gistId
+      ? `https://api.github.com/gists/${gistId}`
+      : 'https://api.github.com/gists';
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type':  'application/json',
+        'Accept':        'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+    return res.json();
+  }
+
+  async function pushToGist() {
+    const { token, gistId } = getSyncConfig();
+    if (!token || !gistId) return;
+    try {
+      await gistFetch('PATCH', gistId, token, {
+        files: { [GIST_FILE]: { content: serializeRuns(runs) } },
+      });
+      setSyncStatus('↑ ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
+    } catch (e) {
+      setSyncStatus('↑ Ошибка: ' + e.message, true);
+    }
+  }
+
+  async function pullFromGist() {
+    const { token, gistId } = getSyncConfig();
+    if (!token || !gistId) { setSyncStatus('Укажите токен и ID гиста', true); return; }
+    setSyncStatus('Загружаю…');
+    try {
+      const data   = await gistFetch('GET', gistId, token);
+      const file   = data.files[GIST_FILE];
+      if (!file) throw new Error('файл не найден в гисте');
+      const pulled = parseLines(file.content);
+      runs = pulled;
+      lsWrite(runs);
+      renderStats(runs);
+      setSyncStatus(`↓ Загружено ${pulled.length} заездов`);
+    } catch (e) {
+      setSyncStatus('↓ Ошибка: ' + e.message, true);
+    }
+  }
+
+  async function createGist(token) {
+    setSyncStatus('Создаю гист…');
+    try {
+      const data   = await gistFetch('POST', null, token, {
+        description: 'Клавогонки — статистика',
+        public:      false,
+        files:       { [GIST_FILE]: { content: serializeRuns(runs) } },
+      });
+      const gistId = data.id;
+      saveSyncConfig(token, gistId);
+      const el = document.getElementById('sync-gist-id');
+      if (el) el.value = gistId;
+      setSyncStatus('Гист создан: ' + gistId);
+    } catch (e) {
+      setSyncStatus('Ошибка: ' + e.message, true);
+    }
+  }
+
   // ── Public API ─────────────────────────────────────────────
 
   async function init() {
@@ -88,6 +180,29 @@ const Stats = (() => {
       if (e.target === overlay) overlay.classList.add('hidden');
     });
 
+    // Sync section
+    const tokenInput = document.getElementById('sync-token');
+    const gistInput  = document.getElementById('sync-gist-id');
+    const { token, gistId } = getSyncConfig();
+    if (tokenInput) tokenInput.value = token;
+    if (gistInput)  gistInput.value  = gistId;
+
+    const saveConfig = () =>
+      saveSyncConfig(tokenInput?.value.trim() || '', gistInput?.value.trim() || '');
+    tokenInput?.addEventListener('blur', saveConfig);
+    gistInput?.addEventListener('blur',  saveConfig);
+
+    document.getElementById('btn-create-gist')?.addEventListener('click', () => {
+      saveConfig();
+      const t = tokenInput?.value.trim();
+      if (!t) { setSyncStatus('Введите токен', true); return; }
+      createGist(t);
+    });
+    document.getElementById('btn-pull-gist')?.addEventListener('click', () => {
+      saveConfig();
+      pullFromGist();
+    });
+
     runs = lsRead();
     renderStats(runs);
   }
@@ -115,6 +230,7 @@ const Stats = (() => {
     runs.push(entry);
     lsWrite(runs);
     renderStats(runs);
+    pushToGist(); // fire-and-forget
   }
 
   // ── Rendering ──────────────────────────────────────────────
