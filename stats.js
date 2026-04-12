@@ -125,22 +125,51 @@ const Stats = (() => {
   }
 
   function groupByDay(allRuns) {
+    if (!allRuns.length) return [];
+
+    // Index runs by date string
     const map = {};
     for (const r of allRuns) {
       if (!map[r.date]) map[r.date] = [];
       map[r.date].push(r);
     }
-    return Object.entries(map)
-      .sort(([a], [b]) => parseRuDate(b) - parseRuDate(a))
-      .map(([date, dayRuns]) => ({
-        date,
+
+    // Date range: earliest run → today
+    const parsedDates = Object.keys(map).map(parseRuDate);
+    const earliest = new Date(Math.min(...parsedDates));
+    const today    = new Date();
+    earliest.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    // Build one row per calendar date, oldest first
+    const rows = [];
+    for (let d = new Date(earliest); d <= today; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toLocaleDateString('ru-RU');
+      const dayRuns = map[dateStr] || [];
+      rows.push({
+        date:     dateStr,
         count:    dayRuns.length,
-        avgLevel: avg1(dayRuns.map(r => r.level ?? 0)),
+        avgLevel: (() => { const lvls = dayRuns.map(r => r.level).filter(v => typeof v === 'number'); return lvls.length ? avg1(lvls) : '—'; })(),
         chars:    dayRuns.reduce((s, r) => s + r.chars, 0),
         errors:   dayRuns.reduce((s, r) => s + (r.errors ?? 0), 0),
         seconds:  dayRuns.reduce((s, r) => s + r.seconds, 0),
-        avgCpm:   avg(dayRuns.map(r => r.cpm)),
-      }));
+        avgCpm:   dayRuns.length ? avg(dayRuns.map(r => r.cpm)) : null,
+      });
+    }
+
+    // Color flags — computed on oldest-first array so look-back is simple
+    rows.forEach((row, i) => {
+      const yellow = row.count >= 5;
+      const green  = yellow && i >= 4 &&
+        rows[i - 1].count >= 5 &&
+        rows[i - 2].count >= 5 &&
+        rows[i - 3].count >= 5 &&
+        rows[i - 4].count >= 5;
+      row.dateClass  = green ? 'cell--green' : yellow ? 'cell--yellow' : '';
+      row.countClass = row.count >= 10 ? 'cell--green' : '';
+    });
+
+    return rows.reverse();  // newest first for display
   }
 
   function renderTableRuns(allRuns) {
@@ -177,13 +206,13 @@ const Stats = (() => {
   function renderTableDays(allRuns) {
     const rows = groupByDay(allRuns).map(d => `
       <tr>
-        <td>${d.date}</td>
+        <td class="${d.dateClass}">${d.date}</td>
         <td>${d.avgLevel}</td>
-        <td>${d.count}</td>
-        <td>${d.chars}</td>
-        <td>${d.errors}</td>
-        <td>${formatTime(d.seconds)}</td>
-        <td>${d.avgCpm} зн/мин</td>
+        <td class="${d.countClass}">${d.count}</td>
+        <td>${d.count ? d.chars : '—'}</td>
+        <td>${d.count ? d.errors : '—'}</td>
+        <td>${d.count ? formatTime(d.seconds) : '—'}</td>
+        <td>${d.avgCpm !== null ? d.avgCpm + ' зн/мин' : '—'}</td>
       </tr>
     `).join('');
 

@@ -573,6 +573,16 @@ button:active  { transform: scale(0.97); }
   background: var(--bg-card);
 }
 
+.stats-table td.cell--yellow {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.stats-table td.cell--green {
+  background: #dcfce7;
+  color: #14532d;
+}
+
 /* ── Hand image ──────────────────────────────────────────── */
 
 .hand-image-row {
