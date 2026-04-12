@@ -13,10 +13,11 @@ const wordInput   = document.getElementById('word-input');
 const liveTimer   = document.getElementById('live-timer');
 const handImage   = document.getElementById('hand-image');
 
-const resultOverlay = document.getElementById('result-overlay');
-const resultTime    = document.getElementById('result-time');
-const resultCpm     = document.getElementById('result-cpm');
-const resultChars   = document.getElementById('result-chars');
+const resultOverlay  = document.getElementById('result-overlay');
+const resultTime     = document.getElementById('result-time');
+const resultCpm      = document.getElementById('result-cpm');
+const resultChars    = document.getElementById('result-chars');
+const resultErrors   = document.getElementById('result-errors');
 
 const btnBack  = document.getElementById('btn-back');
 const btnNext  = document.getElementById('btn-next');
@@ -95,6 +96,7 @@ let lineOffsetTops = [];  // offsetTop of first span in each line
 let startTime      = null;
 let timerInterval  = null;
 let elapsedSeconds = 0;
+let errorCount     = 0;
 
 // ── Screens ───────────────────────────────────────────────────
 
@@ -117,6 +119,7 @@ function startExercise(level) {
   junkBuffer = '';
   startTime  = null;
   elapsedSeconds = 0;
+  errorCount = 0;
 
   exerciseLevelLabel.textContent = `Уровень ${level}`;
   liveTimer.textContent = '0:00';
@@ -339,6 +342,7 @@ function playOy() {
 function handleChar(key) {
   if (junkBuffer.length > 0) {
     junkBuffer += key;
+    errorCount++;
     playOy();
     updateWordDisplay();
     updateDisplay();
@@ -349,6 +353,7 @@ function handleChar(key) {
 
   if (key !== expected) {
     junkBuffer += key;
+    errorCount++;
     playOy();
     updateWordDisplay();
     updateDisplay();
@@ -409,9 +414,10 @@ async function finishRun() {
   const minutes    = elapsedSeconds > 0 ? elapsedSeconds / 60 : 1 / 60;
   const cpm        = Math.round(totalChars / minutes);
 
-  resultTime.textContent  = Stats.formatTime(elapsedSeconds);
-  resultCpm.textContent   = `${cpm} зн/мин`;
-  resultChars.textContent = totalChars;
+  resultTime.textContent   = Stats.formatTime(elapsedSeconds);
+  resultCpm.textContent    = `${cpm} зн/мин`;
+  resultChars.textContent  = totalChars;
+  resultErrors.textContent = errorCount;
   resultOverlay.classList.remove('hidden');
 
   await Stats.saveRun({
@@ -419,6 +425,7 @@ async function finishRun() {
     chars:   totalChars,
     seconds: elapsedSeconds,
     cpm,
+    errors:  errorCount,
   });
 }
 

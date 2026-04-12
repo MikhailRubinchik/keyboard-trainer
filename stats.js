@@ -1,15 +1,12 @@
 // ============================================================
 // stats.js — run statistics storage and display
-// Storage format: stats.txt file, one JSON object per line
-// Fallback: localStorage when File System Access API is unavailable
+// Storage: localStorage. Export to .txt available on demand.
 // ============================================================
 
 const Stats = (() => {
   const LS_KEY = 'klavagonki_stats';
-  const USE_FSA = typeof window.showOpenFilePicker === 'function';
 
-  let fileHandle = null;  // FileSystemFileHandle (only when USE_FSA is true)
-  let runs = [];          // all loaded run records
+  let runs = [];  // all loaded run records
 
   // ── Utilities ──────────────────────────────────────────────
 
@@ -33,62 +30,16 @@ const Stats = (() => {
     return new Date().toLocaleDateString('ru-RU');
   }
 
-  // ── File System Access API ─────────────────────────────────
-
-  async function fsaOpenOrCreate() {
-    try {
-      // First try to open an existing file
-      [fileHandle] = await window.showOpenFilePicker({
-        id: 'klavagonki-stats',
-        types: [{ description: 'Статистика', accept: { 'text/plain': ['.txt'] } }],
-        multiple: false,
-      });
-    } catch (e) {
-      if (e.name === 'AbortError') return false; // user cancelled
-      // File not found — create a new one
-      try {
-        fileHandle = await window.showSaveFilePicker({
-          id: 'klavagonki-stats',
-          suggestedName: 'stats.txt',
-          types: [{ description: 'Статистика', accept: { 'text/plain': ['.txt'] } }],
-        });
-      } catch (e2) {
-        if (e2.name === 'AbortError') return false;
-        console.error('Failed to create stats file:', e2);
-        return false;
-      }
-    }
-    return true;
-  }
-
-  async function fsaRead() {
-    if (!fileHandle) return [];
-    const file = await fileHandle.getFile();
-    const text = await file.text();
-    return parseLines(text);
-  }
-
-  async function fsaWrite(runArray) {
-    if (!fileHandle) return;
-    const writable = await fileHandle.createWritable();
-    await writable.write(serializeRuns(runArray));
-    await writable.close();
-  }
-
-  // ── localStorage fallback ──────────────────────────────────
-
   function lsRead() {
-    const raw = localStorage.getItem(LS_KEY) || '';
-    return parseLines(raw);
+    return parseLines(localStorage.getItem(LS_KEY) || '');
   }
 
   function lsWrite(runArray) {
     localStorage.setItem(LS_KEY, serializeRuns(runArray));
   }
 
-  function lsExport() {
-    const content = serializeRuns(runs);
-    const blob = new Blob([content], { type: 'text/plain' });
+  function exportTxt() {
+    const blob = new Blob([serializeRuns(runs)], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -99,43 +50,17 @@ const Stats = (() => {
 
   // ── Public API ─────────────────────────────────────────────
 
-  /**
-   * Initialises stats: loads existing data.
-   * With FSA: shows the "open file" button.
-   * Without FSA: reads from localStorage immediately.
-   */
   async function init() {
-    const btnOpen   = document.getElementById('btn-open-stats');
     const btnExport = document.getElementById('btn-export-stats');
+    btnExport.addEventListener('click', exportTxt);
 
-    if (!USE_FSA) {
-      // localStorage mode: hide open button, show export
-      btnOpen.classList.add('hidden');
-      btnExport.classList.remove('hidden');
-      btnExport.addEventListener('click', lsExport);
-      runs = lsRead();
-      renderStats(runs);
-      return;
-    }
-
-    // File System Access API
-    btnOpen.addEventListener('click', async () => {
-      const ok = await fsaOpenOrCreate();
-      if (!ok) return;
-      runs = await fsaRead();
-      renderStats(runs);
-      btnOpen.textContent = '✓ Файл открыт';
-      btnOpen.disabled = true;
-    });
-
-    // Pre-load from localStorage as a temporary buffer
     runs = lsRead();
     renderStats(runs);
   }
 
   /**
    * Saves one completed run.
-   * @param {{ level: number, chars: number, seconds: number, cpm: number }} record
+   * @param {{ level: number, chars: number, seconds: number, cpm: number, errors: number }} record
    */
   async function saveRun(record) {
     const entry = {
@@ -143,31 +68,14 @@ const Stats = (() => {
       time:    new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
       level:   record.level,
       chars:   record.chars,
+      errors:  record.errors,
       seconds: record.seconds,
       cpm:     record.cpm,
     };
 
     runs.push(entry);
-
-    if (USE_FSA && fileHandle) {
-      await fsaWrite(runs);
-    } else {
-      lsWrite(runs);
-    }
-
+    lsWrite(runs);
     renderStats(runs);
-  }
-
-  /**
-   * Loads and returns all run records.
-   */
-  async function loadRuns() {
-    if (USE_FSA && fileHandle) {
-      runs = await fsaRead();
-    } else {
-      runs = lsRead();
-    }
-    return runs;
   }
 
   // ── Rendering ──────────────────────────────────────────────
@@ -194,10 +102,10 @@ const Stats = (() => {
       return;
     }
 
-    const today    = todayStr();
+    const today     = todayStr();
     const todayRuns = allRuns.filter(r => r.date === today);
-    const allCpm   = allRuns.map(r => r.cpm);
-    const todCpm   = todayRuns.map(r => r.cpm);
+    const allCpm    = allRuns.map(r => r.cpm);
+    const todCpm    = todayRuns.map(r => r.cpm);
 
     summaryEl.innerHTML = `
       <div class="summary-group">
@@ -244,6 +152,7 @@ const Stats = (() => {
         <td>${r.time}</td>
         <td>${r.level ?? r.exercise ?? '—'}</td>
         <td>${r.chars}</td>
+        <td>${r.errors ?? '—'}</td>
         <td>${formatTime(r.seconds)}</td>
         <td>${r.cpm} зн/мин</td>
       </tr>
@@ -257,6 +166,7 @@ const Stats = (() => {
             <th>Время</th>
             <th>Уровень</th>
             <th>Символов</th>
+            <th>Ошибок</th>
             <th>Длительность</th>
             <th>Скорость</th>
           </tr>
@@ -272,5 +182,5 @@ const Stats = (() => {
     return `${m}:${String(s).padStart(2, '0')}`;
   }
 
-  return { init, saveRun, loadRuns, renderStats, formatTime };
+  return { init, saveRun, renderStats, formatTime };
 })();
