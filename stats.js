@@ -511,7 +511,8 @@ const Stats = (() => {
     const title  = `${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`;
 
     const textBlock = run.text
-      ? buildTextWithErrorsHtml(run.text, run.errorPositions || {})
+      ? '<p class="freq-section-title">Текст упражнения</p>'
+      + buildTextWithErrorsHtml(run.text, run.errorPositions || {})
       + '<div class="freq-divider"></div>'
       : '';
 
@@ -554,6 +555,7 @@ const Stats = (() => {
     const bigramHtml = renderBigramHtml(run.bigramStats || {});
 
     showErrorModal(title, textBlock
+      + '<p class="freq-section-title">Ошибки по словам</p>'
       + perWord
       + '<div class="freq-divider"></div>'
       + '<p class="freq-section-title">Сводка по клавишам</p>'

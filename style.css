@@ -736,8 +736,8 @@ button:active  { transform: scale(0.97); }
 
 .run-text-wrap {
   font-family: var(--font-mono, 'Courier New', monospace);
-  font-size: 0.92rem;
-  line-height: 1.9;
+  font-size: 1.05rem;
+  line-height: 2.1;
   word-break: break-all;
   background: var(--bg-input, #181825);
   border-radius: 8px;
@@ -748,11 +748,12 @@ button:active  { transform: scale(0.97); }
 .tx-wrong   { }
 .tx-correct { color: var(--text-main); }
 .tx-err {
-  color: #f38ba8;
+  color: #ff3333;
   text-decoration: line-through;
-  text-decoration-color: #f38ba8;
-  font-size: 0.88em;
-  margin-right: 1px;
+  text-decoration-color: #ff3333;
+  font-size: 1em;
+  font-weight: bold;
+  margin-right: 2px;
 }
 
 .freq-divider {
