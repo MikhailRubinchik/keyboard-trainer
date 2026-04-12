@@ -160,7 +160,8 @@ const Stats = (() => {
         count:    dayRuns.length,
         avgLevel: (() => { const lvls = dayRuns.map(r => r.level).filter(v => typeof v === 'number'); return lvls.length ? avg1(lvls) : '—'; })(),
         chars:    dayRuns.reduce((s, r) => s + r.chars, 0),
-        errors:   dayRuns.reduce((s, r) => s + (r.errors ?? 0), 0),
+        maxErrors: dayRuns.length ? Math.max(...dayRuns.map(r => r.errors ?? 0)) : null,
+        avgErrors: dayRuns.length ? avg(dayRuns.map(r => r.errors ?? 0)) : null,
         seconds:  dayRuns.reduce((s, r) => s + r.seconds, 0),
         avgCpm:   dayRuns.length ? avg(dayRuns.map(r => r.cpm)) : null,
         maxCpm:   dayRuns.length ? Math.max(...dayRuns.map(r => r.cpm)) : null,
@@ -291,7 +292,8 @@ const Stats = (() => {
         <td>${d.avgLevel}</td>
         <td class="${d.countClass}">${d.count}</td>
         <td>${d.count ? d.chars : '—'}</td>
-        <td>${d.count ? d.errors : '—'}</td>
+        <td>${d.maxErrors !== null ? d.maxErrors : '—'}</td>
+        <td>${d.avgErrors !== null ? d.avgErrors : '—'}</td>
         <td>${d.count ? formatTime(d.seconds) : '—'}</td>
         <td>${d.maxCpm !== null ? d.maxCpm + ' зн/мин' : '—'}${dayBadge(d.maxLabel)}</td>
         <td>${d.avgCpm !== null ? d.avgCpm + ' зн/мин' : '—'}${dayBadge(d.avgLabel)}</td>
@@ -306,7 +308,8 @@ const Stats = (() => {
             <th>Уровень</th>
             <th>Текстов</th>
             <th>Символов</th>
-            <th>Ошибок</th>
+            <th>Ош. макс</th>
+            <th>Ош. ср.</th>
             <th>Длительность</th>
             <th>Макс.</th>
             <th>Средняя</th>
