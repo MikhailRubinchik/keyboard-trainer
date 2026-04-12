@@ -181,7 +181,7 @@ const Stats = (() => {
       row.dateClass  = green ? 'cell--green' : yellow ? 'cell--yellow' : '';
       row.countClass = row.count >= 10 ? 'cell--green' : '';
 
-      if (i > 0 && row.avgCpm !== null) {
+      if (row.avgCpm !== null) {
         row.avgLabel = row.avgCpm > maxDayAvg ? 'record' : row.avgCpm === maxDayAvg ? 'repeat' : '';
         row.maxLabel = row.maxCpm > maxDayMax ? 'record' : row.maxCpm === maxDayMax ? 'repeat' : '';
       } else {
@@ -200,12 +200,8 @@ const Stats = (() => {
   function computeRecords(allRuns) {
     // Returns parallel array of '' | 'record' | 'repeat' (chronological order)
     let maxCpm = -1;
-    return allRuns.map((r, i) => {
-      let label = '';
-      if (i > 0) {
-        if (r.cpm > maxCpm)        label = 'record';
-        else if (r.cpm === maxCpm) label = 'repeat';
-      }
+    return allRuns.map(r => {
+      const label = r.cpm > maxCpm ? 'record' : r.cpm === maxCpm ? 'repeat' : '';
       if (r.cpm > maxCpm) maxCpm = r.cpm;
       return label;
     });
@@ -214,13 +210,9 @@ const Stats = (() => {
   function computeErrorRecords(allRuns) {
     // Fewer errors = better. Returns parallel array '' | 'record' | 'repeat'
     let minErrors = Infinity;
-    return allRuns.map((r, i) => {
+    return allRuns.map(r => {
       const e = r.errors ?? 0;
-      let label = '';
-      if (i > 0) {
-        if (e < minErrors)      label = 'record';
-        else if (e === minErrors) label = 'repeat';
-      }
+      const label = e < minErrors ? 'record' : e === minErrors ? 'repeat' : '';
       if (e < minErrors) minErrors = e;
       return label;
     });
@@ -228,7 +220,7 @@ const Stats = (() => {
 
   function getRecordLabel(cpm) {
     // Call BEFORE saving the new run so `runs` still reflects history
-    if (!runs.length) return '';
+    if (!runs.length) return 'record';  // first run ever is always a record
     const maxPrev = Math.max(...runs.map(r => r.cpm));
     if (cpm > maxPrev)      return 'record';
     if (cpm === maxPrev)    return 'repeat';
