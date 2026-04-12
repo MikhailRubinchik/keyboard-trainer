@@ -181,8 +181,38 @@ const Stats = (() => {
     return rows.reverse();  // newest first for display
   }
 
+  function computeRecords(allRuns) {
+    // Returns parallel array of '' | 'record' | 'repeat' (chronological order)
+    let maxCpm = -1;
+    return allRuns.map((r, i) => {
+      let label = '';
+      if (i > 0) {
+        if (r.cpm > maxCpm)      label = 'record';
+        else if (r.cpm === maxCpm) label = 'repeat';
+      }
+      if (r.cpm > maxCpm) maxCpm = r.cpm;
+      return label;
+    });
+  }
+
+  function getRecordLabel(cpm) {
+    // Call BEFORE saving the new run so `runs` still reflects history
+    if (!runs.length) return '';
+    const maxPrev = Math.max(...runs.map(r => r.cpm));
+    if (cpm > maxPrev)      return 'record';
+    if (cpm === maxPrev)    return 'repeat';
+    return '';
+  }
+
   function renderTableRuns(allRuns) {
-    const rows = [...allRuns].reverse().map(r => `
+    const labels = computeRecords(allRuns);
+    const rows = [...allRuns].map((r, i) => ({ r, label: labels[i] })).reverse().map(({ r, label }) => {
+      const badge = label === 'record'
+        ? ' <span class="run-badge run-badge--record">Рекорд</span>'
+        : label === 'repeat'
+        ? ' <span class="run-badge run-badge--repeat">Повтор</span>'
+        : '';
+      return `
       <tr>
         <td>${r.date}</td>
         <td>${r.time}</td>
@@ -190,9 +220,9 @@ const Stats = (() => {
         <td>${r.chars}</td>
         <td>${r.errors ?? '—'}</td>
         <td>${formatTime(r.seconds)}</td>
-        <td>${r.cpm} зн/мин</td>
-      </tr>
-    `).join('');
+        <td>${r.cpm} зн/мин${badge}</td>
+      </tr>`;
+    }).join('');
 
     return `
       <table class="stats-table">
@@ -475,5 +505,5 @@ const Stats = (() => {
     return Math.round(wr.reduce((s, r) => s + r.cpm, 0) / wr.length);
   }
 
-  return { init, saveRun, renderStats, formatTime, getWeekAvgCpm };
+  return { init, saveRun, renderStats, formatTime, getWeekAvgCpm, getRecordLabel };
 })();

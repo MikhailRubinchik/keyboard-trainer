@@ -690,6 +690,40 @@ button:active  { transform: scale(0.97); }
   color: #fff;
 }
 
+/* ── Record / repeat badges ──────────────────────────────── */
+
+.run-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  border-radius: 4px;
+  padding: 1px 6px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+.run-badge--record {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.run-badge--repeat {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.result-record-label {
+  min-height: 28px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.result-record-label--record { color: #15803d; }
+.result-record-label--repeat { color: #854d0e; }
+
 .freq-divider {
   border-top: 1px solid var(--border);
   margin: 20px 0 14px;
