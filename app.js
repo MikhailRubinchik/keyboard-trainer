@@ -139,6 +139,8 @@ let idleTimer      = null;
 let samePosMistakes = 0;  // consecutive "first errors" at the same cursor position
 let lastMistakePos  = -1;
 
+let runErrors = {};  // cursorPos → { expected, attempts[] }
+
 // ── Screens ───────────────────────────────────────────────────
 
 function showScreen(name) {
@@ -160,9 +162,10 @@ function startExercise(level) {
   junkBuffer = '';
   startTime  = null;
   elapsedSeconds = 0;
-  errorCount = 0;
+  errorCount      = 0;
   samePosMistakes = 0;
   lastMistakePos  = -1;
+  runErrors       = {};
 
   exerciseLevelLabel.textContent = `Уровень ${level}`;
   liveTimer.textContent = '0:00';
@@ -412,6 +415,15 @@ function playCheckFinger() {
   speechSynthesis.speak(utter);
 }
 
+// ── Error detail tracking ─────────────────────────────────────
+
+function recordError(key) {
+  if (!runErrors[cursor]) {
+    runErrors[cursor] = { expected: chars[cursor], attempts: [] };
+  }
+  runErrors[cursor].attempts.push(key);
+}
+
 // ── Single character handler ──────────────────────────────────
 //
 // A correct character is only accepted when junkBuffer is empty.
@@ -423,6 +435,7 @@ function handleChar(key) {
   if (junkBuffer.length > 0) {
     junkBuffer += key;
     errorCount++;
+    recordError(key);
     playOy();
     updateWordDisplay();
     updateDisplay();
@@ -435,6 +448,7 @@ function handleChar(key) {
   if (key !== expected) {
     junkBuffer += key;
     errorCount++;
+    recordError(key);
     // Track consecutive first-errors at the same position
     if (cursor === lastMistakePos) {
       samePosMistakes++;
@@ -517,12 +531,32 @@ async function finishRun() {
   resultErrors.textContent = errorCount;
   resultOverlay.classList.remove('hidden');
 
+  const errorsDetail = Object.entries(runErrors)
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([posStr, info]) => {
+      const pos = Number(posStr);
+      if (chars[pos] === ' ') {
+        return { word: '␣', charInWord: 0, expected: ' ', attempts: [...new Set(info.attempts)] };
+      }
+      let start = pos;
+      while (start > 0 && chars[start - 1] !== ' ') start--;
+      let end = pos;
+      while (end < chars.length && chars[end] !== ' ') end++;
+      return {
+        word:       chars.slice(start, end).join(''),
+        charInWord: pos - start,
+        expected:   info.expected,
+        attempts:   [...new Set(info.attempts)],
+      };
+    });
+
   await Stats.saveRun({
-    level:   currentLevel,
-    chars:   totalChars,
-    seconds: elapsedSeconds,
+    level:        currentLevel,
+    chars:        totalChars,
+    seconds:      elapsedSeconds,
     cpm,
-    errors:  errorCount,
+    errors:       errorCount,
+    errorsDetail,
   });
   updateLevelProgressHint();
 }

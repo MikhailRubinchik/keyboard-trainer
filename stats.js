@@ -83,6 +83,14 @@ const Stats = (() => {
       renderTable(runs);
     });
 
+    const overlay = document.getElementById('error-detail-overlay');
+    document.getElementById('btn-close-detail').addEventListener('click', () => {
+      overlay.classList.add('hidden');
+    });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.classList.add('hidden');
+    });
+
     runs = lsRead();
     renderStats(runs);
   }
@@ -93,13 +101,14 @@ const Stats = (() => {
    */
   async function saveRun(record) {
     const entry = {
-      date:    new Date().toLocaleDateString('ru-RU'),
-      time:    new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-      level:   record.level,
-      chars:   record.chars,
-      errors:  record.errors,
-      seconds: record.seconds,
-      cpm:     record.cpm,
+      date:         new Date().toLocaleDateString('ru-RU'),
+      time:         new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+      level:        record.level,
+      chars:        record.chars,
+      errors:       record.errors,
+      seconds:      record.seconds,
+      cpm:          record.cpm,
+      errorsDetail: record.errorsDetail || [],
     };
 
     runs.push(entry);
@@ -240,6 +249,63 @@ const Stats = (() => {
     tableWrap.innerHTML = tableMode === 'days'
       ? renderTableDays(allRuns)
       : renderTableRuns(allRuns);
+
+    if (tableMode === 'runs') {
+      const reversed = [...allRuns].reverse();
+      tableWrap.querySelectorAll('tbody tr').forEach((tr, i) => {
+        tr.classList.add('clickable-row');
+        tr.addEventListener('click', () => showRunDetail(reversed[i]));
+      });
+    }
+  }
+
+  function showRunDetail(run) {
+    const overlay = document.getElementById('error-detail-overlay');
+    const body    = document.getElementById('error-detail-body');
+    const title   = document.getElementById('error-detail-title');
+
+    title.textContent = `${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`;
+
+    if (!run.errorsDetail) {
+      body.innerHTML = '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>';
+      overlay.classList.remove('hidden');
+      return;
+    }
+
+    if (!run.errorsDetail.length) {
+      body.innerHTML = '<p class="error-detail-empty">Ошибок нет!</p>';
+      overlay.classList.remove('hidden');
+      return;
+    }
+
+    const expectedFinger = (ch) => (typeof getFinger === 'function' ? getFinger(ch) : '');
+
+    const lines = run.errorsDetail.map(entry => {
+      // Word with the error char highlighted
+      const wordHtml = entry.word.split('').map((ch, i) =>
+        i === entry.charInWord
+          ? `<span class="eword--error">${ch}</span>`
+          : `<span>${ch}</span>`
+      ).join('');
+
+      // Attempts: same finger → red, different finger → red + olive bg
+      const ef = expectedFinger(entry.expected);
+      const attemptsHtml = entry.attempts.map(a => {
+        const af = expectedFinger(a);
+        const same = ef && af && af === ef;
+        const display = a === ' ' ? '␣' : a;
+        return `<span class="${same ? 'attempt--same' : 'attempt--diff'}">${display}</span>`;
+      }).join(', ');
+
+      return `<div class="error-entry">
+        <span class="eword">${wordHtml}</span>
+        <span class="error-arrow">→</span>
+        <span class="error-attempts">${attemptsHtml}</span>
+      </div>`;
+    }).join('');
+
+    body.innerHTML = lines;
+    overlay.classList.remove('hidden');
   }
 
   function renderStats(allRuns) {

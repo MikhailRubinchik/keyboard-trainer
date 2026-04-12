@@ -604,6 +604,102 @@ button:active  { transform: scale(0.97); }
   display: block;
 }
 
+/* ── Error detail overlay ────────────────────────────────── */
+
+.error-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.error-detail-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px 40px;
+  min-width: 360px;
+  max-width: 640px;
+  width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.error-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.error-detail-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+
+.error-detail-body {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+}
+
+.error-detail-empty {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+}
+
+.error-entry {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.eword {
+  min-width: 130px;
+}
+
+.eword--error {
+  color: var(--wrong-text);
+  font-weight: 700;
+}
+
+.error-arrow {
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.error-attempts {
+  flex: 1;
+}
+
+.attempt--same {
+  color: var(--wrong-text);
+}
+
+.attempt--diff {
+  background: #6b7c52;
+  border-radius: 2px;
+  padding: 0 3px;
+  color: #fff;
+}
+
+/* ── Clickable table rows ────────────────────────────────── */
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover td {
+  background: #eef2f7;
+}
+
 /* ── Utilities ───────────────────────────────────────────── */
 
 .hidden {
