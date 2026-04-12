@@ -459,12 +459,12 @@ const SENTENCES = [
 ];
 
 /**
- * Returns a random contiguous slice of sentences with total length >= level*100 chars.
+ * Returns a random contiguous slice of sentences with total length >= targetChars.
  * excludeStart - previous start index to exclude for variety.
  * Returns { text: string, startIndex: number }
  */
-function getRandomExercise(level, excludeStart = -1) {
-  const target = level * 100;
+function getRandomExercise(targetChars, excludeStart = -1) {
+  const target = targetChars;
 
   // Find all valid start indices
   const valid = _findValidStarts(target, excludeStart);

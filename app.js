@@ -40,11 +40,14 @@ const FINGER_IMAGE = {
 
 // ── Levels ───────────────────────────────────────────────────
 
-const LEVEL_COUNT  = 20;
+const LEVEL_COUNT  = 23;
 const LS_LEVEL_KEY = 'klavagonki_level';
 
+// Character count for each level (1-indexed)
+const LEVEL_SIZES = [50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000];
+
 // Min avg cpm required to move TO level n (index 0 = threshold for level 2)
-const LEVEL_THRESHOLDS = [20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200];
+const LEVEL_THRESHOLDS = [10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200];
 
 let currentLevel   = 1;
 let lastStartIndex = -1;
@@ -151,7 +154,7 @@ function showScreen(name) {
 // ── Start exercise ────────────────────────────────────────────
 
 function startExercise(level) {
-  const result = getRandomExercise(level, lastStartIndex);
+  const result = getRandomExercise(LEVEL_SIZES[level - 1], lastStartIndex);
   lastStartIndex = result.startIndex;
 
   chars      = [...result.text];
@@ -653,7 +656,7 @@ btnStart.addEventListener('click', () => {
 
 function updateLevelHint() {
   const hint = document.getElementById('level-chars-hint');
-  if (hint) hint.textContent = `~${currentLevel * 100} символов`;
+  if (hint) hint.textContent = `~${LEVEL_SIZES[currentLevel - 1]} символов`;
 }
 
 // ── Level progress hint below stats summary ───────────────────
