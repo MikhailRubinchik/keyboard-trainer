@@ -772,60 +772,66 @@ const Stats = (() => {
   function buildCharts(allRuns) {
     if (allRuns.length < 2) return '';
 
-    const W = 560, H = 110;
-    const padL = 42, padR = 12, padT = 12, padB = 22;
+    const W = 620, H = 200;
+    const padL = 46, padR = 46, padT = 16, padB = 26;
     const plotW = W - padL - padR;
     const plotH = H - padT - padB;
     const n = allRuns.length;
 
     function xPos(i) { return padL + (n === 1 ? plotW / 2 : i / (n - 1) * plotW); }
-    function yPos(v, minV, maxV) { return padT + plotH - (maxV === minV ? plotH / 2 : (v - minV) / (maxV - minV) * plotH); }
-
-    function makeSvg(values, color, yFmt) {
-      const maxV = Math.max(...values) || 1;
-      const minV = 0;
-
-      const polyline = values.map((v, i) => `${xPos(i).toFixed(1)},${yPos(v, minV, maxV).toFixed(1)}`).join(' ');
-      const dots = values.map((v, i) =>
-        `<circle cx="${xPos(i).toFixed(1)}" cy="${yPos(v, minV, maxV).toFixed(1)}" r="2.5" fill="${color}"/>`
-      ).join('');
-
-      const yTicks = [0, maxV / 2, maxV];
-      const yGrid = yTicks.map(t =>
-        `<line x1="${padL}" y1="${yPos(t, minV, maxV).toFixed(1)}" x2="${W - padR}" y2="${yPos(t, minV, maxV).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
-         <text x="${padL - 4}" y="${(yPos(t, minV, maxV) + 4).toFixed(1)}" text-anchor="end" font-size="9" fill="#9ca3af">${yFmt(t)}</text>`
-      ).join('');
-
-      const xStep = Math.max(1, Math.floor(n / 6));
-      const xLabels = values.map((_, i) => {
-        if (i === 0 || i === n - 1 || i % xStep === 0) {
-          return `<text x="${xPos(i).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="9" fill="#9ca3af">${i + 1}</text>`;
-        }
-        return '';
-      }).join('');
-
-      return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
-        ${yGrid}
-        <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
-        <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
-        <polyline points="${polyline}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round"/>
-        ${dots}
-        ${xLabels}
-      </svg>`;
-    }
+    function yScale(v, maxV) { return padT + plotH - (maxV ? v / maxV * plotH : plotH / 2); }
 
     const cpms = allRuns.map(r => r.cpm);
     const errs = allRuns.map(r => (r.errors != null && r.chars) ? r.errors / r.chars * 100 : 0);
+    const maxCpm = Math.max(...cpms) || 1;
+    const maxErr = Math.max(...errs) || 1;
 
-    return `<div class="charts-wrap">
-      <div class="chart-block">
-        <div class="chart-title">Скорость, зн/мин</div>
-        ${makeSvg(cpms, '#3b82f6', v => Math.round(v))}
-      </div>
-      <div class="chart-block">
-        <div class="chart-title">Ошибки, %</div>
-        ${makeSvg(errs, '#ef4444', v => v.toFixed(1))}
-      </div>
+    function line(values, maxV, color) {
+      const pts = values.map((v, i) => `${xPos(i).toFixed(1)},${yScale(v, maxV).toFixed(1)}`).join(' ');
+      const dots = values.map((v, i) =>
+        `<circle cx="${xPos(i).toFixed(1)}" cy="${yScale(v, maxV).toFixed(1)}" r="3" fill="${color}"/>`
+      ).join('');
+      return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>${dots}`;
+    }
+
+    // Left Y axis (CPM) ticks
+    const cpmTicks = [0, Math.round(maxCpm / 2), Math.round(maxCpm)];
+    const leftAxis = cpmTicks.map(t =>
+      `<line x1="${padL}" y1="${yScale(t, maxCpm).toFixed(1)}" x2="${W - padR}" y2="${yScale(t, maxCpm).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+       <text x="${padL - 5}" y="${(yScale(t, maxCpm) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#3b82f6">${t}</text>`
+    ).join('');
+
+    // Right Y axis (error %) ticks
+    const errTicks = [0, parseFloat((maxErr / 2).toFixed(1)), parseFloat(maxErr.toFixed(1))];
+    const rightAxis = errTicks.map(t =>
+      `<text x="${W - padR + 5}" y="${(yScale(t, maxErr) + 4).toFixed(1)}" text-anchor="start" font-size="10" fill="#ef4444">${t.toFixed(1)}%</text>`
+    ).join('');
+
+    // X axis labels
+    const xStep = Math.max(1, Math.floor(n / 8));
+    const xLabels = cpms.map((_, i) => {
+      if (i === 0 || i === n - 1 || i % xStep === 0)
+        return `<text x="${xPos(i).toFixed(1)}" y="${H - 5}" text-anchor="middle" font-size="10" fill="#9ca3af">${i + 1}</text>`;
+      return '';
+    }).join('');
+
+    // Legend
+    const legend = `
+      <text x="${padL + 8}" y="${padT + 14}" font-size="11" fill="#3b82f6">● скорость, зн/мин</text>
+      <text x="${padL + 140}" y="${padT + 14}" font-size="11" fill="#ef4444">● ошибки, %</text>`;
+
+    return `<div class="chart-block">
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+        ${leftAxis}
+        <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
+        <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
+        <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
+        ${line(cpms, maxCpm, '#3b82f6')}
+        ${line(errs, maxErr, '#ef4444')}
+        ${rightAxis}
+        ${xLabels}
+        ${legend}
+      </svg>
     </div>`;
   }
 
