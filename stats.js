@@ -580,7 +580,7 @@ const Stats = (() => {
         const pct = Math.round(count / total * 100);
         return `<div class="interval-row">
           <span class="interval-label">${label}</span>
-          <span class="interval-pct">${pct}%</span>
+          <span class="interval-pct">${pct}% <span class="freq-total">(${count})</span></span>
         </div>`;
       }).join('');
   }
