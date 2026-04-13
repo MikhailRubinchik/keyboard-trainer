@@ -445,6 +445,23 @@ button:active  { transform: scale(0.97); }
   color: var(--text-dim);
 }
 
+.charts-wrap {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.chart-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.chart-title {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
 .level-progress-hint {
   font-size: 0.85rem;
   color: var(--text-dim);

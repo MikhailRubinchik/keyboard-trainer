@@ -769,6 +769,66 @@ const Stats = (() => {
       + bigramHtml);
   }
 
+  function buildCharts(allRuns) {
+    if (allRuns.length < 2) return '';
+
+    const W = 560, H = 110;
+    const padL = 42, padR = 12, padT = 12, padB = 22;
+    const plotW = W - padL - padR;
+    const plotH = H - padT - padB;
+    const n = allRuns.length;
+
+    function xPos(i) { return padL + (n === 1 ? plotW / 2 : i / (n - 1) * plotW); }
+    function yPos(v, minV, maxV) { return padT + plotH - (maxV === minV ? plotH / 2 : (v - minV) / (maxV - minV) * plotH); }
+
+    function makeSvg(values, color, yFmt) {
+      const maxV = Math.max(...values) || 1;
+      const minV = 0;
+
+      const polyline = values.map((v, i) => `${xPos(i).toFixed(1)},${yPos(v, minV, maxV).toFixed(1)}`).join(' ');
+      const dots = values.map((v, i) =>
+        `<circle cx="${xPos(i).toFixed(1)}" cy="${yPos(v, minV, maxV).toFixed(1)}" r="2.5" fill="${color}"/>`
+      ).join('');
+
+      const yTicks = [0, maxV / 2, maxV];
+      const yGrid = yTicks.map(t =>
+        `<line x1="${padL}" y1="${yPos(t, minV, maxV).toFixed(1)}" x2="${W - padR}" y2="${yPos(t, minV, maxV).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+         <text x="${padL - 4}" y="${(yPos(t, minV, maxV) + 4).toFixed(1)}" text-anchor="end" font-size="9" fill="#9ca3af">${yFmt(t)}</text>`
+      ).join('');
+
+      const xStep = Math.max(1, Math.floor(n / 6));
+      const xLabels = values.map((_, i) => {
+        if (i === 0 || i === n - 1 || i % xStep === 0) {
+          return `<text x="${xPos(i).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="9" fill="#9ca3af">${i + 1}</text>`;
+        }
+        return '';
+      }).join('');
+
+      return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+        ${yGrid}
+        <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
+        <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
+        <polyline points="${polyline}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round"/>
+        ${dots}
+        ${xLabels}
+      </svg>`;
+    }
+
+    const cpms = allRuns.map(r => r.cpm);
+    const errs = allRuns.map(r => (r.errors != null && r.chars) ? r.errors / r.chars * 100 : 0);
+
+    return `<div class="charts-wrap">
+      <div class="chart-block">
+        <div class="chart-title">Скорость, зн/мин</div>
+        ${makeSvg(cpms, '#3b82f6', v => Math.round(v))}
+      </div>
+      <div class="chart-block">
+        <div class="chart-title">Ошибки, %</div>
+        ${makeSvg(errs, '#ef4444', v => v.toFixed(1))}
+      </div>
+    </div>`;
+  }
+
   function renderStats(allRuns) {
     const summaryEl = document.getElementById('stats-summary');
     const tableWrap = document.getElementById('stats-table-wrap');
@@ -777,11 +837,16 @@ const Stats = (() => {
 
     allRuns = allRuns.filter(r => !r.incomplete);
 
+    const chartsEl = document.getElementById('stats-charts');
+
     if (!allRuns.length) {
       summaryEl.innerHTML = '<p style="color:var(--text-dim);font-size:0.9rem">Заездов пока нет.</p>';
+      if (chartsEl) chartsEl.innerHTML = '';
       tableWrap.innerHTML = '';
       return;
     }
+
+    if (chartsEl) chartsEl.innerHTML = buildCharts(allRuns);
 
     const today      = todayStr();
     const todayRuns  = allRuns.filter(r => r.date === today);
