@@ -131,10 +131,8 @@ const Stats = (() => {
       runs = pulled;
       lsWrite(runs);
       renderStats(runs);
-      saveSyncConfig(getSyncConfig().token, gistId);  // ensure gistId persists
-      if (!getSyncConfig().token) {
-        document.getElementById('btn-refresh-gist')?.classList.remove('hidden');
-      }
+      saveSyncConfig('', gistId);
+      document.getElementById('btn-refresh-gist')?.classList.remove('hidden');
       document.getElementById('sync-overlay')?.classList.add('hidden');
       setSyncStatus(`↓ Загружено ${pulled.length} заездов`);
     } catch (e) {
