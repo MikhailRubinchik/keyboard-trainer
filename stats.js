@@ -833,7 +833,12 @@ const Stats = (() => {
       return '';
     }).join('');
 
+    const firstDate = allRuns[0].date;
+    const lastDate  = allRuns[n - 1].date;
+    const dateRange = firstDate === lastDate ? firstDate : `${firstDate} — ${lastDate}`;
+
     return `<div class="chart-block">
+      <div class="chart-date-range">${dateRange}</div>
       <div class="chart-legend">
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● скорость, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#ef4444">● ошибки, %</span></label>

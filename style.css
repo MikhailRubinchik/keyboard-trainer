@@ -462,6 +462,12 @@ button:active  { transform: scale(0.97); }
   margin-bottom: 4px;
 }
 
+.chart-date-range {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
 .chart-legend {
   display: flex;
   gap: 16px;
