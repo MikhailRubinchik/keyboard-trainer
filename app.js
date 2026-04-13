@@ -834,17 +834,22 @@ function updateLevelProgressHint() {
   const threshold = LEVEL_THRESHOLDS[currentLevel - 1];
   const recentAvg = Stats.getRecentAvgCpm();
 
+  let firstLine;
   if (recentAvg === 0) {
-    hint.textContent = `Для перехода на уровень ${nextLevel} нужна средняя скорость ${threshold} зн/мин`;
-    return;
+    firstLine = `Для перехода на уровень ${nextLevel} нужна средняя скорость ${threshold} зн/мин`;
+  } else {
+    const remaining = threshold - recentAvg;
+    firstLine = remaining <= 0
+      ? `Средняя скорость за последние 15 заездов уже достаточна для уровня ${nextLevel}!`
+      : `Для перехода на уровень ${nextLevel} нужна скорость ${threshold} зн/мин — осталось ${remaining} зн/мин`;
   }
 
-  const remaining = threshold - recentAvg;
-  if (remaining <= 0) {
-    hint.textContent = `Средняя скорость за последние 15 заездов уже достаточна для уровня ${nextLevel}!`;
-  } else {
-    hint.textContent = `Для перехода на уровень ${nextLevel} нужна скорость ${threshold} зн/мин — осталось ${remaining} зн/мин`;
-  }
+  const allLevels = LEVEL_THRESHOLDS
+    .slice(currentLevel - 1)
+    .map((t, i) => `${currentLevel + 1 + i}: ${t}`)
+    .join(' • ');
+
+  hint.innerHTML = `${firstLine}<br><span style="opacity:0.6;font-size:0.85em">Уровни: ${allLevels} зн/мин</span>`;
 }
 
 // ── Initialization ────────────────────────────────────────────
