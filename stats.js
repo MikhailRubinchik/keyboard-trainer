@@ -118,10 +118,17 @@ const Stats = (() => {
     }
   }
 
+  function setRefreshStatus(msg) {
+    const el = document.getElementById('refresh-status');
+    if (el) el.textContent = msg;
+  }
+
   async function pullFromGist() {
     const { gistId } = getSyncConfig();
     if (!gistId) { setSyncStatus('Укажите ID гиста', true); return; }
     setSyncStatus('Загружаю…');
+    const btn = document.getElementById('btn-refresh-gist');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Загружаю…'; }
     try {
       const res  = await fetch(`https://api.github.com/gists/${gistId}`, {
         headers: { 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
@@ -138,8 +145,13 @@ const Stats = (() => {
       document.getElementById('btn-refresh-gist')?.classList.remove('hidden');
       document.getElementById('sync-overlay')?.classList.add('hidden');
       setSyncStatus(`↓ Загружено ${pulled.length} заездов`);
+      const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setRefreshStatus(`обновлено в ${timeStr}`);
     } catch (e) {
       setSyncStatus('↓ Ошибка: ' + e.message, true);
+      setRefreshStatus('ошибка обновления');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '↻ Обновить'; }
     }
   }
 

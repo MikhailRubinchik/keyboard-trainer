@@ -462,6 +462,11 @@ button:active  { transform: scale(0.97); }
   margin-bottom: 4px;
 }
 
+.refresh-status {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
 .chart-date-range {
   display: flex;
   align-items: center;
