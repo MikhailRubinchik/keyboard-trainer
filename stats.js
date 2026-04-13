@@ -293,7 +293,11 @@ const Stats = (() => {
       errorPositions: record.errorPositions || {},
       idleSeconds:    record.idleSeconds    || 0,
       lazy:           record.lazy           || false,
+      incomplete:     record.incomplete     || false,
     };
+
+    // Replace last entry if it was a checkpoint (incomplete)
+    if (runs.length > 0 && runs[runs.length - 1].incomplete) runs.pop();
 
     runs.push(entry);
     lsWrite(runs);
@@ -345,8 +349,8 @@ const Stats = (() => {
         count:    dayRuns.length,
         avgLevel: (() => { const lvls = dayRuns.map(r => r.level).filter(v => typeof v === 'number'); return lvls.length ? avg1(lvls) : '—'; })(),
         chars:    dayRuns.reduce((s, r) => s + r.chars, 0),
-        maxErrors: dayRuns.length ? Math.max(...dayRuns.map(r => r.errors ?? 0)) : null,
-        avgErrors: dayRuns.length ? avg(dayRuns.map(r => r.errors ?? 0)) : null,
+        worstErrRun: dayRuns.length ? dayRuns.reduce((w, r) => errPct(r) > errPct(w) ? r : w, dayRuns[0]) : null,
+        avgErrPct:   dayRuns.length ? parseFloat(avg(dayRuns.map(r => errPct(r)))) : null,
         seconds:  dayRuns.reduce((s, r) => s + r.seconds, 0),
         avgCpm:   dayRuns.length ? avg(dayRuns.map(r => r.cpm)) : null,
         maxCpm:   dayRuns.length ? Math.max(...dayRuns.map(r => r.cpm)) : null,
@@ -371,14 +375,15 @@ const Stats = (() => {
       row.countClass = row.count >= 10 ? 'cell--green' : '';
 
       if (row.avgCpm !== null) {
-        row.avgLabel    = row.avgCpm    > maxDayAvg    ? 'record' : row.avgCpm    === maxDayAvg    ? 'repeat' : '';
-        row.maxLabel    = row.maxCpm    > maxDayMax    ? 'record' : row.maxCpm    === maxDayMax    ? 'repeat' : '';
-        row.avgErrLabel = row.avgErrors < minDayAvgErr ? 'record' : row.avgErrors === minDayAvgErr ? 'repeat' : '';
-        row.maxErrLabel = row.maxErrors < minDayMaxErr ? 'record' : row.maxErrors === minDayMaxErr ? 'repeat' : '';
-        if (row.avgCpm    > maxDayAvg)    maxDayAvg    = row.avgCpm;
-        if (row.maxCpm    > maxDayMax)    maxDayMax    = row.maxCpm;
-        if (row.avgErrors < minDayAvgErr) minDayAvgErr = row.avgErrors;
-        if (row.maxErrors < minDayMaxErr) minDayMaxErr = row.maxErrors;
+        const wPct = errPct(row.worstErrRun);
+        row.avgLabel    = row.avgCpm  > maxDayAvg    ? 'record' : row.avgCpm  === maxDayAvg    ? 'repeat' : '';
+        row.maxLabel    = row.maxCpm  > maxDayMax    ? 'record' : row.maxCpm  === maxDayMax    ? 'repeat' : '';
+        row.avgErrLabel = row.avgErrPct < minDayAvgErr ? 'record' : row.avgErrPct === minDayAvgErr ? 'repeat' : '';
+        row.maxErrLabel = wPct         < minDayMaxErr ? 'record' : wPct         === minDayMaxErr ? 'repeat' : '';
+        if (row.avgCpm     > maxDayAvg)    maxDayAvg    = row.avgCpm;
+        if (row.maxCpm     > maxDayMax)    maxDayMax    = row.maxCpm;
+        if (row.avgErrPct  < minDayAvgErr) minDayAvgErr = row.avgErrPct;
+        if (wPct           < minDayMaxErr) minDayMaxErr = wPct;
       } else {
         row.avgLabel = row.maxLabel = row.avgErrLabel = row.maxErrLabel = '';
       }
@@ -397,21 +402,32 @@ const Stats = (() => {
     });
   }
 
+  function errPct(r) {
+    return (r.chars > 0 && r.errors != null) ? r.errors / r.chars * 100 : Infinity;
+  }
+
+  function fmtErr(errors, chars) {
+    if (errors == null || !chars) return '—';
+    return `${errors} (${(errors / chars * 100).toFixed(1)}%)`;
+  }
+
   function computeErrorRecords(allRuns) {
-    // Fewer errors = better. Marks each new chronological minimum as 'record'.
-    let minE = Infinity;
+    // Lower error % = better. Marks each new chronological minimum as 'record'.
+    let minPct = Infinity;
     return allRuns.map(r => {
       if (r.errors == null) return '';
-      if (r.errors < minE) { minE = r.errors; return 'record'; }
-      if (r.errors === minE) return 'repeat';
+      const pct = errPct(r);
+      if (pct < minPct)  { minPct = pct; return 'record'; }
+      if (pct === minPct) return 'repeat';
       return '';
     });
   }
 
   function getRecordLabel(cpm) {
     // Call BEFORE saving the new run so `runs` still reflects history
-    if (!runs.length) return 'record';  // first run ever is always a record
-    const maxPrev = Math.max(...runs.map(r => r.cpm));
+    const complete = runs.filter(r => !r.incomplete);
+    if (!complete.length) return 'record';  // first run ever is always a record
+    const maxPrev = Math.max(...complete.map(r => r.cpm));
     if (cpm > maxPrev)      return 'record';
     if (cpm === maxPrev)    return 'repeat';
     return '';
@@ -438,7 +454,7 @@ const Stats = (() => {
         <td>${r.time}</td>
         <td>${r.level ?? r.exercise ?? '—'}</td>
         <td>${r.chars}</td>
-        <td>${r.errors ?? '—'}${errBadge}</td>
+        <td>${fmtErr(r.errors, r.chars)}${errBadge}</td>
         <td>${formatTime(r.seconds)}${lazyBadge}</td>
         <td>${r.cpm} зн/мин${cpmBadge}</td>
       </tr>`;
@@ -475,8 +491,8 @@ const Stats = (() => {
         <td>${d.avgLevel}</td>
         <td class="${d.countClass}">${d.count}</td>
         <td>${d.count ? d.chars : '—'}</td>
-        <td>${d.maxErrors !== null ? d.maxErrors : '—'}${dayBadge(d.maxErrLabel, '-sm')}</td>
-        <td>${d.avgErrors !== null ? d.avgErrors : '—'}${dayBadge(d.avgErrLabel, '-sm')}</td>
+        <td>${d.worstErrRun ? fmtErr(d.worstErrRun.errors, d.worstErrRun.chars) : '—'}${dayBadge(d.maxErrLabel, '-sm')}</td>
+        <td>${d.avgErrPct !== null ? d.avgErrPct.toFixed(1) + '%' : '—'}${dayBadge(d.avgErrLabel, '-sm')}</td>
         <td>${d.count ? formatTime(d.seconds) : '—'}</td>
         <td>${d.maxCpm !== null ? d.maxCpm + ' зн/мин' : '—'}${dayBadge(d.maxLabel)}</td>
         <td>${d.avgCpm !== null ? d.avgCpm + ' зн/мин' : '—'}${dayBadge(d.avgLabel)}</td>
@@ -759,6 +775,8 @@ const Stats = (() => {
 
     if (!summaryEl || !tableWrap) return;
 
+    allRuns = allRuns.filter(r => !r.incomplete);
+
     if (!allRuns.length) {
       summaryEl.innerHTML = '<p style="color:var(--text-dim);font-size:0.9rem">Заездов пока нет.</p>';
       tableWrap.innerHTML = '';
@@ -851,11 +869,11 @@ const Stats = (() => {
 
   function getTodayRunCount() {
     const today = todayStr();
-    return runs.filter(r => r.date === today && !r.lazy).length;
+    return runs.filter(r => r.date === today && !r.lazy && !r.incomplete).length;
   }
 
   function getRecentAvgCpm() {
-    const recent = last15Runs(runs);
+    const recent = last15Runs(runs.filter(r => !r.incomplete));
     if (!recent.length) return 0;
     return Math.round(recent.reduce((s, r) => s + r.cpm, 0) / recent.length);
   }

@@ -128,6 +128,7 @@ function toggleLevelLock() {
 let chars      = [];
 let charStates = [];
 let cursor     = 0;
+let lastCheckpointCursor = 0;
 let wordStart  = 0;
 let wordSoFar  = '';
 let junkBuffer = '';
@@ -188,6 +189,7 @@ function startExercise(level) {
   runBigramRaw    = {};
   runIdleMs       = 0;
   isAbortedRun    = false;
+  lastCheckpointCursor = 0;
   clearTimeout(idleAbandonTimer);
   idleAbandonTimer = null;
 
@@ -596,6 +598,20 @@ function handleChar(key) {
   lastCorrectChar = expected;
 
   cursor++;
+
+  if (cursor - lastCheckpointCursor >= 100) {
+    lastCheckpointCursor = cursor;
+    const liveCpmNow = elapsedSeconds > 0 ? Math.round(cursor / (elapsedSeconds / 60)) : 0;
+    Stats.saveRun({
+      level:      currentLevel,
+      chars:      cursor,
+      seconds:    elapsedSeconds,
+      cpm:        liveCpmNow,
+      errors:     errorCount,
+      text:       chars.slice(0, cursor).join(''),
+      incomplete: true,
+    });
+  }
 
   if (expected === ' ') {
     wordStart = cursor;
