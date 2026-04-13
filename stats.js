@@ -132,6 +132,9 @@ const Stats = (() => {
       lsWrite(runs);
       renderStats(runs);
       setSyncStatus(`↓ Загружено ${pulled.length} заездов`);
+      if (!getSyncConfig().token) {
+        document.getElementById('btn-refresh-gist')?.classList.remove('hidden');
+      }
     } catch (e) {
       setSyncStatus('↓ Ошибка: ' + e.message, true);
     }
