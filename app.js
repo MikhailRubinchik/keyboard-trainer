@@ -844,12 +844,9 @@ function updateLevelProgressHint() {
       : `Для перехода на уровень ${nextLevel} нужна скорость ${threshold} зн/мин — осталось ${remaining} зн/мин`;
   }
 
-  const allLevels = LEVEL_THRESHOLDS
-    .slice(currentLevel - 1)
-    .map((t, i) => `${currentLevel + 1 + i}: ${t}`)
-    .join(' • ');
+  const further = LEVEL_THRESHOLDS.slice(currentLevel).map(t => t).join(', ');
 
-  hint.innerHTML = `${firstLine}<br><span style="opacity:0.6;font-size:0.85em">Уровни: ${allLevels} зн/мин</span>`;
+  hint.innerHTML = `${firstLine}<br><span style="opacity:0.6;font-size:0.85em">Далее: ${further} зн/мин</span>`;
 }
 
 // ── Initialization ────────────────────────────────────────────
