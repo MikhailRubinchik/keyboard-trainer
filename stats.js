@@ -815,12 +815,11 @@ const Stats = (() => {
       return '';
     }).join('');
 
-    // Legend
-    const legend = `
-      <text x="${padL + 8}" y="${padT + 14}" font-size="11" fill="#3b82f6">● скорость, зн/мин</text>
-      <text x="${padL + 140}" y="${padT + 14}" font-size="11" fill="#ef4444">● ошибки, %</text>`;
-
     return `<div class="chart-block">
+      <div class="chart-legend">
+        <span style="color:#3b82f6">● скорость, зн/мин</span>
+        <span style="color:#ef4444">● ошибки, %</span>
+      </div>
       <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
         ${leftAxis}
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
@@ -830,7 +829,6 @@ const Stats = (() => {
         ${line(errs, maxErr, '#ef4444')}
         ${rightAxis}
         ${xLabels}
-        ${legend}
       </svg>
     </div>`;
   }

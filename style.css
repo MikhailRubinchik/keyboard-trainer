@@ -462,6 +462,13 @@ button:active  { transform: scale(0.97); }
   margin-bottom: 4px;
 }
 
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 0.82rem;
+  margin-bottom: 6px;
+}
+
 .level-progress-hint {
   font-size: 0.85rem;
   color: var(--text-dim);
