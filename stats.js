@@ -451,7 +451,10 @@ const Stats = (() => {
         : el === 'repeat'
         ? ' <span class="run-badge-sm run-badge--repeat">П</span>'
         : '';
+      const idle     = r.idleSeconds || 0;
+      const netSecs  = Math.max(0, r.seconds - idle);
       const lazyBadge = r.lazy ? ' <span class="run-badge run-badge--lazy">лень</span>' : '';
+      const timeTip  = idle > 0 ? ` title="Реальное: ${formatTime(r.seconds)}, простой: ${formatTime(idle)}"` : '';
       return `
       <tr${r.lazy ? ' class="row--lazy"' : ''}>
         <td class="run-num">${i + 1}</td>
@@ -460,7 +463,7 @@ const Stats = (() => {
         <td>${r.level ?? r.exercise ?? '—'}</td>
         <td>${r.chars}</td>
         <td>${fmtErr(r.errors, r.chars)}${errBadge}</td>
-        <td>${formatTime(r.seconds)}${lazyBadge}</td>
+        <td${timeTip}>${formatTime(netSecs)}${lazyBadge}</td>
         <td>${r.cpm} зн/мин${cpmBadge}</td>
       </tr>`;
     }).join('');
