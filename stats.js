@@ -131,6 +131,7 @@ const Stats = (() => {
       runs = pulled;
       lsWrite(runs);
       renderStats(runs);
+      saveSyncConfig(getSyncConfig().token, gistId);  // ensure gistId persists
       document.getElementById('btn-refresh-gist')?.classList.remove('hidden');
       document.getElementById('sync-overlay')?.classList.add('hidden');
       setSyncStatus(`↓ Загружено ${pulled.length} заездов`);
@@ -264,8 +265,7 @@ const Stats = (() => {
     });
 
     const btnRefresh = document.getElementById('btn-refresh-gist');
-    const cfg = getSyncConfig();
-    if (cfg.gistId && !cfg.token) btnRefresh.classList.remove('hidden');
+    if (getSyncConfig().gistId) btnRefresh.classList.remove('hidden');
     btnRefresh.addEventListener('click', () => pullFromGist());
 
     runs = lsRead();
