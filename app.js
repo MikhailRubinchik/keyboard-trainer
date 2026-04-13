@@ -150,8 +150,9 @@ let lastCorrectTime = null;  // timestamp of last correct keypress
 let lastCorrectChar = null;  // char typed at lastCorrectTime
 let runBigramRaw    = {};    // bigram → [deltaMs, ...]
 
-let runIdleMs    = 0;      // accumulated idle time (gaps > 5s) in ms
-let isAbortedRun = false;  // true when auto-stopped due to idle
+let runIdleMs        = 0;     // accumulated idle time (gaps > 5s) in ms
+let isAbortedRun     = false; // true when auto-stopped due to idle
+let idleAbandonTimer = null;  // fires abandonRun() if no key pressed long enough
 
 // ── Screens ───────────────────────────────────────────────────
 
@@ -185,6 +186,8 @@ function startExercise(level) {
   runBigramRaw    = {};
   runIdleMs       = 0;
   isAbortedRun    = false;
+  clearTimeout(idleAbandonTimer);
+  idleAbandonTimer = null;
 
   exerciseLevelLabel.textContent = `Уровень ${level}`;
   liveTimer.textContent = '0:00';
@@ -401,6 +404,7 @@ wordInput.addEventListener('keydown', (e) => {
     }
   }
   lastKeyTime = now;
+  resetIdleAbandonTimer();
 
   handleChar(e.key);
 });
@@ -423,6 +427,19 @@ function resetIdleTimer() {
 function clearIdleTimer() {
   clearTimeout(idleTimer);
   idleTimer = null;
+}
+
+function resetIdleAbandonTimer() {
+  clearTimeout(idleAbandonTimer);
+  if (!startTime || wordInput.disabled) return;
+  // Fire when remaining idle budget (180s total, 5s free per gap) would be exhausted
+  const remaining = 180_000 - runIdleMs + 5000;
+  idleAbandonTimer = setTimeout(abandonRun, remaining);
+}
+
+function clearIdleAbandonTimer() {
+  clearTimeout(idleAbandonTimer);
+  idleAbandonTimer = null;
 }
 
 // ── Fanfare (pre-rendered WAV blob) ───────────────────────────
@@ -615,6 +632,7 @@ function handleBackspace() {
 function abandonRun() {
   stopTimer();
   clearIdleTimer();
+  clearIdleAbandonTimer();
   wordInput.disabled = true;
   isAbortedRun = true;
 
@@ -632,6 +650,7 @@ function abandonRun() {
 async function finishRun() {
   stopTimer();
   clearIdleTimer();
+  clearIdleAbandonTimer();
   wordInput.disabled = true;
   updateWordDisplay();
   updateDisplay();
