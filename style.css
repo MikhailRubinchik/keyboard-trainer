@@ -463,9 +463,20 @@ button:active  { transform: scale(0.97); }
 }
 
 .chart-date-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.chart-date-input {
   font-size: 0.8rem;
-  color: var(--text-dim);
-  margin-bottom: 4px;
+  color: var(--text-main);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
 }
 
 .chart-legend {

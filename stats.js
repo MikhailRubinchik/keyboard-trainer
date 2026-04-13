@@ -37,6 +37,9 @@ const Stats = (() => {
     return new Date(y, m - 1, d);
   }
 
+  function ruToIso(ru) { const [d, m, y] = ru.split('.'); return `${y}-${m}-${d}`; }
+  function isoToRu(iso) { const [y, m, d] = iso.split('-'); return `${d}.${m}.${y}`; }
+
   function last15Runs(allRuns) {
     return allRuns.slice(-15);
   }
@@ -769,7 +772,7 @@ const Stats = (() => {
       + bigramHtml);
   }
 
-  function buildCharts(allRuns) {
+  function buildCharts(allRuns, fromIso, toIso) {
     if (allRuns.length < 2) return '';
 
     const W = 760, H = 240;
@@ -787,8 +790,8 @@ const Stats = (() => {
     const maxErr = Math.max(...errs.filter(v => v !== null)) || 1;
 
     // Draws a line+dots wrapped in <g>, skipping null values
-    // tips: array of tooltip strings, parallel to values (null = no dot)
-    function lineGroup(values, maxV, color, groupId, tips) {
+    // tips: tooltip strings per run; records: 'record'|'' per run
+    function lineGroup(values, maxV, color, groupId, tips, records) {
       const dots = [];
       const segments = [];
       let seg = [];
@@ -799,7 +802,11 @@ const Stats = (() => {
           const x = xPos(i).toFixed(1), y = yScale(values[i], maxV).toFixed(1);
           seg.push(`${x},${y}`);
           const tip = tips ? tips[i].replace(/"/g, '&quot;') : '';
+          const isRecord = records && records[i] === 'record';
           dots.push(`<circle cx="${x}" cy="${y}" r="4" fill="${color}" data-tip="${tip}" style="cursor:pointer"/>`);
+          if (isRecord) dots.push(
+            `<text x="${x}" y="${(parseFloat(y) - 8).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="bold" fill="#16a34a">Р</text>`
+          );
         }
       }
       if (seg.length) segments.push(seg);
@@ -811,6 +818,8 @@ const Stats = (() => {
       const errStr = (r.errors != null && r.chars) ? `${r.errors} (${(r.errors / r.chars * 100).toFixed(1)}%)` : '—';
       return `#${i + 1} · ${r.date} ${r.time ?? ''}\nУровень ${r.level ?? '—'} · ${r.cpm} зн/мин\nОшибок: ${errStr} · ${formatTime(r.seconds)}`;
     });
+    const cpmRecords = computeRecords(allRuns);
+    const errRecords = computeErrorRecords(allRuns);
 
     // Left Y axis (CPM) ticks
     const cpmTicks = [0, Math.round(maxCpm / 2), Math.round(maxCpm)];
@@ -833,12 +842,12 @@ const Stats = (() => {
       return '';
     }).join('');
 
-    const firstDate = allRuns[0].date;
-    const lastDate  = allRuns[n - 1].date;
-    const dateRange = firstDate === lastDate ? firstDate : `${firstDate} — ${lastDate}`;
-
     return `<div class="chart-block">
-      <div class="chart-date-range">${dateRange}</div>
+      <div class="chart-date-range">
+        <input type="date" id="chart-from" value="${fromIso}" class="chart-date-input">
+        <span style="color:var(--text-dim)">—</span>
+        <input type="date" id="chart-to" value="${toIso}" class="chart-date-input">
+      </div>
       <div class="chart-legend">
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● скорость, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#ef4444">● ошибки, %</span></label>
@@ -848,8 +857,8 @@ const Stats = (() => {
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
-        ${lineGroup(cpms, maxCpm, '#3b82f6', 'chart-group-cpm', tips)}
-        ${lineGroup(errs, maxErr, '#ef4444', 'chart-group-err', tips)}
+        ${lineGroup(cpms, maxCpm, '#3b82f6', 'chart-group-cpm', tips, cpmRecords)}
+        ${lineGroup(errs, maxErr, '#ef4444', 'chart-group-err', tips, errRecords)}
         ${rightAxis}
         ${xLabels}
       </svg>
@@ -874,48 +883,67 @@ const Stats = (() => {
     }
 
     if (chartsEl) {
-      chartsEl.innerHTML = buildCharts(allRuns);
+      const complete = allRuns;  // already filtered by !incomplete in renderStats
+      const allDates = complete.map(r => ruToIso(r.date));
+      const minIso = allDates[0];
+      const maxIso = allDates[allDates.length - 1];
 
-      const togCpm = document.getElementById('chart-toggle-cpm');
-      const togErr = document.getElementById('chart-toggle-err');
-      if (togCpm) togCpm.addEventListener('change', () => {
-        const g = document.getElementById('chart-group-cpm');
-        if (g) g.style.display = togCpm.checked ? '' : 'none';
-      });
-      if (togErr) togErr.addEventListener('change', () => {
-        const g = document.getElementById('chart-group-err');
-        if (g) g.style.display = togErr.checked ? '' : 'none';
-      });
+      function renderCharts(fromIso, toIso) {
+        const displayed = complete.filter(r => {
+          const iso = ruToIso(r.date);
+          return iso >= fromIso && iso <= toIso;
+        });
+        chartsEl.innerHTML = buildCharts(displayed.length >= 2 ? displayed : complete, fromIso, toIso);
 
-      // Tooltip
-      let tip = document.getElementById('chart-tooltip');
-      if (!tip) {
-        tip = document.createElement('div');
-        tip.id = 'chart-tooltip';
-        tip.className = 'chart-tooltip';
-        document.body.appendChild(tip);
-      }
-      const svg = chartsEl.querySelector('svg');
-      if (svg) {
-        svg.addEventListener('mouseover', e => {
-          const el = e.target.closest('[data-tip]');
-          if (!el) return;
-          tip.textContent = '';
-          el.dataset.tip.split('\n').forEach((line, i) => {
-            if (i) tip.appendChild(document.createElement('br'));
-            tip.appendChild(document.createTextNode(line));
+        const togCpm = document.getElementById('chart-toggle-cpm');
+        const togErr = document.getElementById('chart-toggle-err');
+        if (togCpm) togCpm.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-cpm');
+          if (g) g.style.display = togCpm.checked ? '' : 'none';
+        });
+        if (togErr) togErr.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-err');
+          if (g) g.style.display = togErr.checked ? '' : 'none';
+        });
+
+        const fromEl = document.getElementById('chart-from');
+        const toEl   = document.getElementById('chart-to');
+        if (fromEl) { fromEl.min = minIso; fromEl.max = maxIso; }
+        if (toEl)   { toEl.min   = minIso; toEl.max   = maxIso; }
+        if (fromEl) fromEl.addEventListener('change', () => renderCharts(fromEl.value, toEl?.value || maxIso));
+        if (toEl)   toEl.addEventListener('change',   () => renderCharts(fromEl?.value || minIso, toEl.value));
+
+        let tip = document.getElementById('chart-tooltip');
+        if (!tip) {
+          tip = document.createElement('div');
+          tip.id = 'chart-tooltip';
+          tip.className = 'chart-tooltip';
+          document.body.appendChild(tip);
+        }
+        const svg = chartsEl.querySelector('svg');
+        if (svg) {
+          svg.addEventListener('mouseover', e => {
+            const el = e.target.closest('[data-tip]');
+            if (!el) return;
+            tip.textContent = '';
+            el.dataset.tip.split('\n').forEach((line, i) => {
+              if (i) tip.appendChild(document.createElement('br'));
+              tip.appendChild(document.createTextNode(line));
+            });
+            tip.classList.add('visible');
           });
-          tip.classList.add('visible');
-        });
-        svg.addEventListener('mousemove', e => {
-          tip.style.left = (e.pageX + 12) + 'px';
-          tip.style.top  = (e.pageY - 48) + 'px';
-        });
-        svg.addEventListener('mouseout', e => {
-          if (!e.target.closest('[data-tip]')) return;
-          tip.classList.remove('visible');
-        });
+          svg.addEventListener('mousemove', e => {
+            tip.style.left = (e.pageX + 12) + 'px';
+            tip.style.top  = (e.pageY - 48) + 'px';
+          });
+          svg.addEventListener('mouseout', e => {
+            if (!e.target.closest('[data-tip]')) return;
+            tip.classList.remove('visible');
+          });
+        }
       }
+
+      renderCharts(minIso, maxIso);
     }
 
     const today      = todayStr();
