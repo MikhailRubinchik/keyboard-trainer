@@ -772,7 +772,7 @@ const Stats = (() => {
   function buildCharts(allRuns) {
     if (allRuns.length < 2) return '';
 
-    const W = 620, H = 240;
+    const W = 760, H = 240;
     const padL = 46, padR = 46, padT = 16, padB = 26;
     const plotW = W - padL - padR;
     const plotH = H - padT - padB;
@@ -782,16 +782,27 @@ const Stats = (() => {
     function yScale(v, maxV) { return padT + plotH - (maxV ? v / maxV * plotH : plotH / 2); }
 
     const cpms = allRuns.map(r => r.cpm);
-    const errs = allRuns.map(r => (r.errors != null && r.chars) ? r.errors / r.chars * 100 : 0);
+    const errs = allRuns.map(r => (r.errors != null && r.chars) ? r.errors / r.chars * 100 : null);
     const maxCpm = Math.max(...cpms) || 1;
-    const maxErr = Math.max(...errs) || 1;
+    const maxErr = Math.max(...errs.filter(v => v !== null)) || 1;
 
+    // Draws a line+dots, skipping null values (breaks line into segments)
     function line(values, maxV, color) {
-      const pts = values.map((v, i) => `${xPos(i).toFixed(1)},${yScale(v, maxV).toFixed(1)}`).join(' ');
-      const dots = values.map((v, i) =>
-        `<circle cx="${xPos(i).toFixed(1)}" cy="${yScale(v, maxV).toFixed(1)}" r="3" fill="${color}"/>`
-      ).join('');
-      return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>${dots}`;
+      const dots = [];
+      const segments = [];
+      let seg = [];
+      for (let i = 0; i < values.length; i++) {
+        if (values[i] === null) {
+          if (seg.length) { segments.push(seg); seg = []; }
+        } else {
+          const x = xPos(i).toFixed(1), y = yScale(values[i], maxV).toFixed(1);
+          seg.push(`${x},${y}`);
+          dots.push(`<circle cx="${x}" cy="${y}" r="3" fill="${color}"/>`);
+        }
+      }
+      if (seg.length) segments.push(seg);
+      const polylines = segments.map(s => `<polyline points="${s.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`).join('');
+      return polylines + dots.join('');
     }
 
     // Left Y axis (CPM) ticks
