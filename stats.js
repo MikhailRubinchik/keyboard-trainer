@@ -262,7 +262,8 @@ const Stats = (() => {
     });
 
     const btnRefresh = document.getElementById('btn-refresh-gist');
-    if (getSyncConfig().gistId) btnRefresh.classList.remove('hidden');
+    const cfg = getSyncConfig();
+    if (cfg.gistId && !cfg.token) btnRefresh.classList.remove('hidden');
     btnRefresh.addEventListener('click', () => pullFromGist());
 
     runs = lsRead();
