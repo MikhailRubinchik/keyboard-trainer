@@ -8,6 +8,9 @@ const Stats = (() => {
 
   let runs = [];   // all loaded run records
   let tableMode = 'runs';  // 'runs' | 'days'
+  let chartFromIso = '';
+  let chartToIso   = '';
+  let renderChartsNow = () => {}; // set after first renderStats
 
   // ── Utilities ──────────────────────────────────────────────
 
@@ -186,13 +189,15 @@ const Stats = (() => {
       tableMode = 'runs';
       btnRuns.classList.add('active');
       btnDays.classList.remove('active');
-      renderTable(runs);
+      renderTable(runs.filter(r => !r.incomplete));
+      renderChartsNow();
     });
     btnDays.addEventListener('click', () => {
       tableMode = 'days';
       btnDays.classList.add('active');
       btnRuns.classList.remove('active');
-      renderTable(runs);
+      renderTable(runs.filter(r => !r.incomplete));
+      renderChartsNow();
     });
 
     const overlay = document.getElementById('error-detail-overlay');
@@ -404,6 +409,17 @@ const Stats = (() => {
       }
     });
 
+    // Detect level transitions per date (walk chronologically through allRuns)
+    const levelChangeByDate = {};
+    for (let i = 1; i < allRuns.length; i++) {
+      const r = allRuns[i], prev = allRuns[i - 1];
+      if (r.level != null && prev.level != null && r.level !== prev.level) {
+        if (!levelChangeByDate[r.date]) levelChangeByDate[r.date] = [];
+        if (!levelChangeByDate[r.date].includes(r.level)) levelChangeByDate[r.date].push(r.level);
+      }
+    }
+    rows.forEach(row => { row.levelChanges = levelChangeByDate[row.date] || []; });
+
     return rows.reverse();  // newest first for display
   }
 
@@ -438,6 +454,16 @@ const Stats = (() => {
     });
   }
 
+  // Returns parallel array: newLevel (number) where level changed vs previous run, else null
+  function computeLevelChanges(allRuns) {
+    return allRuns.map((r, i) => {
+      if (i === 0) return null;
+      const prev = allRuns[i - 1];
+      if (r.level != null && prev.level != null && r.level !== prev.level) return r.level;
+      return null;
+    });
+  }
+
   function getRecordLabel(cpm) {
     // Call BEFORE saving the new run so `runs` still reflects history
     const complete = runs.filter(r => !r.incomplete);
@@ -451,8 +477,9 @@ const Stats = (() => {
   function renderTableRuns(allRuns) {
     const cpmLabels = computeRecords(allRuns);
     const errLabels = computeErrorRecords(allRuns);
+    const lvlChanges = computeLevelChanges(allRuns);
     const total = allRuns.length;
-    const rows = [...allRuns].map((r, i) => ({ r, i, cl: cpmLabels[i], el: errLabels[i] })).reverse().map(({ r, i, cl, el }) => {
+    const rows = [...allRuns].map((r, i) => ({ r, i, cl: cpmLabels[i], el: errLabels[i], lc: lvlChanges[i] })).reverse().map(({ r, i, cl, el, lc }) => {
       const cpmBadge = cl === 'record'
         ? ' <span class="run-badge run-badge--record">Рекорд</span>'
         : cl === 'repeat'
@@ -467,12 +494,13 @@ const Stats = (() => {
       const netSecs  = Math.max(0, r.seconds - idle);
       const lazyBadge = r.lazy ? ' <span class="run-badge run-badge--lazy">лень</span>' : '';
       const timeTip  = idle > 0 ? ` title="Реальное: ${formatTime(r.seconds)}, простой: ${formatTime(idle)}"` : '';
+      const lvlBadge = lc != null ? ` <span class="run-badge run-badge--level">→${lc}</span>` : '';
       return `
       <tr${r.lazy ? ' class="row--lazy"' : ''}>
         <td class="run-num">${i + 1}</td>
         <td>${r.date}</td>
         <td>${r.time}</td>
-        <td>${r.level ?? r.exercise ?? '—'}</td>
+        <td>${r.level ?? r.exercise ?? '—'}${lvlBadge}</td>
         <td>${r.chars}</td>
         <td>${fmtErr(r.errors, r.chars)}${errBadge}</td>
         <td${timeTip}>${formatTime(netSecs)}${lazyBadge}</td>
@@ -506,10 +534,14 @@ const Stats = (() => {
   }
 
   function renderTableDays(allRuns) {
-    const rows = groupByDay(allRuns).map(d => `
+    const rows = groupByDay(allRuns).map(d => {
+      const lvlBadge = d.levelChanges && d.levelChanges.length
+        ? d.levelChanges.map(lv => `<span class="run-badge run-badge--level">→${lv}</span>`).join('')
+        : '';
+      return `
       <tr>
         <td class="${d.dateClass}">${d.date}</td>
-        <td>${d.avgLevel}</td>
+        <td>${d.avgLevel}${lvlBadge ? ' ' + lvlBadge : ''}</td>
         <td class="${d.countClass}">${d.count}</td>
         <td>${d.count ? d.chars : '—'}</td>
         <td>${d.worstErrRun ? fmtErr(d.worstErrRun.errors, d.worstErrRun.chars) : '—'}${dayBadge(d.maxErrLabel, '-sm')}</td>
@@ -518,7 +550,7 @@ const Stats = (() => {
         <td>${d.maxCpm !== null ? d.maxCpm + ' зн/мин' : '—'}${dayBadge(d.maxLabel)}</td>
         <td>${d.avgCpm !== null ? d.avgCpm + ' зн/мин' : '—'}${dayBadge(d.avgLabel)}</td>
       </tr>
-    `).join('');
+    `; }).join('');
 
     return `
       <table class="stats-table">
@@ -826,10 +858,22 @@ const Stats = (() => {
 
     const tips = allRuns.map((r, i) => {
       const errStr = (r.errors != null && r.chars) ? `${r.errors} (${(r.errors / r.chars * 100).toFixed(1)}%)` : '—';
-      return `#${i + 1} · ${r.date} ${r.time ?? ''}\nУровень ${r.level ?? '—'} · ${r.cpm} зн/мин\nОшибок: ${errStr} · ${formatTime(r.seconds)}`;
+      const base = r._count
+        ? `${r.date} · ${r._count} заездов\nСредняя: ${r.cpm} зн/мин\nОшибок ср.: ${errStr}`
+        : `#${i + 1} · ${r.date} ${r.time ?? ''}\nУровень ${r.level ?? '—'} · ${r.cpm} зн/мин\nОшибок: ${errStr} · ${formatTime(r.seconds)}`;
+      return base;
     });
     const cpmRecords = computeRecords(allRuns);
     const errRecords = computeErrorRecords(allRuns);
+    const lvlChanges = computeLevelChanges(allRuns);
+
+    // Vertical dividers for level transitions
+    const levelDividers = lvlChanges.map((lc, i) => {
+      if (lc == null) return '';
+      const x = xPos(i).toFixed(1);
+      return `<line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + plotH}" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,3" opacity="0.7"/>
+              <text x="${(parseFloat(x) + 3).toFixed(1)}" y="${(padT + 11).toFixed(1)}" font-size="9" fill="#b45309">→${lc}</text>`;
+    }).join('');
 
     // Left Y axis (CPM) ticks
     const cpmTicks = [0, Math.round(maxCpm / 2), Math.round(maxCpm)];
@@ -867,6 +911,7 @@ const Stats = (() => {
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
+        ${levelDividers}
         ${lineGroup(cpms, maxCpm, '#3b82f6', 'chart-group-cpm', tips, cpmRecords)}
         ${lineGroup(errs, maxErr, '#ef4444', 'chart-group-err', tips, errRecords)}
         ${rightAxis}
@@ -899,11 +944,39 @@ const Stats = (() => {
       const maxIso = allDates[allDates.length - 1];
 
       function renderCharts(fromIso, toIso) {
+        chartFromIso = fromIso;
+        chartToIso   = toIso;
         const displayed = complete.filter(r => {
           const iso = ruToIso(r.date);
           return iso >= fromIso && iso <= toIso;
         });
-        chartsEl.innerHTML = buildCharts(displayed.length >= 2 ? displayed : complete, fromIso, toIso);
+        const src = displayed.length >= 2 ? displayed : complete;
+
+        // Aggregate by day when in days mode
+        let chartRuns = src;
+        if (tableMode === 'days') {
+          const dayMap = {};
+          for (const r of src) {
+            if (!dayMap[r.date]) dayMap[r.date] = [];
+            dayMap[r.date].push(r);
+          }
+          chartRuns = Object.entries(dayMap)
+            .sort(([a], [b]) => parseRuDate(a) - parseRuDate(b))
+            .map(([date, dayRuns]) => ({
+              date,
+              time: '',
+              level: Math.round(dayRuns.reduce((s, r) => s + (r.level || 0), 0) / dayRuns.length),
+              cpm:    Math.round(dayRuns.reduce((s, r) => s + r.cpm, 0) / dayRuns.length),
+              errors: dayRuns.every(r => r.errors != null)
+                ? Math.round(dayRuns.reduce((s, r) => s + r.errors, 0) / dayRuns.length)
+                : null,
+              chars:  Math.round(dayRuns.reduce((s, r) => s + r.chars, 0) / dayRuns.length),
+              seconds: dayRuns.reduce((s, r) => s + r.seconds, 0),
+              _count: dayRuns.length,
+            }));
+        }
+
+        chartsEl.innerHTML = buildCharts(chartRuns, fromIso, toIso);
 
         const togCpm = document.getElementById('chart-toggle-cpm');
         const togErr = document.getElementById('chart-toggle-err');
@@ -953,6 +1026,7 @@ const Stats = (() => {
         }
       }
 
+      renderChartsNow = () => renderCharts(chartFromIso || minIso, chartToIso || maxIso);
       renderCharts(minIso, maxIso);
     }
 

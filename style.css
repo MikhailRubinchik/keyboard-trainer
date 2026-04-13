@@ -802,6 +802,11 @@ button:active  { transform: scale(0.97); }
   color: #b45309;
 }
 
+.run-badge--level {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .row--lazy td {
   opacity: 0.55;
 }
