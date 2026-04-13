@@ -116,12 +116,16 @@ const Stats = (() => {
   }
 
   async function pullFromGist() {
-    const { token, gistId } = getSyncConfig();
-    if (!token || !gistId) { setSyncStatus('Укажите токен и ID гиста', true); return; }
+    const { gistId } = getSyncConfig();
+    if (!gistId) { setSyncStatus('Укажите ID гиста', true); return; }
     setSyncStatus('Загружаю…');
     try {
-      const data   = await gistFetch('GET', gistId, token);
-      const file   = data.files[GIST_FILE];
+      const res  = await fetch(`https://api.github.com/gists/${gistId}`, {
+        headers: { 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
+      });
+      if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+      const data = await res.json();
+      const file = data.files[GIST_FILE];
       if (!file) throw new Error('файл не найден в гисте');
       const pulled = parseLines(file.content);
       runs = pulled;
@@ -138,7 +142,7 @@ const Stats = (() => {
     try {
       const data   = await gistFetch('POST', null, token, {
         description: 'Клавогонки — статистика',
-        public:      false,
+        public:      true,
         files:       { [GIST_FILE]: { content: serializeRuns(runs) } },
       });
       const gistId = data.id;
@@ -187,6 +191,7 @@ const Stats = (() => {
     function openSyncPanel(mode) {
       const tokenInput = document.getElementById('sync-token');
       const gistInput  = document.getElementById('sync-gist-id');
+      const rowToken   = document.getElementById('sync-row-token');
       const rowGistId  = document.getElementById('sync-row-gist-id');
       const btnCreate  = document.getElementById('btn-create-gist');
       const btnPull    = document.getElementById('btn-pull-gist');
@@ -198,22 +203,25 @@ const Stats = (() => {
       gistInput.value  = cfg.gistId;
 
       if (mode === 'daughter') {
-        titleEl.textContent  = 'Настройка синхронизации';
-        hintEl.innerHTML     = 'Введите токен GitHub (скоуп: <b>gist</b>) и нажмите «Создать гист». ID сохранится сам — передайте его папе.';
+        titleEl.textContent     = 'Настройка синхронизации';
+        hintEl.innerHTML        = 'Введите токен GitHub (скоуп: <b>gist</b>) и нажмите «Создать гист». ID сохранится сам — передайте его папе.';
+        rowToken.style.display  = '';
         rowGistId.style.display = cfg.gistId ? '' : 'none';
         btnCreate.style.display = '';
         btnPull.style.display   = 'none';
+        tokenInput.focus();
       } else {
-        titleEl.textContent  = 'Статистика дочки';
-        hintEl.innerHTML     = 'Введите токен GitHub и ID гиста, затем нажмите «Загрузить».';
+        titleEl.textContent     = 'Статистика дочки';
+        hintEl.innerHTML        = 'Вставьте ID гиста от дочки и нажмите «Загрузить».';
+        rowToken.style.display  = 'none';
         rowGistId.style.display = '';
         btnCreate.style.display = 'none';
         btnPull.style.display   = '';
+        gistInput.focus();
       }
 
       setSyncStatus('');
       syncOverlay.classList.remove('hidden');
-      tokenInput.focus();
     }
 
     function closeSyncPanel() {
@@ -227,8 +235,10 @@ const Stats = (() => {
 
     const tokenInput = document.getElementById('sync-token');
     const gistInput  = document.getElementById('sync-gist-id');
-    const saveConfig = () =>
-      saveSyncConfig(tokenInput?.value.trim() || '', gistInput?.value.trim() || '');
+    const saveConfig = () => {
+      const cfg = getSyncConfig();
+      saveSyncConfig(tokenInput?.value.trim() || cfg.token, gistInput?.value.trim() || '');
+    };
     tokenInput?.addEventListener('blur', saveConfig);
     gistInput?.addEventListener('blur',  saveConfig);
 
