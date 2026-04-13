@@ -568,23 +568,15 @@ const Stats = (() => {
   }
 
   function renderIntervalHtml(map) {
-    const CAP = 50; // tenths → 5 seconds
     const entries = Object.entries(map);
     if (!entries.length) return '<p class="error-detail-empty">Нет данных об интервалах</p>';
 
-    // Bucket everything >= CAP into one entry
-    const bucketed = {};
-    for (const [k, v] of entries) {
-      const t = Math.min(Number(k), CAP);
-      bucketed[t] = (bucketed[t] || 0) + v;
-    }
+    const total = Object.values(map).reduce((s, v) => s + v, 0);
 
-    const total = Object.values(bucketed).reduce((s, v) => s + v, 0);
-
-    return Object.entries(bucketed)
+    return entries
       .sort(([a], [b]) => Number(a) - Number(b))
       .map(([t, count]) => {
-        const label = Number(t) >= CAP ? '≥5.0с' : (Number(t) / 10).toFixed(1) + 'с';
+        const label = (Number(t) / 10).toFixed(1) + 'с';
         const pct = Math.round(count / total * 100);
         return `<div class="interval-row">
           <span class="interval-label">${label}</span>
