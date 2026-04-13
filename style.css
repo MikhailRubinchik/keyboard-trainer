@@ -477,6 +477,25 @@ button:active  { transform: scale(0.97); }
   user-select: none;
 }
 
+.chart-tooltip {
+  position: fixed;
+  background: #1e293b;
+  color: #f1f5f9;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  padding: 7px 10px;
+  border-radius: 6px;
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.1s;
+  z-index: 1000;
+}
+
+.chart-tooltip.visible {
+  opacity: 1;
+}
+
 .level-progress-hint {
   font-size: 0.85rem;
   color: var(--text-dim);

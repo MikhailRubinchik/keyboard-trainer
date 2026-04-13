@@ -787,7 +787,8 @@ const Stats = (() => {
     const maxErr = Math.max(...errs.filter(v => v !== null)) || 1;
 
     // Draws a line+dots wrapped in <g>, skipping null values
-    function lineGroup(values, maxV, color, groupId) {
+    // tips: array of tooltip strings, parallel to values (null = no dot)
+    function lineGroup(values, maxV, color, groupId, tips) {
       const dots = [];
       const segments = [];
       let seg = [];
@@ -797,13 +798,19 @@ const Stats = (() => {
         } else {
           const x = xPos(i).toFixed(1), y = yScale(values[i], maxV).toFixed(1);
           seg.push(`${x},${y}`);
-          dots.push(`<circle cx="${x}" cy="${y}" r="3" fill="${color}"/>`);
+          const tip = tips ? tips[i].replace(/"/g, '&quot;') : '';
+          dots.push(`<circle cx="${x}" cy="${y}" r="4" fill="${color}" data-tip="${tip}" style="cursor:pointer"/>`);
         }
       }
       if (seg.length) segments.push(seg);
       const polylines = segments.map(s => `<polyline points="${s.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`).join('');
       return `<g id="${groupId}">${polylines}${dots.join('')}</g>`;
     }
+
+    const tips = allRuns.map((r, i) => {
+      const errStr = (r.errors != null && r.chars) ? `${r.errors} (${(r.errors / r.chars * 100).toFixed(1)}%)` : '—';
+      return `#${i + 1} · ${r.date} ${r.time ?? ''}\nУровень ${r.level ?? '—'} · ${r.cpm} зн/мин\nОшибок: ${errStr} · ${formatTime(r.seconds)}`;
+    });
 
     // Left Y axis (CPM) ticks
     const cpmTicks = [0, Math.round(maxCpm / 2), Math.round(maxCpm)];
@@ -836,8 +843,8 @@ const Stats = (() => {
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
-        ${lineGroup(cpms, maxCpm, '#3b82f6', 'chart-group-cpm')}
-        ${lineGroup(errs, maxErr, '#ef4444', 'chart-group-err')}
+        ${lineGroup(cpms, maxCpm, '#3b82f6', 'chart-group-cpm', tips)}
+        ${lineGroup(errs, maxErr, '#ef4444', 'chart-group-err', tips)}
         ${rightAxis}
         ${xLabels}
       </svg>
@@ -863,6 +870,7 @@ const Stats = (() => {
 
     if (chartsEl) {
       chartsEl.innerHTML = buildCharts(allRuns);
+
       const togCpm = document.getElementById('chart-toggle-cpm');
       const togErr = document.getElementById('chart-toggle-err');
       if (togCpm) togCpm.addEventListener('change', () => {
@@ -873,6 +881,36 @@ const Stats = (() => {
         const g = document.getElementById('chart-group-err');
         if (g) g.style.display = togErr.checked ? '' : 'none';
       });
+
+      // Tooltip
+      let tip = document.getElementById('chart-tooltip');
+      if (!tip) {
+        tip = document.createElement('div');
+        tip.id = 'chart-tooltip';
+        tip.className = 'chart-tooltip';
+        document.body.appendChild(tip);
+      }
+      const svg = chartsEl.querySelector('svg');
+      if (svg) {
+        svg.addEventListener('mouseover', e => {
+          const el = e.target.closest('[data-tip]');
+          if (!el) return;
+          tip.textContent = '';
+          el.dataset.tip.split('\n').forEach((line, i) => {
+            if (i) tip.appendChild(document.createElement('br'));
+            tip.appendChild(document.createTextNode(line));
+          });
+          tip.classList.add('visible');
+        });
+        svg.addEventListener('mousemove', e => {
+          tip.style.left = (e.pageX + 12) + 'px';
+          tip.style.top  = (e.pageY - 10) + 'px';
+        });
+        svg.addEventListener('mouseout', e => {
+          if (!e.target.closest('[data-tip]')) return;
+          tip.classList.remove('visible');
+        });
+      }
     }
 
     const today      = todayStr();
