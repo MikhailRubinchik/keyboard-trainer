@@ -752,6 +752,12 @@ async function finishRun() {
     }
   }
 
+  const newAvg = Stats.getRecentAvgCpm();
+  if (newAvg > 0) {
+    const recommended = getRecommendedLevel(newAvg);
+    if (recommended !== currentLevel) saveLevel(recommended);
+  }
+
   updateLevelProgressHint();
 }
 
