@@ -685,12 +685,17 @@ async function finishRun() {
   const cpm         = Math.round(totalChars / minutes);
   const recordLabel = Stats.getRecordLabel(cpm);  // check BEFORE saveRun
 
-  resultTime.textContent   = Stats.formatTime(elapsedSeconds);
+  const idleSeconds = Math.round(runIdleMs / 1000);
+  const netSeconds  = Math.max(0, elapsedSeconds - idleSeconds);
+  resultTime.textContent = Stats.formatTime(netSeconds);
+  if (idleSeconds > 0) {
+    resultTime.title = `Реальное: ${Stats.formatTime(elapsedSeconds)}, простой: ${Stats.formatTime(idleSeconds)}`;
+  } else {
+    resultTime.title = '';
+  }
   resultCpm.textContent    = `${cpm} зн/мин`;
   resultChars.textContent  = totalChars;
   resultErrors.textContent = errorCount;
-
-  const idleSeconds = Math.round(runIdleMs / 1000);
   const lazy        = idleSeconds >= 60;
 
   const recordEl = document.getElementById('result-record-label');
