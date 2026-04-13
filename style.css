@@ -642,6 +642,12 @@ button:active  { transform: scale(0.97); }
 .stats-table td {
   padding: 8px 12px;
   border-bottom: 1px solid var(--border);
+}
+
+.stats-table td.run-num {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  padding-right: 6px;
   font-family: var(--font-mono);
 }
 

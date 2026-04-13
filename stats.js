@@ -439,7 +439,8 @@ const Stats = (() => {
   function renderTableRuns(allRuns) {
     const cpmLabels = computeRecords(allRuns);
     const errLabels = computeErrorRecords(allRuns);
-    const rows = [...allRuns].map((r, i) => ({ r, cl: cpmLabels[i], el: errLabels[i] })).reverse().map(({ r, cl, el }) => {
+    const total = allRuns.length;
+    const rows = [...allRuns].map((r, i) => ({ r, i, cl: cpmLabels[i], el: errLabels[i] })).reverse().map(({ r, i, cl, el }) => {
       const cpmBadge = cl === 'record'
         ? ' <span class="run-badge run-badge--record">Рекорд</span>'
         : cl === 'repeat'
@@ -453,6 +454,7 @@ const Stats = (() => {
       const lazyBadge = r.lazy ? ' <span class="run-badge run-badge--lazy">лень</span>' : '';
       return `
       <tr${r.lazy ? ' class="row--lazy"' : ''}>
+        <td class="run-num">${i + 1}</td>
         <td>${r.date}</td>
         <td>${r.time}</td>
         <td>${r.level ?? r.exercise ?? '—'}</td>
@@ -467,6 +469,7 @@ const Stats = (() => {
       <table class="stats-table">
         <thead>
           <tr>
+            <th>#</th>
             <th>Дата</th>
             <th>Время</th>
             <th>Уровень</th>
