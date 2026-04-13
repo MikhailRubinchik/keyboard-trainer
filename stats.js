@@ -904,7 +904,7 @@ const Stats = (() => {
         });
         svg.addEventListener('mousemove', e => {
           tip.style.left = (e.pageX + 12) + 'px';
-          tip.style.top  = (e.pageY - 10) + 'px';
+          tip.style.top  = (e.pageY - 48) + 'px';
         });
         svg.addEventListener('mouseout', e => {
           if (!e.target.closest('[data-tip]')) return;
