@@ -933,8 +933,8 @@ const Stats = (() => {
             tip.classList.add('visible');
           });
           svg.addEventListener('mousemove', e => {
-            tip.style.left = (e.pageX + 12) + 'px';
-            tip.style.top  = (e.pageY - 48) + 'px';
+            tip.style.left = (e.clientX + 12) + 'px';
+            tip.style.top  = (e.clientY - 48) + 'px';
           });
           svg.addEventListener('mouseout', e => {
             if (!e.target.closest('[data-tip]')) return;
