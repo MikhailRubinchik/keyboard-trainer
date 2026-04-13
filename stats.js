@@ -772,7 +772,7 @@ const Stats = (() => {
   function buildCharts(allRuns) {
     if (allRuns.length < 2) return '';
 
-    const W = 620, H = 200;
+    const W = 620, H = 240;
     const padL = 46, padR = 46, padT = 16, padB = 26;
     const plotW = W - padL - padR;
     const plotH = H - padT - padB;
