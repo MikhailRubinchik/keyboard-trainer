@@ -132,7 +132,9 @@ const Stats = (() => {
       lsWrite(runs);
       renderStats(runs);
       saveSyncConfig(getSyncConfig().token, gistId);  // ensure gistId persists
-      document.getElementById('btn-refresh-gist')?.classList.remove('hidden');
+      if (!getSyncConfig().token) {
+        document.getElementById('btn-refresh-gist')?.classList.remove('hidden');
+      }
       document.getElementById('sync-overlay')?.classList.add('hidden');
       setSyncStatus(`↓ Загружено ${pulled.length} заездов`);
     } catch (e) {
@@ -265,7 +267,8 @@ const Stats = (() => {
     });
 
     const btnRefresh = document.getElementById('btn-refresh-gist');
-    if (getSyncConfig().gistId) btnRefresh.classList.remove('hidden');
+    const cfg0 = getSyncConfig();
+    if (cfg0.gistId && !cfg0.token) btnRefresh.classList.remove('hidden');
     btnRefresh.addEventListener('click', () => pullFromGist());
 
     runs = lsRead();
