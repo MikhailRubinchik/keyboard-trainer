@@ -786,8 +786,8 @@ const Stats = (() => {
     const maxCpm = Math.max(...cpms) || 1;
     const maxErr = Math.max(...errs.filter(v => v !== null)) || 1;
 
-    // Draws a line+dots, skipping null values (breaks line into segments)
-    function line(values, maxV, color) {
+    // Draws a line+dots wrapped in <g>, skipping null values
+    function lineGroup(values, maxV, color, groupId) {
       const dots = [];
       const segments = [];
       let seg = [];
@@ -802,7 +802,7 @@ const Stats = (() => {
       }
       if (seg.length) segments.push(seg);
       const polylines = segments.map(s => `<polyline points="${s.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`).join('');
-      return polylines + dots.join('');
+      return `<g id="${groupId}">${polylines}${dots.join('')}</g>`;
     }
 
     // Left Y axis (CPM) ticks
@@ -828,16 +828,16 @@ const Stats = (() => {
 
     return `<div class="chart-block">
       <div class="chart-legend">
-        <span style="color:#3b82f6">● скорость, зн/мин</span>
-        <span style="color:#ef4444">● ошибки, %</span>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● скорость, зн/мин</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#ef4444">● ошибки, %</span></label>
       </div>
       <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
         ${leftAxis}
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
-        ${line(cpms, maxCpm, '#3b82f6')}
-        ${line(errs, maxErr, '#ef4444')}
+        ${lineGroup(cpms, maxCpm, '#3b82f6', 'chart-group-cpm')}
+        ${lineGroup(errs, maxErr, '#ef4444', 'chart-group-err')}
         ${rightAxis}
         ${xLabels}
       </svg>
@@ -861,7 +861,19 @@ const Stats = (() => {
       return;
     }
 
-    if (chartsEl) chartsEl.innerHTML = buildCharts(allRuns);
+    if (chartsEl) {
+      chartsEl.innerHTML = buildCharts(allRuns);
+      const togCpm = document.getElementById('chart-toggle-cpm');
+      const togErr = document.getElementById('chart-toggle-err');
+      if (togCpm) togCpm.addEventListener('change', () => {
+        const g = document.getElementById('chart-group-cpm');
+        if (g) g.style.display = togCpm.checked ? '' : 'none';
+      });
+      if (togErr) togErr.addEventListener('change', () => {
+        const g = document.getElementById('chart-group-err');
+        if (g) g.style.display = togErr.checked ? '' : 'none';
+      });
+    }
 
     const today      = todayStr();
     const todayRuns  = allRuns.filter(r => r.date === today);
