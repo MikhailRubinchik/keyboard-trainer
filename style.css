@@ -203,6 +203,12 @@ html, body {
   color: var(--text-dim);
 }
 
+.live-stat {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: var(--text-dim);
+}
+
 .live-timer {
   font-family: var(--font-mono);
   font-size: 1.1rem;

@@ -10,7 +10,9 @@ const screenExercise = document.getElementById('screen-exercise');
 const fingerHint  = document.getElementById('finger-hint');
 const textDisplay = document.getElementById('text-display');
 const wordInput   = document.getElementById('word-input');
-const liveTimer   = document.getElementById('live-timer');
+const liveTimer    = document.getElementById('live-timer');
+const liveProgress = document.getElementById('live-progress');
+const liveCpm      = document.getElementById('live-cpm');
 const handImage   = document.getElementById('hand-image');
 
 const resultOverlay  = document.getElementById('result-overlay');
@@ -190,7 +192,9 @@ function startExercise(level) {
   idleAbandonTimer = null;
 
   exerciseLevelLabel.textContent = `Уровень ${level}`;
-  liveTimer.textContent = '0:00';
+  liveTimer.textContent    = '0:00';
+  liveProgress.textContent = '0%';
+  liveCpm.textContent      = '— зн/мин';
 
   renderText();
   updateFingerHint();
@@ -358,7 +362,11 @@ function startTimer() {
   startTime = Date.now();
   timerInterval = setInterval(() => {
     elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-    liveTimer.textContent = Stats.formatTime(elapsedSeconds);
+    liveTimer.textContent    = Stats.formatTime(elapsedSeconds);
+    liveProgress.textContent = chars.length ? Math.round(cursor / chars.length * 100) + '%' : '0%';
+    liveCpm.textContent      = elapsedSeconds > 0
+      ? Math.round(cursor / (elapsedSeconds / 60)) + ' зн/мин'
+      : '— зн/мин';
   }, 250);
 }
 
