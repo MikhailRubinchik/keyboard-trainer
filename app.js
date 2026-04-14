@@ -602,6 +602,7 @@ function handleChar(key) {
     Stats.saveRun({
       level:      currentLevel,
       chars:      cursor,
+      totalChars: chars.length,
       seconds:    elapsedSeconds,
       cpm:        liveCpmNow,
       errors:     errorCount,

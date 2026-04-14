@@ -317,6 +317,7 @@ const Stats = (() => {
       idleSeconds:    record.idleSeconds    || 0,
       lazy:           record.lazy           || false,
       incomplete:     record.incomplete     || false,
+      totalChars:     record.totalChars     || null,
     };
 
     // Replace last entry if it was a checkpoint (incomplete)
@@ -526,17 +527,22 @@ const Stats = (() => {
       </tr>`;
     }).join('');
 
-    const inProgressRow = inProgress ? `
+    const inProgressRow = inProgress ? (() => {
+      const pct = inProgress.totalChars
+        ? Math.round(inProgress.chars / inProgress.totalChars * 100) + '%'
+        : '—';
+      return `
       <tr class="row--in-progress">
         <td class="run-num">⏳</td>
         <td>${inProgress.date}</td>
         <td>${inProgress.time}</td>
         <td>${inProgress.level ?? '—'}</td>
-        <td>${inProgress.chars}</td>
+        <td>${inProgress.chars} (${pct})</td>
         <td>${fmtErr(inProgress.errors, inProgress.chars)}</td>
         <td>${formatTime(inProgress.seconds)}</td>
         <td>${inProgress.cpm} зн/мин</td>
-      </tr>` : '';
+      </tr>`;
+    })() : '';
 
     return `
       <table class="stats-table">
