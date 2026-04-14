@@ -854,7 +854,7 @@ const Stats = (() => {
 
     showErrorModal(title, textBlock
       + '<p class="freq-section-title">Ошибки по словам <button id="btn-filter-frequent" class="filter-btn">Частые</button></p>'
-      + perWord
+      + `<div id="per-word-list">${perWord}</div>`
       + '<div class="freq-divider"></div>'
       + '<p class="freq-section-title">Сводка по клавишам</p>'
       + freqHtml
@@ -867,23 +867,21 @@ const Stats = (() => {
 
     const filterBtn = document.getElementById('btn-filter-frequent');
     if (filterBtn) {
-      const entries = [...document.querySelectorAll('#error-detail-body .error-entry[data-attempts]')];
-      const parent  = entries[0]?.parentNode;
-      const originalOrder = [...entries]; // save order before any sorting
+      const container    = document.getElementById('per-word-list');
+      const entries      = [...container.querySelectorAll('.error-entry[data-attempts]')];
+      const originalOrder = [...entries];
 
       filterBtn.addEventListener('click', () => {
         const active = filterBtn.classList.toggle('filter-btn--active');
         if (active) {
-          // Sort by attempts descending, hide those with < 2
           [...entries]
             .sort((a, b) => parseInt(b.dataset.attempts) - parseInt(a.dataset.attempts))
-            .forEach(el => parent.appendChild(el));
+            .forEach(el => container.appendChild(el));
           entries.forEach(el => {
             el.style.display = parseInt(el.dataset.attempts) < 2 ? 'none' : '';
           });
         } else {
-          // Restore original order and show all
-          originalOrder.forEach(el => { el.style.display = ''; parent.appendChild(el); });
+          originalOrder.forEach(el => { el.style.display = ''; container.appendChild(el); });
         }
       });
     }
