@@ -147,7 +147,10 @@ const Stats = (() => {
       saveSyncConfig('', gistId);
       document.getElementById('btn-refresh-gist')?.classList.remove('hidden');
       document.getElementById('sync-overlay')?.classList.add('hidden');
-      setSyncStatus(`↓ Загружено ${pulled.length} заездов`);
+      const lastPulled = pulled[pulled.length - 1];
+      const hasProgress = lastPulled?.incomplete;
+      const progressNote = hasProgress ? ` · 🟡 в процессе (${lastPulled.chars} симв)` : '';
+      setSyncStatus(`↓ Загружено ${pulled.length} заездов${progressNote}`);
       const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setRefreshStatus(`обновлено в ${timeStr}`);
     } catch (e) {
