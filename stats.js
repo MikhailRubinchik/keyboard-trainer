@@ -669,15 +669,10 @@ const Stats = (() => {
       ${bars}${xLabels}${yLabel}
     </svg>`;
 
-    // List: sorted by % desc, ties by time asc
-    const list = [...data]
-      .sort((a, b) => {
-        const diff = Math.round(b.pct * 10) - Math.round(a.pct * 10);
-        return diff !== 0 ? diff : a.t - b.t;
-      })
+    // List: sorted by time asc
+    const list = byTime
       .map(({ t, count, pct }) => `<div class="interval-row">
         <span class="interval-label">${(t / 10).toFixed(1)}с</span>
-        <div class="interval-bar-wrap"><div class="interval-bar-fill" style="width:${(pct / maxPct * 100).toFixed(1)}%"></div></div>
         <span class="interval-pct">${Math.round(pct)}% <span class="freq-total">(${count})</span></span>
       </div>`).join('');
 
