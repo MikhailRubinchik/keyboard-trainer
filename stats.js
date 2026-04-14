@@ -409,16 +409,25 @@ const Stats = (() => {
       }
     });
 
-    // Detect level transitions per date (walk chronologically through allRuns)
-    const levelChangeByDate = {};
-    for (let i = 1; i < allRuns.length; i++) {
-      const r = allRuns[i], prev = allRuns[i - 1];
-      if (r.level != null && prev.level != null && r.level !== prev.level) {
-        if (!levelChangeByDate[r.date]) levelChangeByDate[r.date] = [];
-        if (!levelChangeByDate[r.date].includes(r.level)) levelChangeByDate[r.date].push(r.level);
+    // Detect level transitions — mark the date of the LAST run before each transition
+    const levelTransitions = {};
+    for (let i = 0; i < allRuns.length - 1; i++) {
+      const r = allRuns[i], next = allRuns[i + 1];
+      if (r.level != null && next.level != null && next.level !== r.level) {
+        if (!levelTransitions[r.date]) levelTransitions[r.date] = [];
+        if (!levelTransitions[r.date].includes(next.level)) levelTransitions[r.date].push(next.level);
       }
     }
-    rows.forEach(row => { row.levelChanges = levelChangeByDate[row.date] || []; });
+    // Most recent run: mark if current saved level already differs
+    if (allRuns.length > 0) {
+      const last = allRuns[allRuns.length - 1];
+      const currentSavedLevel = parseInt(localStorage.getItem('klavagonki_level'), 10) || null;
+      if (currentSavedLevel != null && last.level != null && currentSavedLevel !== last.level) {
+        if (!levelTransitions[last.date]) levelTransitions[last.date] = [];
+        if (!levelTransitions[last.date].includes(currentSavedLevel)) levelTransitions[last.date].push(currentSavedLevel);
+      }
+    }
+    rows.forEach(row => { row.levelChanges = levelTransitions[row.date] || []; });
 
     return rows.reverse();  // newest first for display
   }
@@ -454,12 +463,18 @@ const Stats = (() => {
     });
   }
 
-  // Returns parallel array: newLevel (number) where level changed vs previous run, else null
+  // Returns parallel array: newLevel (number) for the LAST run before a level transition, else null.
+  // Also marks the most recent run if current saved level already differs from it.
   function computeLevelChanges(allRuns) {
+    const currentSavedLevel = parseInt(localStorage.getItem('klavagonki_level'), 10) || null;
     return allRuns.map((r, i) => {
-      if (i === 0) return null;
-      const prev = allRuns[i - 1];
-      if (r.level != null && prev.level != null && r.level !== prev.level) return r.level;
+      if (i < allRuns.length - 1) {
+        const next = allRuns[i + 1];
+        if (r.level != null && next.level != null && next.level !== r.level) return next.level;
+      } else {
+        // Last run: check if the app has already promoted beyond it
+        if (currentSavedLevel != null && r.level != null && currentSavedLevel !== r.level) return currentSavedLevel;
+      }
       return null;
     });
   }
