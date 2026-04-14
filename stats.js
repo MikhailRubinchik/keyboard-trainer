@@ -634,20 +634,54 @@ const Stats = (() => {
     if (!entries.length) return '<p class="error-detail-empty">Нет данных об интервалах</p>';
 
     const total = Object.values(map).reduce((s, v) => s + v, 0);
+    const data  = entries.map(([t, count]) => ({ t: Number(t), count, pct: count / total * 100 }));
 
-    return entries
-      .map(([t, count]) => ({ t: Number(t), count, pct: count / total * 100 }))
+    // Chart: bars sorted by time (shows distribution shape)
+    const byTime  = [...data].sort((a, b) => a.t - b.t);
+    const W = 520, H = 110;
+    const padL = 30, padR = 8, padT = 10, padB = 24;
+    const plotW = W - padL - padR;
+    const plotH = H - padT - padB;
+    const n      = byTime.length;
+    const maxPct = Math.max(...byTime.map(d => d.pct));
+    const slotW  = plotW / n;
+    const barW   = Math.max(2, slotW - 2);
+
+    const bars = byTime.map((d, i) => {
+      const x    = padL + i * slotW + (slotW - barW) / 2;
+      const barH = maxPct > 0 ? d.pct / maxPct * plotH : 0;
+      const y    = padT + plotH - barH;
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(0, barH).toFixed(1)}" rx="2" fill="var(--accent)" opacity="0.8"/>`;
+    }).join('');
+
+    const step    = Math.max(1, Math.ceil(n / 8));
+    const xLabels = byTime.map((d, i) => {
+      if (i % step !== 0 && i !== n - 1) return '';
+      const x = padL + i * slotW + slotW / 2;
+      return `<text x="${x.toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="9" fill="#9ca3af">${(d.t / 10).toFixed(1)}</text>`;
+    }).join('');
+
+    const yLabel = `<text x="${padL - 3}" y="${(padT + 4).toFixed(1)}" text-anchor="end" font-size="9" fill="#9ca3af">${maxPct.toFixed(0)}%</text>`;
+
+    const svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;margin-bottom:10px">
+      <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#e5e7eb" stroke-width="1"/>
+      <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#e5e7eb" stroke-width="1"/>
+      ${bars}${xLabels}${yLabel}
+    </svg>`;
+
+    // List: sorted by % desc, ties by time asc
+    const list = [...data]
       .sort((a, b) => {
-        const diff = Math.round(b.pct * 10) - Math.round(a.pct * 10); // ties at 0.1% precision
+        const diff = Math.round(b.pct * 10) - Math.round(a.pct * 10);
         return diff !== 0 ? diff : a.t - b.t;
       })
-      .map(({ t, count, pct }) => {
-        const label = (t / 10).toFixed(1) + 'с';
-        return `<div class="interval-row">
-          <span class="interval-label">${label}</span>
-          <span class="interval-pct">${Math.round(pct)}% <span class="freq-total">(${count})</span></span>
-        </div>`;
-      }).join('');
+      .map(({ t, count, pct }) => `<div class="interval-row">
+        <span class="interval-label">${(t / 10).toFixed(1)}с</span>
+        <div class="interval-bar-wrap"><div class="interval-bar-fill" style="width:${(pct / maxPct * 100).toFixed(1)}%"></div></div>
+        <span class="interval-pct">${Math.round(pct)}% <span class="freq-total">(${count})</span></span>
+      </div>`).join('');
+
+    return svg + list;
   }
 
   // ── Bigram timing helpers ──────────────────────────────────
