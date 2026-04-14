@@ -636,13 +636,16 @@ const Stats = (() => {
     const total = Object.values(map).reduce((s, v) => s + v, 0);
 
     return entries
-      .sort(([a], [b]) => Number(a) - Number(b))
-      .map(([t, count]) => {
-        const label = (Number(t) / 10).toFixed(1) + 'с';
-        const pct = Math.round(count / total * 100);
+      .map(([t, count]) => ({ t: Number(t), count, pct: count / total * 100 }))
+      .sort((a, b) => {
+        const diff = Math.round(b.pct * 10) - Math.round(a.pct * 10); // ties at 0.1% precision
+        return diff !== 0 ? diff : a.t - b.t;
+      })
+      .map(({ t, count, pct }) => {
+        const label = (t / 10).toFixed(1) + 'с';
         return `<div class="interval-row">
           <span class="interval-label">${label}</span>
-          <span class="interval-pct">${pct}% <span class="freq-total">(${count})</span></span>
+          <span class="interval-pct">${Math.round(pct)}% <span class="freq-total">(${count})</span></span>
         </div>`;
       }).join('');
   }
