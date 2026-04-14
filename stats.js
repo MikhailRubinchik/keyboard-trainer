@@ -492,7 +492,7 @@ const Stats = (() => {
     return '';
   }
 
-  function renderTableRuns(allRuns) {
+  function renderTableRuns(allRuns, inProgress) {
     const cpmLabels = computeRecords(allRuns);
     const errLabels = computeErrorRecords(allRuns);
     const lvlChanges = computeLevelChanges(allRuns);
@@ -526,6 +526,18 @@ const Stats = (() => {
       </tr>`;
     }).join('');
 
+    const inProgressRow = inProgress ? `
+      <tr class="row--in-progress">
+        <td class="run-num">⏳</td>
+        <td>${inProgress.date}</td>
+        <td>${inProgress.time}</td>
+        <td>${inProgress.level ?? '—'}</td>
+        <td>${inProgress.chars}</td>
+        <td>${fmtErr(inProgress.errors, inProgress.chars)}</td>
+        <td>${formatTime(inProgress.seconds)}</td>
+        <td>${inProgress.cpm} зн/мин</td>
+      </tr>` : '';
+
     return `
       <table class="stats-table">
         <thead>
@@ -540,7 +552,7 @@ const Stats = (() => {
             <th>Скорость</th>
           </tr>
         </thead>
-        <tbody>${rows}</tbody>
+        <tbody>${inProgressRow}${rows}</tbody>
       </table>
     `;
   }
@@ -590,12 +602,12 @@ const Stats = (() => {
     `;
   }
 
-  function renderTable(allRuns) {
+  function renderTable(allRuns, inProgress) {
     const tableWrap = document.getElementById('stats-table-wrap');
     if (!tableWrap) return;
     tableWrap.innerHTML = tableMode === 'days'
       ? renderTableDays(allRuns)
-      : renderTableRuns(allRuns);
+      : renderTableRuns(allRuns, inProgress);
 
     if (tableMode === 'runs') {
       const reversed = [...allRuns].reverse();
@@ -991,26 +1003,14 @@ const Stats = (() => {
     </div>`;
   }
 
-  function renderInProgress(run) {
-    const el = document.getElementById('stats-in-progress');
-    if (!el) return;
-    if (!run) { el.innerHTML = ''; return; }
-    const errStr = run.errors != null && run.chars
-      ? ` · ${fmtErr(run.errors, run.chars)} ошибок` : '';
-    el.innerHTML = `<div class="in-progress-banner">
-      ⏳ В процессе · уровень ${run.level ?? '—'} · ${run.chars} симв · ${run.cpm} зн/мин${errStr}
-    </div>`;
-  }
-
   function renderStats(allRuns) {
     const summaryEl = document.getElementById('stats-summary');
     const tableWrap = document.getElementById('stats-table-wrap');
 
     if (!summaryEl || !tableWrap) return;
 
-    const lastRun   = allRuns[allRuns.length - 1];
+    const lastRun    = allRuns[allRuns.length - 1];
     const inProgress = lastRun?.incomplete ? lastRun : null;
-    renderInProgress(inProgress);
 
     allRuns = allRuns.filter(r => !r.incomplete);
 
@@ -1191,7 +1191,7 @@ const Stats = (() => {
       });
     });
 
-    renderTable(allRuns);
+    renderTable(allRuns, inProgress);
   }
 
   function formatTime(seconds) {
