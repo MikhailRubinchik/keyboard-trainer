@@ -803,7 +803,7 @@ const Stats = (() => {
         return `<span class="${same ? 'attempt--same' : 'attempt--diff'}">${a === ' ' ? '␣' : a}</span>`;
       }).join(', ');
 
-      return `<div class="error-entry">
+      return `<div class="error-entry" data-attempts="${entry.attempts.length}">
         <span class="eword">${wordHtml}</span>
         <span class="error-arrow">→</span>
         <span class="error-attempts">${attemptsHtml}</span>
@@ -816,7 +816,7 @@ const Stats = (() => {
     const bigramHtml = renderBigramHtml(run.bigramStats || {});
 
     showErrorModal(title, textBlock
-      + '<p class="freq-section-title">Ошибки по словам</p>'
+      + '<p class="freq-section-title">Ошибки по словам <button id="btn-filter-frequent" class="filter-btn">Частые</button></p>'
       + perWord
       + '<div class="freq-divider"></div>'
       + '<p class="freq-section-title">Сводка по клавишам</p>'
@@ -827,6 +827,16 @@ const Stats = (() => {
       + '<div class="freq-divider"></div>'
       + '<p class="freq-section-title">Медленные биграммы (топ-30)</p>'
       + bigramHtml);
+
+    const filterBtn = document.getElementById('btn-filter-frequent');
+    if (filterBtn) {
+      filterBtn.addEventListener('click', () => {
+        const active = filterBtn.classList.toggle('filter-btn--active');
+        document.querySelectorAll('#error-detail-body .error-entry[data-attempts]').forEach(el => {
+          el.style.display = (active && parseInt(el.dataset.attempts) < 2) ? 'none' : '';
+        });
+      });
+    }
   }
 
   function buildCharts(allRuns, fromIso, toIso) {
