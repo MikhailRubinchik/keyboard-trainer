@@ -551,7 +551,6 @@ function handleChar(key) {
     junkBuffer += key;
     errorCount++;
     recordError(key);
-    playOy();
     updateWordDisplay();
     updateDisplay();
     updateFingerHint();
@@ -573,8 +572,6 @@ function handleChar(key) {
     }
     if (samePosMistakes % 3 === 0) {
       playCheckFinger();
-    } else {
-      playOy();
     }
     updateWordDisplay();
     updateDisplay();
