@@ -431,7 +431,7 @@ function resetIdleTimer() {
     utter.onend = resetIdleTimer;
     speechSynthesis.cancel();
     speechSynthesis.speak(utter);
-  }, 3000);
+  }, 4000);
 }
 
 function clearIdleTimer() {
