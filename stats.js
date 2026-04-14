@@ -833,11 +833,24 @@ const Stats = (() => {
 
     const filterBtn = document.getElementById('btn-filter-frequent');
     if (filterBtn) {
+      const entries = [...document.querySelectorAll('#error-detail-body .error-entry[data-attempts]')];
+      const parent  = entries[0]?.parentNode;
+      const originalOrder = [...entries]; // save order before any sorting
+
       filterBtn.addEventListener('click', () => {
         const active = filterBtn.classList.toggle('filter-btn--active');
-        document.querySelectorAll('#error-detail-body .error-entry[data-attempts]').forEach(el => {
-          el.style.display = (active && parseInt(el.dataset.attempts) < 2) ? 'none' : '';
-        });
+        if (active) {
+          // Sort by attempts descending, hide those with < 2
+          [...entries]
+            .sort((a, b) => parseInt(b.dataset.attempts) - parseInt(a.dataset.attempts))
+            .forEach(el => parent.appendChild(el));
+          entries.forEach(el => {
+            el.style.display = parseInt(el.dataset.attempts) < 2 ? 'none' : '';
+          });
+        } else {
+          // Restore original order and show all
+          originalOrder.forEach(el => { el.style.display = ''; parent.appendChild(el); });
+        }
       });
     }
   }
