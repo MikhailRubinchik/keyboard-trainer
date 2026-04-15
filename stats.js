@@ -1122,11 +1122,15 @@ const Stats = (() => {
       renderCharts(minIso, maxIso);
     }
 
-    const today      = todayStr();
-    const todayRuns  = allRuns.filter(r => r.date === today);
+    const today       = todayStr();
+    const lastDate    = allRuns[allRuns.length - 1]?.date;
+    const lastDayRuns = lastDate ? allRuns.filter(r => r.date === lastDate) : [];
+    const lastDayLabel = lastDate === today ? 'Сегодня'
+      : lastDate === (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toLocaleDateString('ru-RU'); })() ? 'Вчера'
+      : lastDate;
     const last15R    = last15Runs(allRuns);
     const allCpm     = allRuns.map(r => r.cpm);
-    const todCpm     = todayRuns.map(r => r.cpm);
+    const lastDayCpm = lastDayRuns.map(r => r.cpm);
     const last15Cpm  = last15R.map(r => r.cpm);
 
     summaryEl.innerHTML = `
@@ -1165,21 +1169,21 @@ const Stats = (() => {
           </div>
         </div>
       </div>` : ''}
-      ${todayRuns.length ? `
-      <div class="summary-group clickable-card" data-period="today">
-        <div class="summary-group-title">Сегодня</div>
+      ${lastDayRuns.length ? `
+      <div class="summary-group clickable-card" data-period="lastday">
+        <div class="summary-group-title">${lastDayLabel}</div>
         <div class="summary-row">
           <div class="summary-item">
             <span class="summary-label">Макс. скорость</span>
-            <span class="summary-value">${max(todCpm)} зн/мин</span>
+            <span class="summary-value">${max(lastDayCpm)} зн/мин</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">Средняя скорость</span>
-            <span class="summary-value">${avg(todCpm)} зн/мин</span>
+            <span class="summary-value">${avg(lastDayCpm)} зн/мин</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">Заездов</span>
-            <span class="summary-value">${todayRuns.length}</span>
+            <span class="summary-value">${lastDayRuns.length}</span>
           </div>
         </div>
       </div>` : ''}
@@ -1190,9 +1194,9 @@ const Stats = (() => {
       card.addEventListener('click', () => {
         const period = card.dataset.period;
         let subset, label;
-        if (period === 'all')    { subset = allRuns;   label = 'За всё время'; }
-        if (period === 'last15') { subset = last15R;   label = `Последние ${last15R.length}`; }
-        if (period === 'today')  { subset = todayRuns; label = 'Сегодня'; }
+        if (period === 'all')     { subset = allRuns;      label = 'За всё время'; }
+        if (period === 'last15')  { subset = last15R;      label = `Последние ${last15R.length}`; }
+        if (period === 'lastday') { subset = lastDayRuns;  label = lastDayLabel; }
         showErrorModal(label, buildDetailHtml(subset));
       });
     });
