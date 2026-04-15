@@ -619,7 +619,13 @@ const Stats = (() => {
       const reversed = [...allRuns].reverse();
       let runIdx = 0;
       tableWrap.querySelectorAll('tbody tr').forEach(tr => {
-        if (tr.classList.contains('row--in-progress')) return;
+        if (tr.classList.contains('row--in-progress')) {
+          if (inProgress) {
+            tr.classList.add('clickable-row');
+            tr.addEventListener('click', () => showRunDetail(inProgress));
+          }
+          return;
+        }
         const idx = runIdx++;
         tr.classList.add('clickable-row');
         tr.addEventListener('click', () => showRunDetail(reversed[idx]));
