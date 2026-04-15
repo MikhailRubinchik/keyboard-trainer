@@ -777,8 +777,6 @@ button:active  { transform: scale(0.97); }
 }
 
 .attempt--next {
-  outline: 1px solid currentColor;
-  border-radius: 2px;
   font-size: 2em;
   line-height: 1;
 }
