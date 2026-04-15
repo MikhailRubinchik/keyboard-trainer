@@ -282,8 +282,9 @@ const Stats = (() => {
     });
 
     document.addEventListener('keydown', (e) => {
-      if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && e.code === 'KeyD') { e.preventDefault(); openSyncPanel('daughter'); }
-      if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && e.code === 'KeyP') { e.preventDefault(); openSyncPanel('dad'); }
+      const onHomeScreen = document.getElementById('screen-list')?.classList.contains('active');
+      if (onHomeScreen && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && e.code === 'KeyD') { e.preventDefault(); openSyncPanel('daughter'); }
+      if (onHomeScreen && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && e.code === 'KeyP') { e.preventDefault(); openSyncPanel('dad'); }
       if (e.key === 'Escape') closeSyncPanel();
     });
 
