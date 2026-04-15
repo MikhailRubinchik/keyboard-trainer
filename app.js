@@ -49,7 +49,8 @@ const LS_LEVEL_KEY = 'klavagonki_level';
 const LEVEL_SIZES = [50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000];
 
 // Min avg cpm required to move TO level n (index 0 = threshold for level 2)
-const LEVEL_THRESHOLDS = [10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200];
+// Formula: LEVEL_SIZES[n-1] / 20 min target, rounded
+const LEVEL_THRESHOLDS = [3, 5, 8, 10, 13, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95];
 
 let currentLevel   = 1;
 let lastStartIndex = -1;
