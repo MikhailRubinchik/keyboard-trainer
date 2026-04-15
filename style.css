@@ -776,6 +776,13 @@ button:active  { transform: scale(0.97); }
   color: #fff;
 }
 
+.attempt--next {
+  background: #0e7490;
+  border-radius: 2px;
+  padding: 0 3px;
+  color: #fff;
+}
+
 /* ── Record / repeat badges ──────────────────────────────── */
 
 .run-badge {

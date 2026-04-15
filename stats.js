@@ -745,11 +745,14 @@ const Stats = (() => {
     for (const run of runsArray) {
       if (!run.errorsDetail) continue;
       for (const entry of run.errorsDetail) {
-        if (!freq[entry.expected]) freq[entry.expected] = { total: 0, attempts: {} };
+        if (!freq[entry.expected]) freq[entry.expected] = { total: 0, attempts: {}, nextChars: new Set() };
         const ef = freq[entry.expected];
+        const next1 = entry.word?.[entry.charInWord + 1];
+        const next2 = entry.word?.[entry.charInWord + 2];
         for (const a of entry.attempts) {
           ef.total++;
           ef.attempts[a] = (ef.attempts[a] || 0) + 1;
+          if (a === next1 || a === next2) ef.nextChars.add(a);
         }
       }
     }
@@ -772,8 +775,10 @@ const Stats = (() => {
         .map(([ch, cnt]) => {
           const af = finger(ch);
           const same = ef && af && af === ef;
+          const next = info.nextChars?.has(ch);
           const display = ch === ' ' ? '␣' : ch;
-          return `<span class="${same ? 'attempt--same' : 'attempt--diff'}">${display}</span>&nbsp;(${cnt})`;
+          const cls = next ? 'attempt--next' : same ? 'attempt--same' : 'attempt--diff';
+          return `<span class="${cls}">${display}</span>&nbsp;(${cnt})`;
         }).join(', ');
       return `<div class="error-entry">
         <span class="eword"><b>${keyLabel}</b> <span class="freq-total">(${info.total})</span></span>
@@ -848,12 +853,16 @@ const Stats = (() => {
           : `<span>${ch}</span>`
       ).join('');
 
-      const ef = finger(entry.expected);
+      const ef    = finger(entry.expected);
+      const next1 = entry.word[entry.charInWord + 1];
+      const next2 = entry.word[entry.charInWord + 2];
       const unique = [...new Set(entry.attempts)];
       const attemptsHtml = unique.map(a => {
-        const af = finger(a);
-        const same = ef && af && af === ef;
-        return `<span class="${same ? 'attempt--same' : 'attempt--diff'}">${a === ' ' ? '␣' : a}</span>`;
+        const af   = finger(a);
+        const next = a === next1 || a === next2;
+        const same = !next && ef && af && af === ef;
+        const cls  = next ? 'attempt--next' : same ? 'attempt--same' : 'attempt--diff';
+        return `<span class="${cls}">${a === ' ' ? '␣' : a}</span>`;
       }).join(', ');
 
       return `<div class="error-entry" data-attempts="${entry.attempts.length}">
