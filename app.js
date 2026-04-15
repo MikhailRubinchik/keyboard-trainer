@@ -600,15 +600,40 @@ function handleChar(key) {
   if (cursor - lastCheckpointCursor >= 30) {
     lastCheckpointCursor = cursor;
     const liveCpmNow = elapsedSeconds > 0 ? Math.round(cursor / (elapsedSeconds / 60)) : 0;
+
+    const cpErrorsDetail = Object.entries(runErrors)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([posStr, info]) => {
+        const pos = Number(posStr);
+        if (chars[pos] === ' ') return { word: '␣', charInWord: 0, expected: ' ', attempts: info.attempts };
+        let start = pos; while (start > 0 && chars[start - 1] !== ' ') start--;
+        let end   = pos; while (end < chars.length && chars[end] !== ' ') end++;
+        return { word: chars.slice(start, end).join(''), charInWord: pos - start, expected: info.expected, attempts: [...new Set(info.attempts)] };
+      });
+    const cpBigramStats = {};
+    for (const [bigram, times] of Object.entries(runBigramRaw)) {
+      const sum = times.reduce((s, t) => s + t, 0);
+      cpBigramStats[bigram] = { avg: Math.round(sum / times.length), count: times.length };
+    }
+    const cpErrorPositions = {};
+    for (const [pos, info] of Object.entries(runErrors)) {
+      const unique = [...new Set(info.attempts)];
+      if (unique.length) cpErrorPositions[Number(pos)] = unique;
+    }
+
     Stats.saveRun({
-      level:      currentLevel,
-      chars:      cursor,
-      totalChars: chars.length,
-      seconds:    elapsedSeconds,
-      cpm:        liveCpmNow,
-      errors:     errorCount,
-      text:       chars.slice(0, cursor).join(''),
-      incomplete: true,
+      level:          currentLevel,
+      chars:          cursor,
+      totalChars:     chars.length,
+      seconds:        elapsedSeconds,
+      cpm:            liveCpmNow,
+      errors:         errorCount,
+      errorsDetail:   cpErrorsDetail,
+      intervalMap:    runIntervalMap,
+      bigramStats:    cpBigramStats,
+      text:           chars.slice(0, cursor).join(''),
+      errorPositions: cpErrorPositions,
+      incomplete:     true,
     });
   }
 
