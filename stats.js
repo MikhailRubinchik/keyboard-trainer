@@ -773,11 +773,11 @@ const Stats = (() => {
       const attemptsStr = Object.entries(info.attempts)
         .sort(([, a], [, b]) => b - a)
         .map(([ch, cnt]) => {
-          const af = finger(ch);
+          const af   = finger(ch);
           const same = ef && af && af === ef;
           const next = info.nextChars?.has(ch);
           const display = ch === ' ' ? '␣' : ch;
-          const cls = next ? 'attempt--next' : same ? 'attempt--same' : 'attempt--diff';
+          const cls = (same ? 'attempt--same' : 'attempt--diff') + (next ? ' attempt--next' : '');
           return `<span class="${cls}">${display}</span>&nbsp;(${cnt})`;
         }).join(', ');
       return `<div class="error-entry">
@@ -859,9 +859,9 @@ const Stats = (() => {
       const unique = [...new Set(entry.attempts)];
       const attemptsHtml = unique.map(a => {
         const af   = finger(a);
+        const same = ef && af && af === ef;
         const next = a === next1 || a === next2;
-        const same = !next && ef && af && af === ef;
-        const cls  = next ? 'attempt--next' : same ? 'attempt--same' : 'attempt--diff';
+        const cls  = (same ? 'attempt--same' : 'attempt--diff') + (next ? ' attempt--next' : '');
         return `<span class="${cls}">${a === ' ' ? '␣' : a}</span>`;
       }).join(', ');
 
