@@ -42,8 +42,28 @@ const FINGER_IMAGE = {
 
 // ── Levels ───────────────────────────────────────────────────
 
-const LEVEL_COUNT  = 23;
-const LS_LEVEL_KEY = 'klavagonki_level';
+const LEVEL_COUNT      = 23;
+const LS_LEVEL_KEY     = 'klavagonki_level';
+const LS_SHOW_FINGER   = 'klavagonki_show_finger';
+
+let showFinger = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
+
+function applyFingerSetting() {
+  const visible = showFinger;
+  fingerHint.style.display = visible ? '' : 'none';
+  document.querySelector('.hand-image-row').style.display = visible ? '' : 'none';
+}
+
+function initFingerSetting() {
+  const cb = document.getElementById('setting-show-finger');
+  if (!cb) return;
+  cb.checked = showFinger;
+  cb.addEventListener('change', () => {
+    showFinger = cb.checked;
+    localStorage.setItem(LS_SHOW_FINGER, showFinger);
+    applyFingerSetting();
+  });
+}
 
 // Character count for each level (1-indexed)
 const LEVEL_SIZES = [50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000];
@@ -168,6 +188,7 @@ function showScreen(name) {
 // ── Start exercise ────────────────────────────────────────────
 
 function startExercise(level) {
+  applyFingerSetting();
   const result = getRandomExercise(LEVEL_SIZES[level - 1], lastStartIndex);
   lastStartIndex = result.startIndex;
 
@@ -882,6 +903,7 @@ function updateLevelProgressHint() {
 
 async function init() {
   loadLevel();
+  initFingerSetting();
 
   // Level buttons on home screen
   renderLevelButtons('level-buttons-main', (n) => {
