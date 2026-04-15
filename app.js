@@ -409,6 +409,17 @@ function stopTimer() {
 // on wrong characters.
 
 wordInput.addEventListener('keydown', (e) => {
+  const wordErase = e.key === 'Backspace' && (e.ctrlKey || e.altKey) && !e.metaKey;
+  if (wordErase) {
+    e.preventDefault();
+    resetIdleTimer();
+    junkBuffer = '';
+    updateWordDisplay();
+    updateDisplay();
+    updateFingerHint();
+    return;
+  }
+
   if (e.metaKey || e.ctrlKey || e.altKey) return;
 
   if (e.key === 'Backspace') {
