@@ -414,6 +414,9 @@ wordInput.addEventListener('keydown', (e) => {
     e.preventDefault();
     resetIdleTimer();
     junkBuffer = '';
+    for (let i = wordStart; i < cursor; i++) charStates[i] = 'pending';
+    cursor    = wordStart;
+    wordSoFar = '';
     updateWordDisplay();
     updateDisplay();
     updateFingerHint();
