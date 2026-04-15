@@ -777,7 +777,8 @@ button:active  { transform: scale(0.97); }
 }
 
 .attempt--next {
-  font-style: italic;
+  outline: 1px solid currentColor;
+  border-radius: 2px;
 }
 
 /* ── Record / repeat badges ──────────────────────────────── */
