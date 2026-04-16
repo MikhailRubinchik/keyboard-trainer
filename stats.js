@@ -823,25 +823,35 @@ const Stats = (() => {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  function buildTextWithErrorsHtml(text, errorPositions) {
-    return '<div class="run-text-wrap">'
-      + text.split('').map((ch, i) => {
-          const errs = errorPositions[i];
-          const disp = ch === ' ' ? '\u00A0' : escHtml(ch);
-          if (!errs || !errs.length) return `<span class="tx-ok">${disp}</span>`;
-          const dels = errs.map(e => `<del class="tx-err">${e === ' ' ? '␣' : escHtml(e)}</del>`).join('');
-          return `<span class="tx-wrong">${dels}<span class="tx-correct">${disp}</span></span>`;
-        }).join('')
-      + '</div>';
+  function buildTextWithErrorsHtml(text, errorPositions, stopAt) {
+    const chars = text.split('');
+    const parts = chars.map((ch, i) => {
+      const disp = ch === ' ' ? '\u00A0' : escHtml(ch);
+      if (stopAt !== undefined && i >= stopAt) {
+        return `<span class="tx-untyped">${disp}</span>`;
+      }
+      const errs = errorPositions[i];
+      if (!errs || !errs.length) return `<span class="tx-ok">${disp}</span>`;
+      const dels = errs.map(e => `<del class="tx-err">${e === ' ' ? '␣' : escHtml(e)}</del>`).join('');
+      return `<span class="tx-wrong">${dels}<span class="tx-correct">${disp}</span></span>`;
+    });
+    if (stopAt !== undefined && stopAt <= chars.length) {
+      parts.splice(stopAt, 0, '<span class="tx-stop-marker"></span>');
+    }
+    return '<div class="run-text-wrap">' + parts.join('') + '</div>';
   }
 
   function showRunDetail(run) {
     const finger = (ch) => (typeof getFinger === 'function' ? getFinger(ch) : '');
     const title  = `${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`;
 
+    // For incomplete runs where full text is stored, mark the stop position
+    const stopAt = (run.incomplete && run.text && run.text.length > run.chars)
+      ? run.chars : undefined;
+
     const textBlock = run.text
       ? '<p class="freq-section-title">Текст упражнения</p>'
-      + buildTextWithErrorsHtml(run.text, run.errorPositions || {})
+      + buildTextWithErrorsHtml(run.text, run.errorPositions || {}, stopAt)
       + '<div class="freq-divider"></div>'
       : '';
 

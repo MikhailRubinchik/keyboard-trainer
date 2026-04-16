@@ -673,7 +673,7 @@ function handleChar(key) {
       errorsDetail:   cpErrorsDetail,
       intervalMap:    runIntervalMap,
       bigramStats:    cpBigramStats,
-      text:           chars.slice(0, cursor).join(''),
+      text:           chars.join(''),
       errorPositions: cpErrorPositions,
       incomplete:     true,
     });

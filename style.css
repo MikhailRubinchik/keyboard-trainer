@@ -881,6 +881,16 @@ button:active  { transform: scale(0.97); }
 .tx-ok      { color: var(--text-main); }
 .tx-wrong   { }
 .tx-correct { color: var(--text-main); }
+.tx-untyped { color: #bbb; }
+.tx-stop-marker {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: #f0a500;
+  vertical-align: text-bottom;
+  margin: 0 1px;
+  border-radius: 1px;
+}
 .tx-err {
   color: #ff3333;
   text-decoration: line-through;
