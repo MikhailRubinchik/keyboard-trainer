@@ -192,7 +192,7 @@ function startExercise(level) {
   const result = getRandomExercise(LEVEL_SIZES[level - 1], lastStartIndex);
   lastStartIndex = result.startIndex;
 
-  chars      = [...result.text];
+  chars      = [...result.text.replace(/[«»]/g, '"')];
   charStates = new Array(chars.length).fill('pending');
   cursor     = 0;
   wordStart  = 0;
