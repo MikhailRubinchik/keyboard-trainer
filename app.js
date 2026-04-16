@@ -564,14 +564,7 @@ function playOy() {
   speechSynthesis.speak(utter);
 }
 
-function playCheckFinger() {
-  if (!window.speechSynthesis) return;
-  const utter = new SpeechSynthesisUtterance('Проверь палец');
-  utter.lang = 'ru-RU';
-  utter.rate = 1.0;
-  speechSynthesis.cancel();
-  speechSynthesis.speak(utter);
-}
+function playCheckFinger() { playOy(); }
 
 // ── Error detail tracking ─────────────────────────────────────
 
