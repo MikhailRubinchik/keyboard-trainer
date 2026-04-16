@@ -389,15 +389,24 @@ const Stats = (() => {
     let minDayMaxErr = Infinity;
 
     // Color flags + record labels — computed on oldest-first array
+    const NEW_RULES_START = new Date(2026, 3, 14); // 14 April 2026
+    function parseRowDate(s) {
+      const [d, m, y] = s.split('.').map(Number);
+      return new Date(y, m - 1, d);
+    }
+    function isYellowDay(r) {
+      const threshold = parseRowDate(r.date) >= NEW_RULES_START ? 2 : 5;
+      return r.count >= threshold;
+    }
     rows.forEach((row, i) => {
-      const yellow = row.count >= 5;
+      const yellow = isYellowDay(row);
       const green  = yellow && i >= 4 &&
-        rows[i - 1].count >= 5 &&
-        rows[i - 2].count >= 5 &&
-        rows[i - 3].count >= 5 &&
-        rows[i - 4].count >= 5;
+        isYellowDay(rows[i - 1]) &&
+        isYellowDay(rows[i - 2]) &&
+        isYellowDay(rows[i - 3]) &&
+        isYellowDay(rows[i - 4]);
       row.dateClass  = green ? 'cell--green' : yellow ? 'cell--yellow' : '';
-      row.countClass = row.count >= 10 ? 'cell--green' : '';
+      row.countClass = row.count >= 5 ? 'cell--green' : '';
 
       if (row.avgCpm !== null) {
         const wPct = errPct(row.worstErrRun);
