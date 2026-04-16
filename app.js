@@ -466,6 +466,7 @@ wordInput.addEventListener('keydown', (e) => {
 
 function resetIdleTimer() {
   clearTimeout(idleTimer);
+  if (window.speechSynthesis) speechSynthesis.cancel();
   if (!startTime || wordInput.disabled) return;
   idleTimer = setTimeout(() => {
     if (!window.speechSynthesis) return;
