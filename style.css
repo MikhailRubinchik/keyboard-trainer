@@ -141,6 +141,12 @@ html, body {
   margin-bottom: 32px;
 }
 
+.settings-row--exercise {
+  margin-top: 8px;
+  margin-bottom: 0;
+  text-align: center;
+}
+
 .setting-toggle {
   display: flex;
   align-items: center;
