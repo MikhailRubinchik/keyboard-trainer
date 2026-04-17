@@ -665,7 +665,7 @@ function handleChar(key) {
 
   cursor++;
 
-  if (cursor - lastCheckpointCursor >= 10) {
+  if (cursor - lastCheckpointCursor >= 10 && cursor < chars.length) {
     lastCheckpointCursor = cursor;
     const liveCpmNow = elapsedSeconds > 0 ? Math.round(cursor / (elapsedSeconds / 60)) : 0;
 
