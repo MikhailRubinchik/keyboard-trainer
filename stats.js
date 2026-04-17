@@ -289,9 +289,12 @@ const Stats = (() => {
     });
 
     const btnRefresh = document.getElementById('btn-refresh-gist');
+    const btnPush    = document.getElementById('btn-push-gist');
     const cfg0 = getSyncConfig();
     if (cfg0.gistId && !cfg0.token) btnRefresh.classList.remove('hidden');
+    if (cfg0.gistId &&  cfg0.token) btnPush.classList.remove('hidden');
     btnRefresh.addEventListener('click', () => pullFromGist());
+    btnPush.addEventListener('click', () => pushToGist());
 
     runs = lsRead();
     renderStats(runs);
