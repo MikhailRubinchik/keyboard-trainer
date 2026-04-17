@@ -1057,9 +1057,11 @@ const Stats = (() => {
     if (!summaryEl || !tableWrap) return;
 
     const lastRun    = allRuns[allRuns.length - 1];
-    const inProgress = lastRun?.incomplete ? lastRun : null;
+    // A run is truly incomplete only if it hasn't reached totalChars
+    const trulyIncomplete = r => r.incomplete && (!r.totalChars || r.chars < r.totalChars);
+    const inProgress = lastRun && trulyIncomplete(lastRun) ? lastRun : null;
 
-    allRuns = allRuns.filter(r => !r.incomplete);
+    allRuns = allRuns.filter(r => !trulyIncomplete(r));
 
     const chartsEl = document.getElementById('stats-charts');
 
