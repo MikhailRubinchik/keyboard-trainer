@@ -553,7 +553,7 @@ const Stats = (() => {
         <td>${inProgress.chars} (${pct})</td>
         <td>${fmtErr(inProgress.errors, inProgress.chars)}</td>
         <td>${formatTime(inProgress.seconds)}</td>
-        <td>${inProgress.cpm} зн/мин <button class="btn-finalize-run" title="Пометить как завершённый">✓</button></td>
+        <td>${inProgress.cpm} зн/мин</td>
       </tr>`;
     })() : '';
 
@@ -636,19 +636,6 @@ const Stats = (() => {
           if (inProgress) {
             tr.classList.add('clickable-row');
             tr.addEventListener('click', () => showRunDetail(inProgress));
-            const btnFinalize = tr.querySelector('.btn-finalize-run');
-            if (btnFinalize) {
-              btnFinalize.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const idx = runs.indexOf(inProgress);
-                if (idx !== -1) {
-                  runs[idx] = { ...runs[idx], incomplete: false };
-                  lsWrite(runs);
-                  pushToGist();
-                  renderStats(runs);
-                }
-              });
-            }
           }
           return;
         }

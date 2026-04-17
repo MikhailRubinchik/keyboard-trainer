@@ -860,18 +860,6 @@ button:active  { transform: scale(0.97); }
   font-style: italic;
 }
 
-.btn-finalize-run {
-  margin-left: 6px;
-  padding: 1px 6px;
-  font-size: 0.8rem;
-  background: #d1fae5;
-  color: #065f46;
-  border: 1px solid #6ee7b7;
-  border-radius: 4px;
-  cursor: pointer;
-  font-style: normal;
-}
-
 .run-badge-sm {
   font-size: 0.68rem;
   font-weight: 700;
