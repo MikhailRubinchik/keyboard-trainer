@@ -187,7 +187,22 @@ function showScreen(name) {
 
 // ── Start exercise ────────────────────────────────────────────
 
+function restoreFingerSetting() {
+  showFinger = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
+  const cb = document.getElementById('setting-show-finger');
+  if (cb) { cb.disabled = false; cb.checked = showFinger; }
+}
+
 function startExercise(level) {
+  const isFirstToday = Stats.getTodayRunCount() === 0;
+  const cb = document.getElementById('setting-show-finger');
+  if (isFirstToday) {
+    showFinger = false;
+    if (cb) { cb.checked = false; cb.disabled = true; }
+  } else {
+    showFinger = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
+    if (cb) { cb.disabled = false; cb.checked = showFinger; }
+  }
   applyFingerSetting();
   const result = getRandomExercise(LEVEL_SIZES[level - 1], lastStartIndex);
   lastStartIndex = result.startIndex;
@@ -849,6 +864,7 @@ btnBack.addEventListener('click', () => {
   clearIdleTimer();
   resultOverlay.classList.add('hidden');
   wordInput.disabled = true;
+  restoreFingerSetting();
   showScreen('list');
 });
 
@@ -858,6 +874,7 @@ function doNext() {
     isAbortedRun = false;
     document.querySelector('.result-title').textContent = 'Заезд завершён!';
     btnNext.textContent = 'Следующий →';
+    restoreFingerSetting();
     showScreen('list');
   } else {
     startExercise(currentLevel);
