@@ -840,6 +840,11 @@ button:active  { transform: scale(0.97); }
   color: #92400e;
 }
 
+.run-badge--nofinger {
+  background: #f0f9ff;
+  color: #0369a1;
+}
+
 .row--lazy td {
   opacity: 0.55;
 }

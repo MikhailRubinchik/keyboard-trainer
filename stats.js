@@ -319,6 +319,7 @@ const Stats = (() => {
       lazy:           record.lazy           || false,
       incomplete:     record.incomplete     || false,
       totalChars:     record.totalChars     || null,
+      noFinger:       record.noFinger       || false,
     };
 
     // Replace last entry if it was a checkpoint (incomplete)
@@ -523,11 +524,12 @@ const Stats = (() => {
       const netSecs  = Math.max(0, r.seconds - idle);
       const lazyBadge = r.lazy ? ' <span class="run-badge run-badge--lazy">лень</span>' : '';
       const timeTip  = idle > 0 ? ` title="Реальное: ${formatTime(r.seconds)}, простой: ${formatTime(idle)}"` : '';
-      const lvlBadge = lc != null ? ` <span class="run-badge run-badge--level">→${lc}</span>` : '';
+      const lvlBadge      = lc != null ? ` <span class="run-badge run-badge--level">→${lc}</span>` : '';
+      const noFingerBadge = r.noFinger ? ' <span class="run-badge run-badge--nofinger" title="Без подсказки пальца">без 👆</span>' : '';
       return `
       <tr${r.lazy ? ' class="row--lazy"' : ''}>
         <td class="run-num">${i + 1}</td>
-        <td>${r.date}</td>
+        <td>${r.date}${noFingerBadge}</td>
         <td>${r.time}</td>
         <td>${r.level ?? r.exercise ?? '—'}${lvlBadge}</td>
         <td>${r.chars}</td>

@@ -153,6 +153,7 @@ let lastCheckpointCursor = 0;
 let wordStart  = 0;
 let wordSoFar  = '';
 let junkBuffer = '';
+let noFinger   = false;  // true when finger hint was disabled for this run
 
 let lineStartChars = [];  // char index where each line starts
 let lineOffsetTops = [];  // offsetTop of first span in each line
@@ -194,9 +195,9 @@ function restoreFingerSetting() {
 }
 
 function startExercise(level) {
-  const isFirstToday = Stats.getTodayRunCount() === 0;
+  noFinger = Stats.getTodayRunCount() === 0;
   const cb = document.getElementById('setting-show-finger');
-  if (isFirstToday) {
+  if (noFinger) {
     showFinger = false;
     if (cb) { cb.checked = false; cb.disabled = true; }
   } else {
@@ -684,6 +685,7 @@ function handleChar(key) {
       bigramStats:    cpBigramStats,
       text:           chars.join(''),
       errorPositions: cpErrorPositions,
+      noFinger:       noFinger,
       incomplete:     true,
     });
   }
@@ -833,6 +835,7 @@ async function finishRun() {
     errorPositions,
     idleSeconds,
     lazy,
+    noFinger,
   });
 
   const todayCount = Stats.getTodayRunCount();
