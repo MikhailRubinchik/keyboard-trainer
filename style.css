@@ -493,6 +493,11 @@ button:active  { transform: scale(0.97); }
   color: var(--text-dim);
 }
 
+.storage-size {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
 .chart-date-range {
   display: flex;
   align-items: center;

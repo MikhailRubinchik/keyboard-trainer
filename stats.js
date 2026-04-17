@@ -320,6 +320,7 @@ const Stats = (() => {
       incomplete:     record.incomplete     || false,
       totalChars:     record.totalChars     || null,
       noFinger:       record.noFinger       || false,
+      keystrokeLog:   record.keystrokeLog   || [],
     };
 
     // Replace last entry if it was a checkpoint (incomplete)
@@ -1242,6 +1243,14 @@ const Stats = (() => {
     });
 
     renderTable(allRuns, inProgress);
+
+    const sizeEl = document.getElementById('storage-size');
+    if (sizeEl) {
+      const raw = localStorage.getItem('klavagonki_stats') || '';
+      const kb  = Math.round(raw.length * 2 / 1024);
+      const pct = Math.round(raw.length * 2 / (5 * 1024 * 1024) * 100);
+      sizeEl.textContent = `${kb} КБ / ~5 МБ (${pct}%)`;
+    }
   }
 
   function formatTime(seconds) {

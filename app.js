@@ -175,6 +175,9 @@ let lastCorrectTime = null;  // timestamp of last correct keypress
 let lastCorrectChar = null;  // char typed at lastCorrectTime
 let runBigramRaw    = {};    // bigram → [deltaMs, ...]
 
+let keystrokeLog     = [];   // [[key, deltaMs], ...] full keystroke sequence
+let lastKeystrokeTime = null;
+
 let runIdleMs        = 0;     // accumulated idle time (gaps > 5s) in ms
 let isAbortedRun     = false; // true when auto-stopped due to idle
 let idleAbandonTimer = null;  // fires abandonRun() if no key pressed long enough
@@ -221,13 +224,15 @@ function startExercise(level) {
   lastMistakePos  = -1;
   runErrors       = {};
   lastKeyTime     = null;
-  runIntervalMap  = {};
-  lastCorrectTime = null;
-  lastCorrectChar = null;
-  runBigramRaw    = {};
-  runIdleMs       = 0;
-  isAbortedRun    = false;
+  runIntervalMap   = {};
+  lastCorrectTime  = null;
+  lastCorrectChar  = null;
+  runBigramRaw     = {};
+  runIdleMs        = 0;
+  isAbortedRun     = false;
   lastCheckpointCursor = 0;
+  keystrokeLog     = [];
+  lastKeystrokeTime = null;
   clearTimeout(idleAbandonTimer);
   idleAbandonTimer = null;
 
@@ -425,6 +430,17 @@ function stopTimer() {
 // on wrong characters.
 
 wordInput.addEventListener('keydown', (e) => {
+  // Record keystroke for replay log
+  if (!wordInput.disabled) {
+    const now = Date.now();
+    const delta = lastKeystrokeTime !== null ? now - lastKeystrokeTime : 0;
+    const k = (e.ctrlKey || e.altKey) && e.key === 'Backspace' ? '⌫⌫'
+            : e.key === 'Backspace' ? '⌫'
+            : e.key.length === 1 ? e.key
+            : null;
+    if (k !== null) { keystrokeLog.push([k, delta]); lastKeystrokeTime = now; }
+  }
+
   const wordErase = e.key === 'Backspace' && (e.ctrlKey || e.altKey) && !e.metaKey;
   if (wordErase) {
     e.preventDefault();
@@ -686,6 +702,7 @@ function handleChar(key) {
       text:           chars.join(''),
       errorPositions: cpErrorPositions,
       noFinger:       noFinger,
+      keystrokeLog:   keystrokeLog.slice(),
       incomplete:     true,
     });
   }
@@ -836,6 +853,7 @@ async function finishRun() {
     idleSeconds,
     lazy,
     noFinger,
+    keystrokeLog,
   });
 
   const todayCount = Stats.getTodayRunCount();
