@@ -11,6 +11,7 @@ const Stats = (() => {
   let chartFromIso = '';
   let chartToIso   = '';
   let renderChartsNow = () => {}; // set after first renderStats
+  let replayState = null;
 
   // ── Utilities ──────────────────────────────────────────────
 
@@ -111,13 +112,22 @@ const Stats = (() => {
   async function pushToGist() {
     const { token, gistId } = getSyncConfig();
     if (!token || !gistId) return;
+    const btn = document.getElementById('btn-push-gist');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Отправляю…'; }
     try {
+      const ver = typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'unknown';
       await gistFetch('PATCH', gistId, token, {
+        description: `Клавогонки — статистика (${ver})`,
         files: { [GIST_FILE]: { content: serializeRuns(runs) } },
       });
+      const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setSyncStatus('↑ ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
+      setRefreshStatus(`отправлено в ${timeStr}`);
     } catch (e) {
       setSyncStatus('↑ Ошибка: ' + e.message, true);
+      setRefreshStatus('ошибка отправки');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '↑ Отправить'; }
     }
   }
 
@@ -295,6 +305,46 @@ const Stats = (() => {
     if (cfg0.gistId &&  cfg0.token) btnPush.classList.remove('hidden');
     btnRefresh.addEventListener('click', () => pullFromGist());
     btnPush.addEventListener('click', () => pushToGist());
+
+    // Replay overlay
+    const replayOverlay = document.getElementById('replay-overlay');
+    if (replayOverlay) {
+      function closeReplay() {
+        if (replayState?.timeoutId) clearTimeout(replayState.timeoutId);
+        replayState = null;
+        replayOverlay.classList.add('hidden');
+      }
+      document.getElementById('btn-close-replay').addEventListener('click', closeReplay);
+      replayOverlay.addEventListener('click', e => { if (e.target === replayOverlay) closeReplay(); });
+
+      document.getElementById('btn-replay-playpause').addEventListener('click', () => {
+        if (!replayState) return;
+        replayState.paused = !replayState.paused;
+        const btn = document.getElementById('btn-replay-playpause');
+        if (replayState.paused) {
+          clearTimeout(replayState.timeoutId);
+          btn.textContent = '▶';
+        } else {
+          btn.textContent = '⏸';
+          scheduleNextReplayKey();
+        }
+      });
+
+      document.getElementById('btn-replay-restart').addEventListener('click', () => {
+        if (!replayState) return;
+        document.getElementById('btn-replay-playpause').textContent = '⏸';
+        startReplay(replayState.run, replayState.speed);
+      });
+
+      replayOverlay.querySelectorAll('.btn-speed').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!replayState) return;
+          replayState.speed = parseFloat(btn.dataset.speed);
+          replayOverlay.querySelectorAll('.btn-speed').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+    }
 
     runs = lsRead();
     renderStats(runs);
@@ -508,6 +558,150 @@ const Stats = (() => {
     return '';
   }
 
+  // ── Replay engine ──────────────────────────────────────────
+
+  function showReplay(run) {
+    if (!run.keystrokeLog || !run.keystrokeLog.length || !run.text) return;
+    const overlay = document.getElementById('replay-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('hidden');
+    document.getElementById('replay-title').textContent =
+      `${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`;
+    overlay.querySelectorAll('.btn-speed').forEach(b => {
+      b.classList.toggle('active', parseFloat(b.dataset.speed) === 1);
+    });
+    const ppBtn = document.getElementById('btn-replay-playpause');
+    if (ppBtn) ppBtn.textContent = '⏸';
+    startReplay(run, 1);
+  }
+
+  function startReplay(run, speed) {
+    if (replayState?.timeoutId) clearTimeout(replayState.timeoutId);
+    const chars = run.text.split('');
+    replayState = {
+      run,
+      chars,
+      charStates: new Array(chars.length).fill('pending'),
+      cursor: 0,
+      wordStart: 0,
+      wordSoFar: '',
+      junkBuffer: '',
+      logIdx: 0,
+      speed: speed || 1,
+      paused: false,
+      timeoutId: null,
+    };
+    renderReplayText();
+    renderReplayWord();
+    updateReplayProgress();
+    scheduleNextReplayKey();
+  }
+
+  function scheduleNextReplayKey() {
+    if (!replayState || replayState.paused) return;
+    const log = replayState.run.keystrokeLog;
+    if (replayState.logIdx >= log.length) {
+      updateReplayProgress();
+      return;
+    }
+    const [, deltaMs] = log[replayState.logIdx];
+    const delay = Math.max(5, deltaMs / replayState.speed);
+    replayState.timeoutId = setTimeout(() => {
+      if (!replayState || replayState.paused) return;
+      const [key] = replayState.run.keystrokeLog[replayState.logIdx];
+      applyReplayKey(key);
+      replayState.logIdx++;
+      updateReplayProgress();
+      scheduleNextReplayKey();
+    }, delay);
+  }
+
+  function applyReplayKey(key) {
+    const s = replayState;
+    if (key === '⌫⌫') {
+      if (s.junkBuffer.length > 0) {
+        const sp = s.junkBuffer.lastIndexOf(' ');
+        s.junkBuffer = sp >= 0 ? s.junkBuffer.slice(0, sp) : '';
+      } else {
+        const n = s.wordSoFar.length;
+        for (let i = s.cursor - n; i < s.cursor; i++) s.charStates[i] = 'pending';
+        s.cursor -= n;
+        s.wordSoFar = '';
+      }
+    } else if (key === '⌫') {
+      if (s.junkBuffer.length > 0) {
+        s.junkBuffer = s.junkBuffer.slice(0, -1);
+      } else if (s.cursor > s.wordStart) {
+        s.cursor--;
+        s.charStates[s.cursor] = 'pending';
+        s.wordSoFar = s.wordSoFar.slice(0, -1);
+      }
+    } else {
+      if (s.junkBuffer.length > 0) {
+        s.junkBuffer += key;
+      } else {
+        const expected = s.chars[s.cursor];
+        if (key !== expected) {
+          s.junkBuffer += key;
+        } else {
+          s.charStates[s.cursor] = 'correct';
+          s.cursor++;
+          if (expected === ' ') {
+            s.wordStart = s.cursor;
+            s.wordSoFar = '';
+          } else {
+            s.wordSoFar += expected;
+          }
+        }
+      }
+    }
+    renderReplayText();
+    renderReplayWord();
+  }
+
+  function renderReplayText() {
+    const el = document.getElementById('replay-text-display');
+    if (!el || !replayState) return;
+    const { chars, charStates, cursor, junkBuffer } = replayState;
+    el.innerHTML = chars.map((ch, i) => {
+      const d = ch === ' ' ? '\u00A0'
+              : ch.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      let cls;
+      if (i === cursor) {
+        cls = junkBuffer.length > 0 ? 'char--current-error' : 'char--current-ok';
+      } else if (charStates[i] === 'correct') {
+        cls = 'char--correct';
+      } else {
+        cls = 'char--pending';
+      }
+      return `<span class="${cls}">${d}</span>`;
+    }).join('');
+  }
+
+  function renderReplayWord() {
+    const el = document.getElementById('replay-word-display');
+    if (!el || !replayState) return;
+    const { wordSoFar, junkBuffer } = replayState;
+    if (!wordSoFar && !junkBuffer) {
+      el.innerHTML = '<span class="wchar--placeholder">печатай здесь…</span>';
+      el.classList.remove('has-error');
+      return;
+    }
+    let html = '';
+    for (const ch of wordSoFar) html += `<span>${ch}</span>`;
+    for (const ch of junkBuffer)
+      html += `<span class="wchar--wrong">${ch === ' ' ? '\u00A0' : ch}</span>`;
+    el.innerHTML = html;
+    el.classList.toggle('has-error', junkBuffer.length > 0);
+  }
+
+  function updateReplayProgress() {
+    const el = document.getElementById('replay-progress');
+    if (!el || !replayState) return;
+    const total = replayState.run.keystrokeLog.length;
+    el.textContent = `${replayState.logIdx} / ${total}`;
+  }
+
   function renderTableRuns(allRuns, inProgress) {
     const cpmLabels = computeRecords(allRuns);
     const errLabels = computeErrorRecords(allRuns);
@@ -527,12 +721,16 @@ const Stats = (() => {
       const idle     = r.idleSeconds || 0;
       const netSecs  = Math.max(0, r.seconds - idle);
       const lazyBadge = r.lazy ? ' <span class="run-badge run-badge--lazy">лень</span>' : '';
-      const timeTip  = idle > 0 ? ` title="Реальное: ${formatTime(r.seconds)}, простой: ${formatTime(idle)}"` : '';
+      const timeTip  = ` title="Реальное: ${formatTime(r.seconds)}, простой: ${formatTime(idle)}"`;
+
+
       const lvlBadge      = lc != null ? ` <span class="run-badge run-badge--level">→${lc}</span>` : '';
       const noFingerBadge = r.noFinger ? ' <span class="run-badge run-badge--nofinger" title="Без подсказки пальца">без 👆</span>' : '';
+      const replayBtn = (r.keystrokeLog?.length && r.text)
+        ? ' <button class="btn-replay-run" title="Виртуальный заезд">▶</button>' : '';
       return `
       <tr${r.lazy ? ' class="row--lazy"' : ''}>
-        <td class="run-num">${i + 1}</td>
+        <td class="run-num">${i + 1}${replayBtn}</td>
         <td>${r.date}${noFingerBadge}</td>
         <td>${r.time}</td>
         <td>${r.level ?? r.exercise ?? '—'}${lvlBadge}</td>
@@ -645,6 +843,8 @@ const Stats = (() => {
         const idx = runIdx++;
         tr.classList.add('clickable-row');
         tr.addEventListener('click', () => showRunDetail(reversed[idx]));
+        const rb = tr.querySelector('.btn-replay-run');
+        if (rb) rb.addEventListener('click', e => { e.stopPropagation(); showReplay(reversed[idx]); });
       });
     }
 
@@ -959,9 +1159,15 @@ const Stats = (() => {
     function xPos(i) { return padL + (n === 1 ? plotW / 2 : i / (n - 1) * plotW); }
     function yScale(v, maxV) { return padT + plotH - (maxV ? v / maxV * plotH : plotH / 2); }
 
-    const cpms = allRuns.map(r => r.cpm);
+    const cpms    = allRuns.map(r => r.cpm);
+    const cpmMaxes = allRuns.map(r => r.cpmMax ?? null);
+    const cpmMins  = allRuns.map(r => r.cpmMin  ?? null);
+    const hasDayLines = cpmMaxes.some(v => v !== null);
     const errs = allRuns.map(r => (r.errors != null && r.chars) ? r.errors / r.chars * 100 : null);
     const maxCpm = Math.max(...cpms) || 1;
+    const maxCpmScale = hasDayLines
+      ? Math.max(...cpms, ...cpmMaxes.filter(v => v !== null)) || 1
+      : maxCpm;
     const maxErr = Math.max(...errs.filter(v => v !== null)) || 1;
 
     // Draws a line+dots wrapped in <g>, skipping null values
@@ -978,9 +1184,9 @@ const Stats = (() => {
           seg.push(`${x},${y}`);
           const tip = tips ? tips[i].replace(/"/g, '&quot;') : '';
           const isRecord = records && records[i] === 'record';
-          dots.push(`<circle cx="${x}" cy="${y}" r="4" fill="${color}" data-tip="${tip}" style="cursor:pointer"/>`);
+          dots.push(`<circle cx="${x}" cy="${y}" r="${isRecord ? 6 : 4}" fill="${color}" data-tip="${tip}" style="cursor:pointer"/>`);
           if (isRecord) dots.push(
-            `<text x="${x}" y="${(parseFloat(y) - 8).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="bold" fill="#16a34a">Р</text>`
+            `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#fbbf24" style="pointer-events:none">★</text>`
           );
         }
       }
@@ -992,11 +1198,19 @@ const Stats = (() => {
     const tips = allRuns.map((r, i) => {
       const errStr = (r.errors != null && r.chars) ? `${r.errors} (${(r.errors / r.chars * 100).toFixed(1)}%)` : '—';
       const base = r._count
-        ? `${r.date} · ${r._count} заездов\nСредняя: ${r.cpm} зн/мин\nОшибок ср.: ${errStr}`
+        ? `${r.date} · ${r._count} заездов`
+          + (r.cpmMax != null ? `\nМакс.: ${r.cpmMax} зн/мин` : '')
+          + `\nСредняя: ${r.cpm} зн/мин`
+          + (r.cpmMin != null ? `\nМин.: ${r.cpmMin} зн/мин` : '')
+          + (r.errPctMax != null ? `\nОшибок макс.: ${r.errPctMax.toFixed(1)}%` : '')
+          + `\nОшибок ср.: ${errStr}`
+          + (r.errPctMin != null ? `\nОшибок мин.: ${r.errPctMin.toFixed(1)}%` : '')
         : `#${i + 1} · ${r.date} ${r.time ?? ''}\nУровень ${r.level ?? '—'} · ${r.cpm} зн/мин\nОшибок: ${errStr} · ${formatTime(r.seconds)}`;
       return base;
     });
-    const cpmRecords = computeRecords(allRuns);
+    const cpmRecords    = computeRecords(allRuns);
+    const cpmMaxRecords = hasDayLines ? computeRecords(allRuns.map(r => ({ cpm: r.cpmMax ?? 0 }))) : null;
+    const cpmMinRecords = hasDayLines ? computeRecords(allRuns.map(r => ({ cpm: r.cpmMin ?? 0 }))) : null;
     const errRecords = computeErrorRecords(allRuns);
     const lvlChanges = computeLevelChanges(allRuns);
 
@@ -1009,10 +1223,10 @@ const Stats = (() => {
     }).join('');
 
     // Left Y axis (CPM) ticks
-    const cpmTicks = [0, Math.round(maxCpm / 2), Math.round(maxCpm)];
+    const cpmTicks = [0, Math.round(maxCpmScale / 2), Math.round(maxCpmScale)];
     const leftAxis = cpmTicks.map(t =>
-      `<line x1="${padL}" y1="${yScale(t, maxCpm).toFixed(1)}" x2="${W - padR}" y2="${yScale(t, maxCpm).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
-       <text x="${padL - 5}" y="${(yScale(t, maxCpm) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#3b82f6">${t}</text>`
+      `<line x1="${padL}" y1="${yScale(t, maxCpmScale).toFixed(1)}" x2="${W - padR}" y2="${yScale(t, maxCpmScale).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+       <text x="${padL - 5}" y="${(yScale(t, maxCpmScale) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#3b82f6">${t}</text>`
     ).join('');
 
     // Right Y axis (error %) ticks
@@ -1029,6 +1243,132 @@ const Stats = (() => {
       return '';
     }).join('');
 
+    // === Day mode: two separate charts ===
+    if (hasDayLines) {
+      const Hd = 200, padRd = 16;
+      const plotWd = W - padL - padRd, plotHd = Hd - padT - padB;
+      function xPosD(i) { return padL + (n === 1 ? plotWd / 2 : i / (n - 1) * plotWd); }
+      function yScaleD(v, maxV) { return padT + plotHd - (maxV ? v / maxV * plotHd : plotHd / 2); }
+
+      function lineGroupD(values, maxV, color, groupId, tipsArr, records) {
+        const dots = [], segments = [];
+        let seg = [];
+        for (let i = 0; i < values.length; i++) {
+          if (values[i] === null) {
+            if (seg.length) { segments.push(seg); seg = []; }
+          } else {
+            const x = xPosD(i).toFixed(1), y = yScaleD(values[i], maxV).toFixed(1);
+            seg.push(`${x},${y}`);
+            const tip = tipsArr ? tipsArr[i].replace(/"/g, '&quot;') : '';
+            const isRecord = records && records[i] === 'record';
+            dots.push(`<circle cx="${x}" cy="${y}" r="${isRecord ? 6 : 4}" fill="${color}" data-tip="${tip}" style="cursor:pointer"/>`);
+            if (isRecord) dots.push(`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#fbbf24" style="pointer-events:none">★</text>`);
+          }
+        }
+        if (seg.length) segments.push(seg);
+        const polylines = segments.map(s => `<polyline points="${s.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`).join('');
+        return `<g id="${groupId}">${polylines}${dots.join('')}</g>`;
+      }
+
+      const errMaxes = allRuns.map(r => r.errPctMax ?? null);
+      const errMins  = allRuns.map(r => r.errPctMin  ?? null);
+      const maxErrAll = Math.max(...[...errs, ...errMaxes, ...errMins].filter(v => v !== null)) || 1;
+
+      const errMaxRecords = computeErrorRecords(allRuns.map(r => ({ errors: r.errPctMax ?? null, chars: r.errPctMax != null ? 100 : 0 })));
+      const errMinRecords = computeErrorRecords(allRuns.map(r => ({ errors: r.errPctMin ?? null, chars: r.errPctMin != null ? 100 : 0 })));
+
+      const levelDividersD = lvlChanges.map((lc, i) => {
+        if (lc == null) return '';
+        const x = xPosD(i).toFixed(1);
+        return `<line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + plotHd}" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,3" opacity="0.7"/>
+                <text x="${(parseFloat(x) + 3).toFixed(1)}" y="${(padT + 11).toFixed(1)}" font-size="9" fill="#b45309">→${lc}</text>`;
+      }).join('');
+
+      const xStepD = Math.max(1, Math.floor(n / 8));
+      const xLabelsD = cpms.map((_, i) => {
+        if (i === 0 || i === n - 1 || i % xStepD === 0)
+          return `<text x="${xPosD(i).toFixed(1)}" y="${Hd - 5}" text-anchor="middle" font-size="10" fill="#9ca3af">${i + 1}</text>`;
+        return '';
+      }).join('');
+
+      const cpmTicksD = [0, Math.round(maxCpmScale / 2), Math.round(maxCpmScale)];
+      const leftAxisCpm = cpmTicksD.map(t =>
+        `<line x1="${padL}" y1="${yScaleD(t, maxCpmScale).toFixed(1)}" x2="${W - padRd}" y2="${yScaleD(t, maxCpmScale).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+         <text x="${padL - 5}" y="${(yScaleD(t, maxCpmScale) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#3b82f6">${t}</text>`
+      ).join('');
+
+      const errTicksD = [0, parseFloat((maxErrAll / 2).toFixed(1)), parseFloat(maxErrAll.toFixed(1))];
+      const leftAxisErr = errTicksD.map(t =>
+        `<line x1="${padL}" y1="${yScaleD(t, maxErrAll).toFixed(1)}" x2="${W - padRd}" y2="${yScaleD(t, maxErrAll).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+         <text x="${padL - 5}" y="${(yScaleD(t, maxErrAll) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#3b82f6">${t.toFixed(1)}%</text>`
+      ).join('');
+
+      const bordersD = `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotHd}" stroke="#d1d5db" stroke-width="1"/>
+        <line x1="${W - padRd}" y1="${padT}" x2="${W - padRd}" y2="${padT + plotHd}" stroke="#d1d5db" stroke-width="1"/>
+        <line x1="${padL}" y1="${padT + plotHd}" x2="${W - padRd}" y2="${padT + plotHd}" stroke="#d1d5db" stroke-width="1"/>`;
+
+      return `<div class="chart-date-range">
+        <input type="date" id="chart-from" value="${fromIso}" class="chart-date-input">
+        <span style="color:var(--text-dim)">—</span>
+        <input type="date" id="chart-to" value="${toIso}" class="chart-date-input">
+      </div>
+      <div class="chart-block">
+        <div class="chart-legend">
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● ср. скорость, зн/мин</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm-max" checked> <span style="color:#16a34a">● макс. скорость</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm-min" checked> <span style="color:#f59e0b">● мин. скорость</span></label>
+        </div>
+        <svg viewBox="0 0 ${W} ${Hd}" style="width:100%;display:block">
+          ${leftAxisCpm}${bordersD}${levelDividersD}
+          ${lineGroupD(cpmMaxes, maxCpmScale, '#16a34a', 'chart-group-cpm-max', tips, cpmMaxRecords)}
+          ${lineGroupD(cpmMins,  maxCpmScale, '#f59e0b', 'chart-group-cpm-min', tips, cpmMinRecords)}
+          ${lineGroupD(cpms,     maxCpmScale, '#3b82f6', 'chart-group-cpm',     tips, cpmRecords)}
+          ${xLabelsD}
+        </svg>
+      </div>
+      <div class="chart-block">
+        <div class="chart-legend">
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#3b82f6">● ср. ошибки, %</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-max" checked> <span style="color:#16a34a">● макс. ошибки</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-min" checked> <span style="color:#f59e0b">● мин. ошибки</span></label>
+        </div>
+        <svg viewBox="0 0 ${W} ${Hd}" style="width:100%;display:block">
+          ${leftAxisErr}${bordersD}
+          ${lineGroupD(errMaxes, maxErrAll, '#16a34a', 'chart-group-err-max', tips, errMaxRecords)}
+          ${lineGroupD(errMins,  maxErrAll, '#f59e0b', 'chart-group-err-min', tips, errMinRecords)}
+          ${lineGroupD(errs,     maxErrAll, '#3b82f6', 'chart-group-err',     tips, errRecords)}
+          ${xLabelsD}
+        </svg>
+      </div>`;
+    }
+
+    // === Non-day mode: combined chart ===
+    function smoothLine(vals, color, groupId, dash) {
+      const pts = vals.map((v, i) => `${xPos(i).toFixed(1)},${yScale(v, maxCpm).toFixed(1)}`);
+      const da = dash ? ` stroke-dasharray="${dash}"` : '';
+      return `<g id="${groupId}"><polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" opacity="0.8"${da}/></g>`;
+    }
+    const smaVals = cpms.map((_, i) => {
+      const slice = cpms.slice(Math.max(0, i - 9), i + 1);
+      return slice.reduce((a, b) => a + b, 0) / slice.length;
+    });
+    const alpha = 2 / 11;
+    const emaVals = cpms.reduce((acc, v, i) => {
+      acc.push(i === 0 ? v : alpha * v + (1 - alpha) * acc[i - 1]);
+      return acc;
+    }, []);
+    const nn = cpms.length;
+    const sumX  = nn * (nn - 1) / 2;
+    const sumX2 = (nn - 1) * nn * (2 * nn - 1) / 6;
+    const sumY  = cpms.reduce((a, b) => a + b, 0);
+    const sumXY = cpms.reduce((s, v, i) => s + i * v, 0);
+    const trendB = (nn * sumXY - sumX * sumY) / (nn * sumX2 - sumX * sumX);
+    const trendA = (sumY - trendB * sumX) / nn;
+    const trendVals = cpms.map((_, i) => trendA + trendB * i);
+    const smaLine   = smoothLine(smaVals,   '#8b5cf6', 'chart-group-sma',   '');
+    const emaLine   = smoothLine(emaVals,   '#f97316', 'chart-group-ema',   '');
+    const trendLine = smoothLine(trendVals, '#06b6d4', 'chart-group-trend', '6,3');
+
     return `<div class="chart-block">
       <div class="chart-date-range">
         <input type="date" id="chart-from" value="${fromIso}" class="chart-date-input">
@@ -1037,6 +1377,9 @@ const Stats = (() => {
       </div>
       <div class="chart-legend">
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● скорость, зн/мин</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-sma" checked> <span style="color:#8b5cf6">● СМА-10</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-ema" checked> <span style="color:#f97316">● ЕМА-10</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-trend" checked> <span style="color:#06b6d4">● тренд</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#ef4444">● ошибки, %</span></label>
       </div>
       <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
@@ -1045,6 +1388,9 @@ const Stats = (() => {
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         ${levelDividers}
+        ${trendLine}
+        ${smaLine}
+        ${emaLine}
         ${lineGroup(cpms, maxCpm, '#3b82f6', 'chart-group-cpm', tips, cpmRecords)}
         ${lineGroup(errs, maxErr, '#ef4444', 'chart-group-err', tips, errRecords)}
         ${rightAxis}
@@ -1067,6 +1413,14 @@ const Stats = (() => {
     allRuns = allRuns.filter(r => !trulyIncomplete(r));
 
     const chartsEl = document.getElementById('stats-charts');
+
+    const sizeElEarly = document.getElementById('storage-size');
+    if (sizeElEarly) {
+      const raw = localStorage.getItem('klavagonki_stats') || '';
+      const kb  = Math.round(raw.length * 2 / 1024);
+      const pct = Math.round(raw.length * 2 / (5 * 1024 * 1024) * 100);
+      sizeElEarly.textContent = `${kb} КБ / ~5 МБ (${pct}%)`;
+    }
 
     if (!allRuns.length) {
       summaryEl.innerHTML = '<p style="color:var(--text-dim);font-size:0.9rem">Заездов пока нет.</p>';
@@ -1105,10 +1459,20 @@ const Stats = (() => {
               time: '',
               level: Math.round(dayRuns.reduce((s, r) => s + (r.level || 0), 0) / dayRuns.length),
               cpm:    Math.round(dayRuns.reduce((s, r) => s + r.cpm, 0) / dayRuns.length),
+              cpmMax: Math.max(...dayRuns.map(r => r.cpm)),
+              cpmMin: Math.min(...dayRuns.map(r => r.cpm)),
               errors: dayRuns.every(r => r.errors != null)
                 ? Math.round(dayRuns.reduce((s, r) => s + r.errors, 0) / dayRuns.length)
                 : null,
               chars:  Math.round(dayRuns.reduce((s, r) => s + r.chars, 0) / dayRuns.length),
+              errPctMax: (() => {
+                const v = dayRuns.filter(r => r.errors != null && r.chars);
+                return v.length ? Math.max(...v.map(r => r.errors / r.chars * 100)) : null;
+              })(),
+              errPctMin: (() => {
+                const v = dayRuns.filter(r => r.errors != null && r.chars);
+                return v.length ? Math.min(...v.map(r => r.errors / r.chars * 100)) : null;
+              })(),
               seconds: dayRuns.reduce((s, r) => s + r.seconds, 0),
               _count: dayRuns.length,
             }));
@@ -1116,8 +1480,10 @@ const Stats = (() => {
 
         chartsEl.innerHTML = buildCharts(chartRuns, fromIso, toIso);
 
-        const togCpm = document.getElementById('chart-toggle-cpm');
-        const togErr = document.getElementById('chart-toggle-err');
+        const togCpm    = document.getElementById('chart-toggle-cpm');
+        const togErr    = document.getElementById('chart-toggle-err');
+        const togCpmMax = document.getElementById('chart-toggle-cpm-max');
+        const togCpmMin = document.getElementById('chart-toggle-cpm-min');
         if (togCpm) togCpm.addEventListener('change', () => {
           const g = document.getElementById('chart-group-cpm');
           if (g) g.style.display = togCpm.checked ? '' : 'none';
@@ -1125,6 +1491,39 @@ const Stats = (() => {
         if (togErr) togErr.addEventListener('change', () => {
           const g = document.getElementById('chart-group-err');
           if (g) g.style.display = togErr.checked ? '' : 'none';
+        });
+        if (togCpmMax) togCpmMax.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-cpm-max');
+          if (g) g.style.display = togCpmMax.checked ? '' : 'none';
+        });
+        if (togCpmMin) togCpmMin.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-cpm-min');
+          if (g) g.style.display = togCpmMin.checked ? '' : 'none';
+        });
+        const togSma = document.getElementById('chart-toggle-sma');
+        if (togSma) togSma.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-sma');
+          if (g) g.style.display = togSma.checked ? '' : 'none';
+        });
+        const togEma = document.getElementById('chart-toggle-ema');
+        if (togEma) togEma.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-ema');
+          if (g) g.style.display = togEma.checked ? '' : 'none';
+        });
+        const togTrend = document.getElementById('chart-toggle-trend');
+        if (togTrend) togTrend.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-trend');
+          if (g) g.style.display = togTrend.checked ? '' : 'none';
+        });
+        const togErrMax = document.getElementById('chart-toggle-err-max');
+        const togErrMin = document.getElementById('chart-toggle-err-min');
+        if (togErrMax) togErrMax.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-err-max');
+          if (g) g.style.display = togErrMax.checked ? '' : 'none';
+        });
+        if (togErrMin) togErrMin.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-err-min');
+          if (g) g.style.display = togErrMin.checked ? '' : 'none';
         });
 
         const fromEl = document.getElementById('chart-from');
@@ -1141,8 +1540,7 @@ const Stats = (() => {
           tip.className = 'chart-tooltip';
           document.body.appendChild(tip);
         }
-        const svg = chartsEl.querySelector('svg');
-        if (svg) {
+        chartsEl.querySelectorAll('svg').forEach(svg => {
           svg.addEventListener('mouseover', e => {
             const el = e.target.closest('[data-tip]');
             if (!el) return;
@@ -1161,7 +1559,7 @@ const Stats = (() => {
             if (!e.target.closest('[data-tip]')) return;
             tip.classList.remove('visible');
           });
-        }
+        });
       }
 
       renderChartsNow = () => renderCharts(chartFromIso || minIso, chartToIso || maxIso);
@@ -1249,13 +1647,6 @@ const Stats = (() => {
 
     renderTable(allRuns, inProgress);
 
-    const sizeEl = document.getElementById('storage-size');
-    if (sizeEl) {
-      const raw = localStorage.getItem('klavagonki_stats') || '';
-      const kb  = Math.round(raw.length * 2 / 1024);
-      const pct = Math.round(raw.length * 2 / (5 * 1024 * 1024) * 100);
-      sizeEl.textContent = `${kb} КБ / ~5 МБ (${pct}%)`;
-    }
   }
 
   function formatTime(seconds) {
