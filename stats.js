@@ -1252,17 +1252,26 @@ const Stats = (() => {
     if (hasDayLines) {
       const Hd = 200, padRd = 16;
       const plotWd = W - padL - padRd, plotHd = Hd - padT - padB;
-      function xPosD(i) { return padL + (n === 1 ? plotWd / 2 : i / (n + 9) * plotWd); }
       function yScaleD(v, maxV) { return padT + plotHd - (maxV ? v / maxV * plotHd : plotHd / 2); }
 
-      function lineGroupD(values, maxV, color, groupId, tipsArr, records, hidden) {
+      // Date-based x positioning
+      const dayDateMs = allRuns.map(r => +parseRuDate(r.date));
+      const minDateMs = dayDateMs[0];
+      const maxDateMs = dayDateMs[dayDateMs.length - 1];
+      const futureDateMs = maxDateMs + 10 * 86400000;
+      function xPosByMs(ms) {
+        return padL + (ms - minDateMs) / (futureDateMs - minDateMs) * plotWd;
+      }
+      const xsData = dayDateMs.map(ms => xPosByMs(ms));
+
+      function lineGroupD(values, maxV, color, groupId, tipsArr, records, hidden, xs) {
         const dots = [], segments = [];
         let seg = [];
         for (let i = 0; i < values.length; i++) {
           if (values[i] === null) {
             if (seg.length) { segments.push(seg); seg = []; }
           } else {
-            const x = xPosD(i).toFixed(1), y = yScaleD(values[i], maxV).toFixed(1);
+            const x = (xs ? xs[i] : xPosByMs(dayDateMs[i])).toFixed(1), y = yScaleD(values[i], maxV).toFixed(1);
             seg.push(`${x},${y}`);
             const tip = tipsArr ? tipsArr[i].replace(/"/g, '&quot;') : '';
             const isRecord = records && records[i] === 'record';
@@ -1284,43 +1293,56 @@ const Stats = (() => {
 
       const levelDividersD = lvlChanges.map((lc, i) => {
         if (lc == null) return '';
-        const x = xPosD(i).toFixed(1);
+        const x = xsData[i].toFixed(1);
         return `<line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + plotHd}" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,3" opacity="0.7"/>
                 <text x="${(parseFloat(x) + 3).toFixed(1)}" y="${(padT + 11).toFixed(1)}" font-size="9" fill="#b45309">→${lc}</text>`;
       }).join('');
 
-      // Day trend (avg CPM only)
-      const sumXDt = n * (n - 1) / 2;
-      const sumX2Dt = (n - 1) * n * (2 * n - 1) / 6;
+      // Day trend (avg CPM only, regression on actual day offsets)
+      const dayOffsets = dayDateMs.map(ms => (ms - minDateMs) / 86400000);
+      const sumXDt  = dayOffsets.reduce((s, v) => s + v, 0);
+      const sumX2Dt = dayOffsets.reduce((s, v) => s + v * v, 0);
       const sumYDt  = cpms.reduce((a, b) => a + b, 0);
-      const sumXYDt = cpms.reduce((s, v, i) => s + i * v, 0);
+      const sumXYDt = cpms.reduce((s, v, i) => s + dayOffsets[i] * v, 0);
       const trendBDt = (n * sumXYDt - sumXDt * sumYDt) / (n * sumX2Dt - sumXDt * sumXDt);
       const trendADt = (sumYDt - trendBDt * sumXDt) / n;
-      const trendValsDt = Array.from({length: n + 10}, (_, i) => trendADt + trendBDt * i);
 
-      const maxCpmForecastD = Math.max(maxCpmScale, ...[n, n+3, n+6, n+9].map(i => trendValsDt[i]));
+      // Forecast dots at +1, +4, +7, +10 days from last data date
+      const forecastDaysMsList = [1, 4, 7, 10].map(d => maxDateMs + d * 86400000);
+      const forecastVals = forecastDaysMsList.map(ms => trendADt + trendBDt * (ms - minDateMs) / 86400000);
+      const maxCpmForecastD = Math.max(maxCpmScale, ...forecastVals);
 
-      const trendDotsDt = [n, n+3, n+6, n+9].map(i => {
-        const v = trendValsDt[i];
-        const x = xPosD(i).toFixed(1), y = yScaleD(v, maxCpmForecastD).toFixed(1);
-        const tip = `Прогноз день ${i + 1}: ${Math.round(v)} зн/мин`.replace(/"/g, '&quot;');
+      const dateFormatter = ms => {
+        const d = new Date(ms);
+        return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+      };
+
+      const trendDotsDt = forecastDaysMsList.map((ms, k) => {
+        const v = forecastVals[k];
+        const x = xPosByMs(ms).toFixed(1), y = yScaleD(v, maxCpmForecastD).toFixed(1);
+        const tip = `Прогноз ${dateFormatter(ms)}: ${Math.round(v)} зн/мин`.replace(/"/g, '&quot;');
         return `<circle cx="${x}" cy="${y}" r="4" fill="#06b6d4" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
       }).join('');
+
       const trendLineDt = (() => {
-        const pts = trendValsDt.map((v, i) => `${xPosD(i).toFixed(1)},${yScaleD(v, maxCpmForecastD).toFixed(1)}`);
+        const numPts = 80;
+        const pts = Array.from({length: numPts}, (_, i) => {
+          const ms = minDateMs + i / (numPts - 1) * (futureDateMs - minDateMs);
+          const v = trendADt + trendBDt * (ms - minDateMs) / 86400000;
+          return `${xPosByMs(ms).toFixed(1)},${yScaleD(v, maxCpmForecastD).toFixed(1)}`;
+        });
         return `<g id="chart-group-trend"><polyline points="${pts.join(' ')}" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linejoin="round" opacity="0.8" stroke-dasharray="6,3"/>${trendDotsDt}</g>`;
       })();
 
-      const xStepD = Math.max(1, Math.floor(n / 8));
-      const xLabelsD = cpms.map((_, i) => {
-        if (i === 0 || i === n - 1 || i % xStepD === 0)
-          return `<text x="${xPosD(i).toFixed(1)}" y="${Hd - 5}" text-anchor="middle" font-size="10" fill="#9ca3af">${i + 1}</text>`;
-        return '';
-      }).join('') + Array.from({length: 10}, (_, j) => {
-        const i = n + j;
-        if (j === 0 || j === 9 || i % xStepD === 0)
-          return `<text x="${xPosD(i).toFixed(1)}" y="${Hd - 5}" text-anchor="middle" font-size="10" fill="#9ca3af">${i + 1}</text>`;
-        return '';
+      // X-axis labels: actual dates (DD.MM) at regular intervals + 4 forecast dates
+      const stepD = Math.max(1, Math.floor(n / 6));
+      const labelMsSet = new Set();
+      for (let i = 0; i < n; i += stepD) labelMsSet.add(dayDateMs[i]);
+      if (n > 0) labelMsSet.add(dayDateMs[n - 1]);
+      forecastDaysMsList.forEach(ms => labelMsSet.add(ms));
+      const xLabelsD = [...labelMsSet].sort((a, b) => a - b).map(ms => {
+        const x = xPosByMs(ms).toFixed(1);
+        return `<text x="${x}" y="${Hd - 5}" text-anchor="middle" font-size="10" fill="#9ca3af">${dateFormatter(ms)}</text>`;
       }).join('');
 
       const cpmTicksD = [0, Math.round(maxCpmForecastD / 2), Math.round(maxCpmForecastD)];
@@ -1354,9 +1376,9 @@ const Stats = (() => {
         <svg viewBox="0 0 ${W} ${Hd}" style="width:100%;display:block">
           ${leftAxisCpm}${bordersD}${levelDividersD}
           ${trendLineDt}
-          ${lineGroupD(cpmMaxes, maxCpmForecastD, '#16a34a', 'chart-group-cpm-max', tips, cpmMaxRecords, true)}
-          ${lineGroupD(cpmMins,  maxCpmForecastD, '#f59e0b', 'chart-group-cpm-min', tips, cpmMinRecords, true)}
-          ${lineGroupD(cpms,     maxCpmForecastD, '#3b82f6', 'chart-group-cpm',     tips, cpmRecords)}
+          ${lineGroupD(cpmMaxes, maxCpmForecastD, '#16a34a', 'chart-group-cpm-max', tips, cpmMaxRecords, true,  xsData)}
+          ${lineGroupD(cpmMins,  maxCpmForecastD, '#f59e0b', 'chart-group-cpm-min', tips, cpmMinRecords, true,  xsData)}
+          ${lineGroupD(cpms,     maxCpmForecastD, '#3b82f6', 'chart-group-cpm',     tips, cpmRecords,    false, xsData)}
           ${xLabelsD}
         </svg>
       </div>
@@ -1368,9 +1390,9 @@ const Stats = (() => {
         </div>
         <svg viewBox="0 0 ${W} ${Hd}" style="width:100%;display:block">
           ${leftAxisErr}${bordersD}
-          ${lineGroupD(errMaxes, maxErrAll, '#16a34a', 'chart-group-err-max', tips, errMaxRecords, true)}
-          ${lineGroupD(errMins,  maxErrAll, '#f59e0b', 'chart-group-err-min', tips, errMinRecords, true)}
-          ${lineGroupD(errs,     maxErrAll, '#3b82f6', 'chart-group-err',     tips, errRecords)}
+          ${lineGroupD(errMaxes, maxErrAll, '#16a34a', 'chart-group-err-max', tips, errMaxRecords, true,  xsData)}
+          ${lineGroupD(errMins,  maxErrAll, '#f59e0b', 'chart-group-err-min', tips, errMinRecords, true,  xsData)}
+          ${lineGroupD(errs,     maxErrAll, '#3b82f6', 'chart-group-err',     tips, errRecords,    false, xsData)}
           ${xLabelsD}
         </svg>
       </div>`;
