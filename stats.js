@@ -1156,7 +1156,7 @@ const Stats = (() => {
     const plotH = H - padT - padB;
     const n = allRuns.length;
 
-    function xPos(i) { return padL + (n === 1 ? plotW / 2 : i / (n - 1) * plotW); }
+    function xPos(i) { return padL + (n === 1 ? plotW / 2 : i / (n + 9) * plotW); }
     function yScale(v, maxV) { return padT + plotH - (maxV ? v / maxV * plotH : plotH / 2); }
 
     const cpms    = allRuns.map(r => r.cpm);
