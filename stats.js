@@ -1241,6 +1241,11 @@ const Stats = (() => {
       if (i === 0 || i === n - 1 || i % xStep === 0)
         return `<text x="${xPos(i).toFixed(1)}" y="${H - 5}" text-anchor="middle" font-size="10" fill="#9ca3af">${i + 1}</text>`;
       return '';
+    }).join('') + Array.from({length: 10}, (_, j) => {
+      const i = n + j;
+      if (j === 0 || j === 9 || i % xStep === 0)
+        return `<text x="${xPos(i).toFixed(1)}" y="${H - 5}" text-anchor="middle" font-size="10" fill="#e5e7eb">${i + 1}</text>`;
+      return '';
     }).join('');
 
     // === Day mode: two separate charts ===
