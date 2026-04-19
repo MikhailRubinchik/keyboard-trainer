@@ -1348,15 +1348,6 @@ const Stats = (() => {
       const da = dash ? ` stroke-dasharray="${dash}"` : '';
       return `<g id="${groupId}"><polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" opacity="0.8"${da}/></g>`;
     }
-    const smaVals = cpms.map((_, i) => {
-      const slice = cpms.slice(Math.max(0, i - 9), i + 1);
-      return slice.reduce((a, b) => a + b, 0) / slice.length;
-    });
-    const alpha = 2 / 11;
-    const emaVals = cpms.reduce((acc, v, i) => {
-      acc.push(i === 0 ? v : alpha * v + (1 - alpha) * acc[i - 1]);
-      return acc;
-    }, []);
     const nn = cpms.length;
     const sumX  = nn * (nn - 1) / 2;
     const sumX2 = (nn - 1) * nn * (2 * nn - 1) / 6;
@@ -1365,8 +1356,6 @@ const Stats = (() => {
     const trendB = (nn * sumXY - sumX * sumY) / (nn * sumX2 - sumX * sumX);
     const trendA = (sumY - trendB * sumX) / nn;
     const trendVals = cpms.map((_, i) => trendA + trendB * i);
-    const smaLine   = smoothLine(smaVals,   '#8b5cf6', 'chart-group-sma',   '');
-    const emaLine   = smoothLine(emaVals,   '#f97316', 'chart-group-ema',   '');
     const trendLine = smoothLine(trendVals, '#06b6d4', 'chart-group-trend', '6,3');
 
     return `<div class="chart-block">
@@ -1377,8 +1366,6 @@ const Stats = (() => {
       </div>
       <div class="chart-legend">
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● скорость, зн/мин</span></label>
-        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-sma" checked> <span style="color:#8b5cf6">● СМА-10</span></label>
-        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-ema" checked> <span style="color:#f97316">● ЕМА-10</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-trend" checked> <span style="color:#06b6d4">● тренд</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#ef4444">● ошибки, %</span></label>
       </div>
@@ -1389,8 +1376,6 @@ const Stats = (() => {
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         ${levelDividers}
         ${trendLine}
-        ${smaLine}
-        ${emaLine}
         ${lineGroup(cpms, maxCpm, '#3b82f6', 'chart-group-cpm', tips, cpmRecords)}
         ${lineGroup(errs, maxErr, '#ef4444', 'chart-group-err', tips, errRecords)}
         ${rightAxis}
@@ -1499,16 +1484,6 @@ const Stats = (() => {
         if (togCpmMin) togCpmMin.addEventListener('change', () => {
           const g = document.getElementById('chart-group-cpm-min');
           if (g) g.style.display = togCpmMin.checked ? '' : 'none';
-        });
-        const togSma = document.getElementById('chart-toggle-sma');
-        if (togSma) togSma.addEventListener('change', () => {
-          const g = document.getElementById('chart-group-sma');
-          if (g) g.style.display = togSma.checked ? '' : 'none';
-        });
-        const togEma = document.getElementById('chart-toggle-ema');
-        if (togEma) togEma.addEventListener('change', () => {
-          const g = document.getElementById('chart-group-ema');
-          if (g) g.style.display = togEma.checked ? '' : 'none';
         });
         const togTrend = document.getElementById('chart-toggle-trend');
         if (togTrend) togTrend.addEventListener('change', () => {
