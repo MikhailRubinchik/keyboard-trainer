@@ -1348,10 +1348,10 @@ const Stats = (() => {
     }
 
     // === Non-day mode: combined chart ===
-    function smoothLine(vals, color, groupId, dash) {
+    function smoothLine(vals, color, groupId, dash, extra = '') {
       const pts = vals.map((v, i) => `${xPos(i).toFixed(1)},${yScale(v, maxCpm).toFixed(1)}`);
       const da = dash ? ` stroke-dasharray="${dash}"` : '';
-      return `<g id="${groupId}"><polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" opacity="0.8"${da}/></g>`;
+      return `<g id="${groupId}"><polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" opacity="0.8"${da}/>${extra}</g>`;
     }
     const nn = cpms.length;
     const sumX  = nn * (nn - 1) / 2;
@@ -1361,7 +1361,13 @@ const Stats = (() => {
     const trendB = (nn * sumXY - sumX * sumY) / (nn * sumX2 - sumX * sumX);
     const trendA = (sumY - trendB * sumX) / nn;
     const trendVals = Array.from({length: n + 10}, (_, i) => trendA + trendB * i);
-    const trendLine = smoothLine(trendVals, '#06b6d4', 'chart-group-trend', '6,3');
+    const trendDots = [n, n+3, n+6, n+9].map(i => {
+      const v = trendVals[i];
+      const x = xPos(i).toFixed(1), y = yScale(v, maxCpm).toFixed(1);
+      const tip = `Прогноз #${i + 1}: ${Math.round(v)} зн/мин`.replace(/"/g, '&quot;');
+      return `<circle cx="${x}" cy="${y}" r="4" fill="#06b6d4" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
+    }).join('');
+    const trendLine = smoothLine(trendVals, '#06b6d4', 'chart-group-trend', '6,3', trendDots);
 
     return `<div class="chart-block">
       <div class="chart-date-range">
