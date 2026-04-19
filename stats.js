@@ -1348,11 +1348,6 @@ const Stats = (() => {
     }
 
     // === Non-day mode: combined chart ===
-    function smoothLine(vals, color, groupId, dash, extra = '') {
-      const pts = vals.map((v, i) => `${xPos(i).toFixed(1)},${yScale(v, maxCpm).toFixed(1)}`);
-      const da = dash ? ` stroke-dasharray="${dash}"` : '';
-      return `<g id="${groupId}"><polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" opacity="0.8"${da}/>${extra}</g>`;
-    }
     const nn = cpms.length;
     const sumX  = nn * (nn - 1) / 2;
     const sumX2 = (nn - 1) * nn * (2 * nn - 1) / 6;
@@ -1361,13 +1356,26 @@ const Stats = (() => {
     const trendB = (nn * sumXY - sumX * sumY) / (nn * sumX2 - sumX * sumX);
     const trendA = (sumY - trendB * sumX) / nn;
     const trendVals = Array.from({length: n + 10}, (_, i) => trendA + trendB * i);
+
+    const maxCpmForecast = Math.max(maxCpm, ...[n, n+3, n+6, n+9].map(i => trendVals[i]));
+    const cpmTicksRun = [0, Math.round(maxCpmForecast / 2), Math.round(maxCpmForecast)];
+    const leftAxisRun = cpmTicksRun.map(t =>
+      `<line x1="${padL}" y1="${yScale(t, maxCpmForecast).toFixed(1)}" x2="${W - padR}" y2="${yScale(t, maxCpmForecast).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+       <text x="${padL - 5}" y="${(yScale(t, maxCpmForecast) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#3b82f6">${t}</text>`
+    ).join('');
+
+    function smoothLine(vals, maxV, color, groupId, dash, extra = '') {
+      const pts = vals.map((v, i) => `${xPos(i).toFixed(1)},${yScale(v, maxV).toFixed(1)}`);
+      const da = dash ? ` stroke-dasharray="${dash}"` : '';
+      return `<g id="${groupId}"><polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" opacity="0.8"${da}/>${extra}</g>`;
+    }
     const trendDots = [n, n+3, n+6, n+9].map(i => {
       const v = trendVals[i];
-      const x = xPos(i).toFixed(1), y = yScale(v, maxCpm).toFixed(1);
+      const x = xPos(i).toFixed(1), y = yScale(v, maxCpmForecast).toFixed(1);
       const tip = `Прогноз #${i + 1}: ${Math.round(v)} зн/мин`.replace(/"/g, '&quot;');
       return `<circle cx="${x}" cy="${y}" r="4" fill="#06b6d4" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
     }).join('');
-    const trendLine = smoothLine(trendVals, '#06b6d4', 'chart-group-trend', '6,3', trendDots);
+    const trendLine = smoothLine(trendVals, maxCpmForecast, '#06b6d4', 'chart-group-trend', '6,3', trendDots);
 
     return `<div class="chart-block">
       <div class="chart-date-range">
@@ -1381,13 +1389,13 @@ const Stats = (() => {
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#ef4444">● ошибки, %</span></label>
       </div>
       <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
-        ${leftAxis}
+        ${leftAxisRun}
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         ${levelDividers}
         ${trendLine}
-        ${lineGroup(cpms, maxCpm, '#3b82f6', 'chart-group-cpm', tips, cpmRecords)}
+        ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords)}
         ${lineGroup(errs, maxErr, '#ef4444', 'chart-group-err', tips, errRecords)}
         ${rightAxis}
         ${xLabels}
