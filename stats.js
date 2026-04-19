@@ -1360,7 +1360,7 @@ const Stats = (() => {
     const sumXY = cpms.reduce((s, v, i) => s + i * v, 0);
     const trendB = (nn * sumXY - sumX * sumY) / (nn * sumX2 - sumX * sumX);
     const trendA = (sumY - trendB * sumX) / nn;
-    const trendVals = cpms.map((_, i) => trendA + trendB * i);
+    const trendVals = Array.from({length: n + 10}, (_, i) => trendA + trendB * i);
     const trendLine = smoothLine(trendVals, '#06b6d4', 'chart-group-trend', '6,3');
 
     return `<div class="chart-block">
