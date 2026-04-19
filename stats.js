@@ -1252,7 +1252,7 @@ const Stats = (() => {
     if (hasDayLines) {
       const Hd = 200, padRd = 16;
       const plotWd = W - padL - padRd, plotHd = Hd - padT - padB;
-      function xPosD(i) { return padL + (n === 1 ? plotWd / 2 : i / (n - 1) * plotWd); }
+      function xPosD(i) { return padL + (n === 1 ? plotWd / 2 : i / (n + 9) * plotWd); }
       function yScaleD(v, maxV) { return padT + plotHd - (maxV ? v / maxV * plotHd : plotHd / 2); }
 
       function lineGroupD(values, maxV, color, groupId, tipsArr, records, hidden) {
@@ -1289,17 +1289,44 @@ const Stats = (() => {
                 <text x="${(parseFloat(x) + 3).toFixed(1)}" y="${(padT + 11).toFixed(1)}" font-size="9" fill="#b45309">→${lc}</text>`;
       }).join('');
 
+      // Day trend (avg CPM only)
+      const sumXDt = n * (n - 1) / 2;
+      const sumX2Dt = (n - 1) * n * (2 * n - 1) / 6;
+      const sumYDt  = cpms.reduce((a, b) => a + b, 0);
+      const sumXYDt = cpms.reduce((s, v, i) => s + i * v, 0);
+      const trendBDt = (n * sumXYDt - sumXDt * sumYDt) / (n * sumX2Dt - sumXDt * sumXDt);
+      const trendADt = (sumYDt - trendBDt * sumXDt) / n;
+      const trendValsDt = Array.from({length: n + 10}, (_, i) => trendADt + trendBDt * i);
+
+      const maxCpmForecastD = Math.max(maxCpmScale, ...[n, n+3, n+6, n+9].map(i => trendValsDt[i]));
+
+      const trendDotsDt = [n, n+3, n+6, n+9].map(i => {
+        const v = trendValsDt[i];
+        const x = xPosD(i).toFixed(1), y = yScaleD(v, maxCpmForecastD).toFixed(1);
+        const tip = `Прогноз день ${i + 1}: ${Math.round(v)} зн/мин`.replace(/"/g, '&quot;');
+        return `<circle cx="${x}" cy="${y}" r="4" fill="#06b6d4" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
+      }).join('');
+      const trendLineDt = (() => {
+        const pts = trendValsDt.map((v, i) => `${xPosD(i).toFixed(1)},${yScaleD(v, maxCpmForecastD).toFixed(1)}`);
+        return `<g id="chart-group-trend"><polyline points="${pts.join(' ')}" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linejoin="round" opacity="0.8" stroke-dasharray="6,3"/>${trendDotsDt}</g>`;
+      })();
+
       const xStepD = Math.max(1, Math.floor(n / 8));
       const xLabelsD = cpms.map((_, i) => {
         if (i === 0 || i === n - 1 || i % xStepD === 0)
           return `<text x="${xPosD(i).toFixed(1)}" y="${Hd - 5}" text-anchor="middle" font-size="10" fill="#9ca3af">${i + 1}</text>`;
         return '';
+      }).join('') + Array.from({length: 10}, (_, j) => {
+        const i = n + j;
+        if (j === 0 || j === 9 || i % xStepD === 0)
+          return `<text x="${xPosD(i).toFixed(1)}" y="${Hd - 5}" text-anchor="middle" font-size="10" fill="#9ca3af">${i + 1}</text>`;
+        return '';
       }).join('');
 
-      const cpmTicksD = [0, Math.round(maxCpmScale / 2), Math.round(maxCpmScale)];
+      const cpmTicksD = [0, Math.round(maxCpmForecastD / 2), Math.round(maxCpmForecastD)];
       const leftAxisCpm = cpmTicksD.map(t =>
-        `<line x1="${padL}" y1="${yScaleD(t, maxCpmScale).toFixed(1)}" x2="${W - padRd}" y2="${yScaleD(t, maxCpmScale).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
-         <text x="${padL - 5}" y="${(yScaleD(t, maxCpmScale) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#3b82f6">${t}</text>`
+        `<line x1="${padL}" y1="${yScaleD(t, maxCpmForecastD).toFixed(1)}" x2="${W - padRd}" y2="${yScaleD(t, maxCpmForecastD).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+         <text x="${padL - 5}" y="${(yScaleD(t, maxCpmForecastD) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#3b82f6">${t}</text>`
       ).join('');
 
       const errTicksD = [0, parseFloat((maxErrAll / 2).toFixed(1)), parseFloat(maxErrAll.toFixed(1))];
@@ -1320,14 +1347,16 @@ const Stats = (() => {
       <div class="chart-block">
         <div class="chart-legend">
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● ср. скорость, зн/мин</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-trend" checked> <span style="color:#06b6d4">● тренд</span></label>
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm-max"> <span style="color:#16a34a">● макс. скорость</span></label>
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm-min"> <span style="color:#f59e0b">● мин. скорость</span></label>
         </div>
         <svg viewBox="0 0 ${W} ${Hd}" style="width:100%;display:block">
           ${leftAxisCpm}${bordersD}${levelDividersD}
-          ${lineGroupD(cpmMaxes, maxCpmScale, '#16a34a', 'chart-group-cpm-max', tips, cpmMaxRecords, true)}
-          ${lineGroupD(cpmMins,  maxCpmScale, '#f59e0b', 'chart-group-cpm-min', tips, cpmMinRecords, true)}
-          ${lineGroupD(cpms,     maxCpmScale, '#3b82f6', 'chart-group-cpm',     tips, cpmRecords)}
+          ${trendLineDt}
+          ${lineGroupD(cpmMaxes, maxCpmForecastD, '#16a34a', 'chart-group-cpm-max', tips, cpmMaxRecords, true)}
+          ${lineGroupD(cpmMins,  maxCpmForecastD, '#f59e0b', 'chart-group-cpm-min', tips, cpmMinRecords, true)}
+          ${lineGroupD(cpms,     maxCpmForecastD, '#3b82f6', 'chart-group-cpm',     tips, cpmRecords)}
           ${xLabelsD}
         </svg>
       </div>
