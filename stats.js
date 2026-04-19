@@ -1250,7 +1250,7 @@ const Stats = (() => {
       function xPosD(i) { return padL + (n === 1 ? plotWd / 2 : i / (n - 1) * plotWd); }
       function yScaleD(v, maxV) { return padT + plotHd - (maxV ? v / maxV * plotHd : plotHd / 2); }
 
-      function lineGroupD(values, maxV, color, groupId, tipsArr, records) {
+      function lineGroupD(values, maxV, color, groupId, tipsArr, records, hidden) {
         const dots = [], segments = [];
         let seg = [];
         for (let i = 0; i < values.length; i++) {
@@ -1267,7 +1267,7 @@ const Stats = (() => {
         }
         if (seg.length) segments.push(seg);
         const polylines = segments.map(s => `<polyline points="${s.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`).join('');
-        return `<g id="${groupId}">${polylines}${dots.join('')}</g>`;
+        return `<g id="${groupId}"${hidden ? ' style="display:none"' : ''}>${polylines}${dots.join('')}</g>`;
       }
 
       const errMaxes = allRuns.map(r => r.errPctMax ?? null);
@@ -1315,13 +1315,13 @@ const Stats = (() => {
       <div class="chart-block">
         <div class="chart-legend">
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● ср. скорость, зн/мин</span></label>
-          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm-max" checked> <span style="color:#16a34a">● макс. скорость</span></label>
-          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm-min" checked> <span style="color:#f59e0b">● мин. скорость</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm-max"> <span style="color:#16a34a">● макс. скорость</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm-min"> <span style="color:#f59e0b">● мин. скорость</span></label>
         </div>
         <svg viewBox="0 0 ${W} ${Hd}" style="width:100%;display:block">
           ${leftAxisCpm}${bordersD}${levelDividersD}
-          ${lineGroupD(cpmMaxes, maxCpmScale, '#16a34a', 'chart-group-cpm-max', tips, cpmMaxRecords)}
-          ${lineGroupD(cpmMins,  maxCpmScale, '#f59e0b', 'chart-group-cpm-min', tips, cpmMinRecords)}
+          ${lineGroupD(cpmMaxes, maxCpmScale, '#16a34a', 'chart-group-cpm-max', tips, cpmMaxRecords, true)}
+          ${lineGroupD(cpmMins,  maxCpmScale, '#f59e0b', 'chart-group-cpm-min', tips, cpmMinRecords, true)}
           ${lineGroupD(cpms,     maxCpmScale, '#3b82f6', 'chart-group-cpm',     tips, cpmRecords)}
           ${xLabelsD}
         </svg>
@@ -1329,13 +1329,13 @@ const Stats = (() => {
       <div class="chart-block">
         <div class="chart-legend">
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#3b82f6">● ср. ошибки, %</span></label>
-          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-max" checked> <span style="color:#16a34a">● макс. ошибки</span></label>
-          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-min" checked> <span style="color:#f59e0b">● мин. ошибки</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-max"> <span style="color:#16a34a">● макс. ошибки</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-min"> <span style="color:#f59e0b">● мин. ошибки</span></label>
         </div>
         <svg viewBox="0 0 ${W} ${Hd}" style="width:100%;display:block">
           ${leftAxisErr}${bordersD}
-          ${lineGroupD(errMaxes, maxErrAll, '#16a34a', 'chart-group-err-max', tips, errMaxRecords)}
-          ${lineGroupD(errMins,  maxErrAll, '#f59e0b', 'chart-group-err-min', tips, errMinRecords)}
+          ${lineGroupD(errMaxes, maxErrAll, '#16a34a', 'chart-group-err-max', tips, errMaxRecords, true)}
+          ${lineGroupD(errMins,  maxErrAll, '#f59e0b', 'chart-group-err-min', tips, errMinRecords, true)}
           ${lineGroupD(errs,     maxErrAll, '#3b82f6', 'chart-group-err',     tips, errRecords)}
           ${xLabelsD}
         </svg>
