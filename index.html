@@ -138,6 +138,28 @@
     </div>
   </div>
 
+  <!-- ======= Replay overlay ======= -->
+  <div id="replay-overlay" class="replay-overlay hidden">
+    <div class="replay-card">
+      <div class="replay-header">
+        <h2 class="replay-title" id="replay-title"></h2>
+        <button id="btn-close-replay" class="btn-ghost">✕</button>
+      </div>
+      <div id="replay-text-display" class="text-display replay-text-display"></div>
+      <div id="replay-word-display" class="word-display replay-word-display"></div>
+      <div class="replay-controls">
+        <button id="btn-replay-playpause" class="btn-primary replay-playpause">⏸</button>
+        <button id="btn-replay-restart" class="btn-ghost">↺</button>
+        <span class="replay-speed-label">Скорость:</span>
+        <button class="btn-speed" data-speed="0.5">0.5×</button>
+        <button class="btn-speed active" data-speed="1">1×</button>
+        <button class="btn-speed" data-speed="2">2×</button>
+        <button class="btn-speed" data-speed="4">4×</button>
+        <span id="replay-progress" class="replay-progress"></span>
+      </div>
+    </div>
+  </div>
+
   <!-- ======= Error detail overlay ======= -->
   <div id="error-detail-overlay" class="error-detail-overlay hidden">
     <div class="error-detail-card">
@@ -149,6 +171,7 @@
     </div>
   </div>
 
+  <script src="version.js"></script>
   <script src="texts.js"></script>
   <script src="fingers.js"></script>
   <script src="stats.js"></script>
