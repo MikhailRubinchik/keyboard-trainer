@@ -198,7 +198,7 @@ function restoreFingerSetting() {
 }
 
 function startExercise(level) {
-  noFinger = Stats.getTodayRunCount() === 0;
+  noFinger = Stats.getTodayRunCount() % 2 === 0;
   const cb = document.getElementById('setting-show-finger');
   if (noFinger) {
     showFinger = false;
