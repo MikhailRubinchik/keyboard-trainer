@@ -1228,9 +1228,17 @@ const Stats = (() => {
       }
       return out;
     })();
+    function fmtDateRange(a, b) {
+      const [d1, m1, y1] = a.split('.');
+      const [d2, m2, y2] = b.split('.');
+      if (a === b)           return a;
+      if (m1 === m2 && y1 === y2) return `${d1}–${d2}.${m2}.${y2}`;
+      if (y1 === y2)         return `${d1}.${m1}–${d2}.${m2}.${y2}`;
+      return `${a}–${b}`;
+    }
     const rolling5Tips = allRuns.map((_, i) =>
       cpmRolling5[i] !== null
-        ? `Среднее 5 заездов (${i - 3}–${i + 1}, ${allRuns[i - 4].date}–${allRuns[i].date}): ${cpmRolling5[i]} зн/мин`
+        ? `Среднее 5 заездов (${i - 3}–${i + 1}, ${fmtDateRange(allRuns[i - 4].date, allRuns[i].date)}): ${cpmRolling5[i]} зн/мин`
         : ''
     );
 
