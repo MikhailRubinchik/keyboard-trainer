@@ -1229,7 +1229,9 @@ const Stats = (() => {
       return out;
     })();
     const rolling5Tips = allRuns.map((_, i) =>
-      cpmRolling5[i] !== null ? `Среднее 5 заездов (${i - 3}–${i + 1}): ${cpmRolling5[i]} зн/мин` : ''
+      cpmRolling5[i] !== null
+        ? `Среднее 5 заездов (${i - 3}–${i + 1}, ${allRuns[i - 4].date}–${allRuns[i].date}): ${cpmRolling5[i]} зн/мин`
+        : ''
     );
 
     // Vertical dividers for level transitions
