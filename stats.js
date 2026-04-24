@@ -1172,7 +1172,7 @@ const Stats = (() => {
 
     // Draws a line+dots wrapped in <g>, skipping null values
     // tips: tooltip strings per run; records: 'record'|'' per run
-    function lineGroup(values, maxV, color, groupId, tips, records) {
+    function lineGroup(values, maxV, color, groupId, tips, records, hidden = false) {
       const dots = [];
       const segments = [];
       let seg = [];
@@ -1192,7 +1192,7 @@ const Stats = (() => {
       }
       if (seg.length) segments.push(seg);
       const polylines = segments.map(s => `<polyline points="${s.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`).join('');
-      return `<g id="${groupId}">${polylines}${dots.join('')}</g>`;
+      return `<g id="${groupId}"${hidden ? ' style="display:none"' : ''}>${polylines}${dots.join('')}</g>`;
     }
 
     const tips = allRuns.map((r, i) => {
@@ -1213,6 +1213,24 @@ const Stats = (() => {
     const cpmMinRecords = hasDayLines ? computeRecords(allRuns.map(r => ({ cpm: r.cpmMin ?? 0 }))) : null;
     const errRecords = computeErrorRecords(allRuns);
     const lvlChanges = computeLevelChanges(allRuns);
+
+    // Rolling 5-run average
+    const cpmRolling5 = cpms.map((_, i) =>
+      i >= 4 ? Math.round((cpms[i] + cpms[i-1] + cpms[i-2] + cpms[i-3] + cpms[i-4]) / 5) : null
+    );
+    const rolling5Records = (() => {
+      const out = new Array(n).fill('');
+      let maxV = -1;
+      for (let i = 0; i < n; i++) {
+        if (cpmRolling5[i] === null) continue;
+        if (cpmRolling5[i] > maxV) { out[i] = 'record'; maxV = cpmRolling5[i]; }
+        else if (cpmRolling5[i] === maxV) out[i] = 'repeat';
+      }
+      return out;
+    })();
+    const rolling5Tips = allRuns.map((_, i) =>
+      cpmRolling5[i] !== null ? `Среднее 5 заездов (${i - 3}–${i + 1}): ${cpmRolling5[i]} зн/мин` : ''
+    );
 
     // Vertical dividers for level transitions
     const levelDividers = lvlChanges.map((lc, i) => {
@@ -1437,6 +1455,7 @@ const Stats = (() => {
       <div class="chart-legend">
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● скорость, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-trend" checked> <span style="color:#06b6d4">● тренд</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-rolling5"> <span style="color:#a855f7">● ср-5, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#ef4444">● ошибки, %</span></label>
       </div>
       <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
@@ -1446,6 +1465,7 @@ const Stats = (() => {
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         ${levelDividers}
         ${trendLine}
+        ${lineGroup(cpmRolling5, maxCpmForecast, '#a855f7', 'chart-group-rolling5', rolling5Tips, rolling5Records, true)}
         ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords)}
         ${lineGroup(errs, maxErr, '#ef4444', 'chart-group-err', tips, errRecords)}
         ${rightAxis}
@@ -1559,6 +1579,11 @@ const Stats = (() => {
         if (togTrend) togTrend.addEventListener('change', () => {
           const g = document.getElementById('chart-group-trend');
           if (g) g.style.display = togTrend.checked ? '' : 'none';
+        });
+        const togRolling5 = document.getElementById('chart-toggle-rolling5');
+        if (togRolling5) togRolling5.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-rolling5');
+          if (g) g.style.display = togRolling5.checked ? '' : 'none';
         });
         const togErrMax = document.getElementById('chart-toggle-err-max');
         const togErrMin = document.getElementById('chart-toggle-err-min');
