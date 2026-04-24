@@ -44,8 +44,8 @@ const Stats = (() => {
   function ruToIso(ru) { const [d, m, y] = ru.split('.'); return `${y}-${m}-${d}`; }
   function isoToRu(iso) { const [y, m, d] = iso.split('-'); return `${d}.${m}.${y}`; }
 
-  function last15Runs(allRuns) {
-    return allRuns.slice(-15);
+  function last5Runs(allRuns) {
+    return allRuns.slice(-5);
   }
 
   function lsRead() {
@@ -1617,10 +1617,10 @@ const Stats = (() => {
     const lastDayLabel = lastDate === today ? 'Сегодня'
       : lastDate === (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toLocaleDateString('ru-RU'); })() ? 'Вчера'
       : lastDate;
-    const last15R    = last15Runs(allRuns);
+    const last5R    = last5Runs(allRuns);
     const allCpm     = allRuns.map(r => r.cpm);
     const lastDayCpm = lastDayRuns.map(r => r.cpm);
-    const last15Cpm  = last15R.map(r => r.cpm);
+    const last5Cpm  = last5R.map(r => r.cpm);
 
     summaryEl.innerHTML = `
       <div class="summary-group clickable-card" data-period="all">
@@ -1640,21 +1640,21 @@ const Stats = (() => {
           </div>
         </div>
       </div>
-      ${last15R.length > 1 ? `
-      <div class="summary-group clickable-card" data-period="last15">
-        <div class="summary-group-title">Последние ${last15R.length}</div>
+      ${last5R.length > 1 ? `
+      <div class="summary-group clickable-card" data-period="last5">
+        <div class="summary-group-title">Последние ${last5R.length}</div>
         <div class="summary-row">
           <div class="summary-item">
             <span class="summary-label">Макс. скорость</span>
-            <span class="summary-value">${max(last15Cpm)} зн/мин</span>
+            <span class="summary-value">${max(last5Cpm)} зн/мин</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">Средняя скорость</span>
-            <span class="summary-value">${avg(last15Cpm)} зн/мин</span>
+            <span class="summary-value">${avg(last5Cpm)} зн/мин</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">Заездов</span>
-            <span class="summary-value">${last15R.length}</span>
+            <span class="summary-value">${last5R.length}</span>
           </div>
         </div>
       </div>` : ''}
@@ -1684,7 +1684,7 @@ const Stats = (() => {
         const period = card.dataset.period;
         let subset, label;
         if (period === 'all')     { subset = allRuns;      label = 'За всё время'; }
-        if (period === 'last15')  { subset = last15R;      label = `Последние ${last15R.length}`; }
+        if (period === 'last5')  { subset = last5R;      label = `Последние ${last5R.length}`; }
         if (period === 'lastday') { subset = lastDayRuns;  label = lastDayLabel; }
         showErrorModal(label, buildDetailHtml(subset));
       });
@@ -1706,7 +1706,7 @@ const Stats = (() => {
   }
 
   function getRecentAvgCpm() {
-    const recent = last15Runs(runs.filter(r => !r.incomplete));
+    const recent = last5Runs(runs.filter(r => !r.incomplete));
     if (!recent.length) return 0;
     return Math.round(recent.reduce((s, r) => s + r.cpm, 0) / recent.length);
   }
