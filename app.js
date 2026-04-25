@@ -363,8 +363,15 @@ function updateWordDisplay() {
 }
 
 wordInput.addEventListener('focus', () => wordDisplay.classList.add('focused'));
-wordInput.addEventListener('blur',  () => wordDisplay.classList.remove('focused'));
+wordInput.addEventListener('blur', () => {
+  wordDisplay.classList.remove('focused');
+  // Если упражнение идёт — сразу возвращаем фокус
+  if (startTime && !wordInput.disabled) setTimeout(() => wordInput.focus(), 0);
+});
 wordDisplay.addEventListener('click', () => wordInput.focus());
+document.getElementById('screen-exercise').addEventListener('click', () => {
+  if (startTime && !wordInput.disabled) wordInput.focus();
+});
 
 // ── Finger hint + hand image ──────────────────────────────────
 
