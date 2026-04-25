@@ -752,7 +752,7 @@ const Stats = (() => {
       <tr${r.lazy ? ' class="row--lazy"' : ''}>
         <td class="run-num">${i + 1}${replayBtn}</td>
         <td>${r.date}${noFingerBadge}</td>
-        <td>${r.time}</td>
+        <td>${fmtAmPm(r.time)}</td>
         <td>${r.level ?? r.exercise ?? '—'}${lvlBadge}</td>
         <td>${r.chars}</td>
         <td>${fmtErr(r.errors, r.chars)}${errBadge}</td>
@@ -1775,6 +1775,19 @@ const Stats = (() => {
 
     renderTable(allRuns, inProgress);
 
+  }
+
+  function fmtAmPm(timeStr) {
+    if (!timeStr) return '—';
+    // Already AM/PM
+    if (/[AP]M/i.test(timeStr)) return timeStr;
+    // Convert HH:MM (24h) → h:MM AM/PM
+    const [hStr, mStr] = timeStr.split(':');
+    const h = parseInt(hStr, 10);
+    if (isNaN(h)) return timeStr;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12  = h % 12 || 12;
+    return `${h12}:${mStr} ${ampm}`;
   }
 
   function formatTime(seconds) {
