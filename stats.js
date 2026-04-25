@@ -138,9 +138,7 @@ const Stats = (() => {
       setRefreshStatus(`отправлено в ${timeStr}`);
     } catch (e) {
       const msg = e.message || String(e);
-      setSyncStatus('↑ Ошибка: ' + msg, true);
-      setRefreshStatus('ошибка отправки');
-      console.error('[pushToGist]', msg);
+      setRefreshStatus('↑ ' + msg);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = '↑ Отправить'; }
     }
