@@ -888,6 +888,9 @@ async function finishRun() {
 // ── Navigation buttons ────────────────────────────────────────
 
 btnBack.addEventListener('click', () => {
+  if (startTime && !wordInput.disabled) {
+    if (!confirm('Прервать упражнение и выйти?')) return;
+  }
   stopTimer();
   clearIdleTimer();
   resultOverlay.classList.add('hidden');
