@@ -880,6 +880,34 @@ const Stats = (() => {
         });
       });
     }
+
+    // Sentence coverage section (runs mode only)
+    if (tableMode === 'runs' && typeof SENTENCES !== 'undefined' && SENTENCES.length) {
+      const n = SENTENCES.length;
+      const counts = new Array(n).fill(0);
+      for (const run of allRuns) {
+        if (!run.text) continue;
+        const padded = ' ' + run.text + ' ';
+        for (let i = 0; i < n; i++) {
+          if (padded.includes(' ' + SENTENCES[i] + ' ') || run.text === SENTENCES[i]) counts[i]++;
+        }
+      }
+      const hist = new Map();
+      for (const c of counts) hist.set(c, (hist.get(c) || 0) + 1);
+      const entries = [...hist.entries()].sort((a, b) => a[0] - b[0]);
+      const neverSeen = hist.get(0) || 0;
+      const seen = n - neverSeen;
+      const rows = entries.map(([times, cnt]) =>
+        `<tr><td>${times === 0 ? 'Ни разу' : times + ' раз'}</td><td>${cnt}</td><td>${(cnt / n * 100).toFixed(1)}%</td></tr>`
+      ).join('');
+      const div = document.createElement('div');
+      div.style.cssText = 'margin-top:24px';
+      div.innerHTML = `
+        <p class="freq-section-title" style="margin-bottom:6px">Покрытие предложений: ${seen} из ${n} (${(seen / n * 100).toFixed(1)}%)</p>
+        <table class="stats-table"><thead><tr><th>Встречалось</th><th>Предложений</th><th>%</th></tr></thead>
+        <tbody>${rows}</tbody></table>`;
+      tableWrap.appendChild(div);
+    }
   }
 
   // ── Interval map helpers ───────────────────────────────────
