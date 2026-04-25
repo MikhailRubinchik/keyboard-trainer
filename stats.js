@@ -751,8 +751,7 @@ const Stats = (() => {
       return `
       <tr${r.lazy ? ' class="row--lazy"' : ''}>
         <td class="run-num">${i + 1}${replayBtn}</td>
-        <td>${r.date}${noFingerBadge}</td>
-        <td style="white-space:nowrap">${fmtAmPm(r.time)}</td>
+        <td title="${r.date}${r.time ? ' · ' + fmtAmPm(r.time) : ''}">${r.date}${noFingerBadge}</td>
         <td>${r.level ?? r.exercise ?? '—'}${lvlBadge}</td>
         <td>${r.chars}</td>
         <td>${fmtErr(r.errors, r.chars)}${errBadge}</td>
@@ -768,8 +767,7 @@ const Stats = (() => {
       return `
       <tr class="row--in-progress">
         <td class="run-num">⏳</td>
-        <td>${inProgress.date}</td>
-        <td>${inProgress.time}</td>
+        <td title="${inProgress.date}${inProgress.time ? ' · ' + fmtAmPm(inProgress.time) : ''}">${inProgress.date}</td>
         <td>${inProgress.level ?? '—'}</td>
         <td>${inProgress.chars} (${pct})</td>
         <td>${fmtErr(inProgress.errors, inProgress.chars)}</td>
@@ -784,7 +782,6 @@ const Stats = (() => {
           <tr>
             <th>#</th>
             <th>Дата</th>
-            <th>Старт</th>
             <th>Уровень</th>
             <th>Символов</th>
             <th>Ошибок</th>
