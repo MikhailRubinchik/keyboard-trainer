@@ -109,22 +109,29 @@ const Stats = (() => {
       let detail = '';
       try {
         const json = await res.json();
-        detail = json.message ? ` — ${json.message}` : '';
+        detail = json.message || '';
       } catch {}
       const hints = {
-        401: ' (токен недействителен или истёк)',
-        403: ' (нет прав; нужен scope: gist)',
-        404: ' (гист не найден или чужой токен)',
-        422: ' (неверный запрос)',
+        401: 'токен недействителен или истёк',
+        403: 'нет прав; нужен scope: gist',
+        404: 'гист не найден или чужой токен',
+        422: 'неверный запрос',
       };
-      throw new Error(`GitHub API ${res.status}${hints[res.status] || ''}${detail}`);
+      const reason = detail || hints[res.status] || '';
+      throw new Error(`GitHub API ${res.status}${reason ? ` — ${reason}` : ''}`);
     }
     return res.json();
   }
 
-  async function pushToGist() {
+  let lastPushMs = 0;
+  const PUSH_THROTTLE_MS = 60_000; // не чаще раза в минуту (автоматические пуши)
+
+  async function pushToGist({ force = false } = {}) {
     const { token, gistId } = getSyncConfig();
     if (!token || !gistId) return;
+    const now = Date.now();
+    if (!force && now - lastPushMs < PUSH_THROTTLE_MS) return;
+    lastPushMs = now;
     const btn = document.getElementById('btn-push-gist');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Отправляю…'; }
     try {
@@ -317,7 +324,7 @@ const Stats = (() => {
     if (cfg0.gistId && !cfg0.token) btnRefresh.classList.remove('hidden');
     if (cfg0.gistId &&  cfg0.token) btnPush.classList.remove('hidden');
     btnRefresh.addEventListener('click', () => pullFromGist());
-    btnPush.addEventListener('click', () => pushToGist());
+    btnPush.addEventListener('click', () => pushToGist({ force: true }));
 
     // Replay overlay
     const replayOverlay = document.getElementById('replay-overlay');
@@ -395,7 +402,7 @@ const Stats = (() => {
     runs.push(entry);
     lsWrite(runs);
     renderStats(runs);
-    pushToGist(); // fire-and-forget
+    pushToGist({ force: !entry.incomplete }); // fire-and-forget; завершённые заезды пушим всегда
   }
 
   // ── Rendering ──────────────────────────────────────────────
