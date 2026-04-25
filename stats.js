@@ -105,7 +105,20 @@ const Stats = (() => {
       },
       body: body ? JSON.stringify(body) : undefined,
     });
-    if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+    if (!res.ok) {
+      let detail = '';
+      try {
+        const json = await res.json();
+        detail = json.message ? ` — ${json.message}` : '';
+      } catch {}
+      const hints = {
+        401: ' (токен недействителен или истёк)',
+        403: ' (нет прав; нужен scope: gist)',
+        404: ' (гист не найден или чужой токен)',
+        422: ' (неверный запрос)',
+      };
+      throw new Error(`GitHub API ${res.status}${hints[res.status] || ''}${detail}`);
+    }
     return res.json();
   }
 
@@ -124,8 +137,10 @@ const Stats = (() => {
       setSyncStatus('↑ ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
       setRefreshStatus(`отправлено в ${timeStr}`);
     } catch (e) {
-      setSyncStatus('↑ Ошибка: ' + e.message, true);
+      const msg = e.message || String(e);
+      setSyncStatus('↑ Ошибка: ' + msg, true);
       setRefreshStatus('ошибка отправки');
+      console.error('[pushToGist]', msg);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = '↑ Отправить'; }
     }
