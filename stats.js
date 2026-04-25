@@ -752,7 +752,7 @@ const Stats = (() => {
       <tr${r.lazy ? ' class="row--lazy"' : ''}>
         <td class="run-num">${i + 1}${replayBtn}</td>
         <td>${r.date}${noFingerBadge}</td>
-        <td>${fmtAmPm(r.time)}</td>
+        <td style="white-space:nowrap">${fmtAmPm(r.time)}</td>
         <td>${r.level ?? r.exercise ?? '—'}${lvlBadge}</td>
         <td>${r.chars}</td>
         <td>${fmtErr(r.errors, r.chars)}${errBadge}</td>
