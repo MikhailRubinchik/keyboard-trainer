@@ -784,7 +784,7 @@ const Stats = (() => {
           <tr>
             <th>#</th>
             <th>Дата</th>
-            <th>Время</th>
+            <th>Старт</th>
             <th>Уровень</th>
             <th>Символов</th>
             <th>Ошибок</th>
@@ -1780,7 +1780,7 @@ const Stats = (() => {
   function formatTime(seconds) {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
+    return m > 0 ? `${m}м ${String(s).padStart(2, '0')}с` : `${s}с`;
   }
 
   function getTodayRunCount() {
