@@ -416,7 +416,7 @@ function startTimer() {
   startTime = Date.now();
   const now = new Date();
   runStartDate = now.toLocaleDateString('ru-RU');
-  runStartTime = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  runStartTime = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   timerInterval = setInterval(() => {
     elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
     liveTimer.textContent    = Stats.formatTime(elapsedSeconds);
