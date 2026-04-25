@@ -42,7 +42,7 @@ const FINGER_IMAGE = {
 
 // ── Levels ───────────────────────────────────────────────────
 
-const LEVEL_COUNT      = 23;
+const LEVEL_COUNT      = 34;
 const LS_LEVEL_KEY     = 'klavagonki_level';
 const LS_SHOW_FINGER   = 'klavagonki_show_finger';
 
@@ -66,11 +66,11 @@ function initFingerSetting() {
 }
 
 // Character count for each level (1-indexed)
-const LEVEL_SIZES = [50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000];
+const LEVEL_SIZES = [50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3000];
 
 // Min avg cpm required to move TO level n (index 0 = threshold for level 2)
 // Formula: (LEVEL_SIZES[n-1] + LEVEL_SIZES[n]) / 2 / 20 — median of adjacent sizes takes ~20 min
-const LEVEL_THRESHOLDS = [4, 6, 9, 11, 14, 18, 23, 28, 33, 38, 43, 48, 53, 58, 63, 68, 73, 78, 83, 88, 93, 98];
+const LEVEL_THRESHOLDS = [4, 6, 9, 11, 14, 18, 23, 28, 33, 38, 43, 48, 53, 58, 63, 68, 73, 78, 83, 88, 93, 98, 103, 108, 113, 118, 123, 128, 133, 138, 143, 148, 150];
 
 let currentLevel   = 1;
 let lastStartIndex = -1;
