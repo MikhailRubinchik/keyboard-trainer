@@ -376,8 +376,8 @@ const Stats = (() => {
    */
   async function saveRun(record) {
     const entry = {
-      date:         new Date().toLocaleDateString('ru-RU'),
-      time:         new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+      date:         record.date || new Date().toLocaleDateString('ru-RU'),
+      time:         record.time || new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
       level:        record.level,
       chars:        record.chars,
       errors:       record.errors,

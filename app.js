@@ -159,6 +159,8 @@ let lineStartChars = [];  // char index where each line starts
 let lineOffsetTops = [];  // offsetTop of first span in each line
 
 let startTime      = null;
+let runStartDate   = '';   // записывается при первом нажатии клавиши
+let runStartTime   = '';
 let timerInterval  = null;
 let elapsedSeconds = 0;
 let errorCount     = 0;
@@ -412,6 +414,9 @@ function updateFingerHint() {
 
 function startTimer() {
   startTime = Date.now();
+  const now = new Date();
+  runStartDate = now.toLocaleDateString('ru-RU');
+  runStartTime = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
   timerInterval = setInterval(() => {
     elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
     liveTimer.textContent    = Stats.formatTime(elapsedSeconds);
@@ -697,6 +702,8 @@ function handleChar(key) {
     }
 
     Stats.saveRun({
+      date:           runStartDate,
+      time:           runStartTime,
       level:          currentLevel,
       chars:          cursor,
       totalChars:     chars.length,
@@ -847,6 +854,8 @@ async function finishRun() {
   }
 
   await Stats.saveRun({
+    date:           runStartDate,
+    time:           runStartTime,
     level:          currentLevel,
     chars:          totalChars,
     seconds:        elapsedSeconds,
