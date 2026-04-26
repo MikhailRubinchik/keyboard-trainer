@@ -1146,7 +1146,7 @@ const Stats = (() => {
         return `<span class="${cls}">${a === ' ' ? '␣' : a}</span>`;
       }).join(', ');
 
-      return `<div class="error-entry" data-attempts="${entry.attempts.length}">
+      return `<div class="error-entry" data-attempts="${new Set(entry.attempts).size}">
         <span class="eword">${wordHtml}</span>
         <span class="error-arrow">→</span>
         <span class="error-attempts">${attemptsHtml}</span>
