@@ -375,6 +375,24 @@ document.getElementById('screen-exercise').addEventListener('click', () => {
   if (startTime && !wordInput.disabled) wordInput.focus();
 });
 
+// Prevent any click on the exercise screen from stealing focus while typing.
+// mousedown fires before blur, so preventDefault here stops the focus transfer.
+// click events still fire (buttons/checkboxes work normally).
+document.getElementById('screen-exercise').addEventListener('mousedown', (e) => {
+  if (!startTime || wordInput.disabled) return;
+  if (e.target === wordInput) return;
+  if (e.target.type === 'checkbox') return;  // let setting toggles work
+  e.preventDefault();
+});
+
+// Prevent Escape from blurring the input during an active exercise.
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && startTime && !wordInput.disabled) {
+    e.preventDefault();
+    wordInput.focus();
+  }
+});
+
 // ── Finger hint + hand image ──────────────────────────────────
 
 function updateFingerHint() {
