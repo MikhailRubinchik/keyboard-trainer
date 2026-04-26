@@ -375,13 +375,13 @@ document.getElementById('screen-exercise').addEventListener('click', () => {
   if (startTime && !wordInput.disabled) wordInput.focus();
 });
 
-// Prevent any click on the exercise screen from stealing focus while typing.
+// Prevent any click anywhere on the page from stealing focus while exercise is active.
 // mousedown fires before blur, so preventDefault here stops the focus transfer.
-// click events still fire (buttons/checkboxes work normally).
-document.getElementById('screen-exercise').addEventListener('mousedown', (e) => {
-  if (!startTime || wordInput.disabled) return;
+// click events still fire (buttons/checkboxes still work normally).
+document.addEventListener('mousedown', (e) => {
+  if (wordInput.disabled) return;           // exercise not active
   if (e.target === wordInput) return;
-  if (e.target.type === 'checkbox') return;  // let setting toggles work
+  if (e.target.type === 'checkbox') return; // let setting toggles work
   e.preventDefault();
 });
 
