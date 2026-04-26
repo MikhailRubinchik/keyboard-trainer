@@ -1137,8 +1137,7 @@ const Stats = (() => {
       const ef    = finger(entry.expected);
       const next1 = entry.word[entry.charInWord + 1];
       const next2 = entry.word[entry.charInWord + 2];
-      const unique = [...new Set(entry.attempts)];
-      const attemptsHtml = unique.map(a => {
+      const attemptsHtml = entry.attempts.map(a => {
         const af   = finger(a);
         const same = ef && af && af === ef;
         const next = a === next1 || a === next2;
