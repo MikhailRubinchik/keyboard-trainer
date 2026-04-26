@@ -769,7 +769,7 @@ const Stats = (() => {
         <td class="run-num">⏳</td>
         <td title="${inProgress.date}${inProgress.time ? ' · ' + fmtAmPm(inProgress.time) : ''}">${inProgress.date}</td>
         <td>${inProgress.level ?? '—'}</td>
-        <td>${inProgress.chars} (${pct})</td>
+        <td>${inProgress.totalChars ?? inProgress.chars} (${pct})</td>
         <td>${fmtErr(inProgress.errors, inProgress.chars)}</td>
         <td>${formatTime(inProgress.seconds)}</td>
         <td>${inProgress.cpm} зн/мин</td>
