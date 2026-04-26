@@ -381,13 +381,18 @@ document.getElementById('screen-exercise').addEventListener('click', () => {
 document.addEventListener('mousedown', (e) => {
   if (wordInput.disabled) return;           // exercise not active
   if (e.target === wordInput) return;
-  if (e.target.type === 'checkbox') return; // let setting toggles work
   e.preventDefault();
 });
 
-// Prevent Escape from blurring the input during an active exercise.
+// After any checkbox toggle on the exercise screen, return focus to the input.
+document.getElementById('screen-exercise').addEventListener('change', (e) => {
+  if (e.target.type === 'checkbox' && !wordInput.disabled) wordInput.focus();
+});
+
+// Prevent Tab and Escape from leaving the input during an active exercise.
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && startTime && !wordInput.disabled) {
+  if (wordInput.disabled) return;
+  if (e.key === 'Tab' || e.key === 'Escape') {
     e.preventDefault();
     wordInput.focus();
   }
