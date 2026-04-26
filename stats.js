@@ -124,7 +124,7 @@ const Stats = (() => {
   }
 
   let lastPushMs = 0;
-  const PUSH_THROTTLE_MS = 60_000; // не чаще раза в минуту (автоматические пуши)
+  const PUSH_THROTTLE_MS = 20_000; // не чаще раза в 20 секунд (автоматические пуши)
 
   async function pushToGist({ force = false } = {}) {
     const { token, gistId } = getSyncConfig();
