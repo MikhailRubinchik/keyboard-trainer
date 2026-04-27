@@ -1,10 +1,8 @@
 // Exercise texts
-// Source: N. Nosov, "Adventures of Neznaika and his Friends" - retelling for educational purposes
-//
-// Sentences are in narrative order.
-// getRandomExercise() picks a random contiguous slice of the required length.
+// getRandomExercise() picks a random contiguous slice of sentences >= targetChars.
+// If the active text set is too short, sentences are repeated until there is enough.
 
-const SENTENCES = [
+const NEZNAIKA_SENTENCES = [
   // ── Знакомство с Цветочным городом ──
   "В маленьком городе, который назывался Цветочным, жили маленькие существа - коротышки.",
   "Коротышками их называли потому, что все они были очень маленького роста.",
@@ -458,43 +456,75 @@ const SENTENCES = [
   "И всё было хорошо - по-настоящему хорошо, как только бывает в хороших сказках.",
 ];
 
+const WINNIE_SENTENCES = [
+  "Как-то раз Винни-Пух пошёл навестить своего друга Пятачка.",
+  "Пятачок жил в большом дереве посреди орешника.",
+  "По дороге Винни-Пух думал о том, не пора ли уже завтракать.",
+  "Над входом в дом Пятачка висела табличка «ЖИЛЪ-БЫЛ ПЯТАЧОКЪ».",
+  "Пятачок очень гордился этой табличкой, хотя сам повесил её только вчера.",
+  "Вместе они решили пойти в гости к Иа-Иа, который жил в дальнем уголке леса.",
+  "Иа-Иа стоял у своего домика и уныло смотрел в землю.",
+  "Похоже, он снова потерял свой хвост и теперь никак не мог его найти.",
+  "Винни-Пух предложил немедленно отправиться на его поиски.",
+  "Пятачок побежал в одну сторону, а Винни-Пух — в другую.",
+  "Через некоторое время выяснилось, что хвост висел у Кролика в доме как звонок.",
+  "Кролик очень удивился, узнав, что звонок на самом деле оказался хвостом Иа-Иа.",
+  "Все вместе они торжественно вернули хвост на место, и Иа-Иа стал чуть веселее.",
+  "На обратном пути Винни-Пух сочинил новую песенку про мёд и дружбу.",
+  "Он пел её до самого дома, слегка изменяя слова на каждом шагу.",
+];
+
+const TEXT_SETS = [
+  { id: 'neznaika', label: 'Незнайка',  sentences: NEZNAIKA_SENTENCES },
+  { id: 'winnie',   label: 'Винни-Пух', sentences: WINNIE_SENTENCES },
+];
+
+// Active sentence pool — updated by setTextSet()
+let SENTENCES = NEZNAIKA_SENTENCES;
+
+function setTextSet(id) {
+  const set = TEXT_SETS.find(s => s.id === id) || TEXT_SETS[0];
+  SENTENCES = set.sentences;
+}
+
 /**
  * Returns a random contiguous slice of sentences with total length >= targetChars.
- * excludeStart - previous start index to exclude for variety.
+ * If the active set is shorter than needed, sentences are repeated until sufficient.
+ * excludeStart — previous start index to exclude for variety.
  * Returns { text: string, startIndex: number }
  */
 function getRandomExercise(targetChars, excludeStart = -1) {
-  const target = targetChars;
+  // Expand pool by repeating if the active set is too short
+  let pool = SENTENCES;
+  while (pool.reduce((s, t) => s + t.length + 1, 0) < targetChars + 1) {
+    pool = [...pool, ...SENTENCES];
+  }
 
-  // Find all valid start indices
-  const valid = _findValidStarts(target, excludeStart);
-
-  // If none found with the exclusion, drop the restriction
-  const starts = valid.length > 0 ? valid : _findValidStarts(target, -1);
+  const valid = _findValidStarts(pool, targetChars, excludeStart);
+  const starts = valid.length > 0 ? valid : _findValidStarts(pool, targetChars, -1);
 
   const startIndex = starts[Math.floor(Math.random() * starts.length)];
 
-  // Collect consecutive sentences until target length is reached
   const parts = [];
   let accumulated = 0;
-  for (let i = startIndex; i < SENTENCES.length; i++) {
-    if (parts.length > 0) accumulated += 1; // space between sentences
-    accumulated += SENTENCES[i].length;
-    parts.push(SENTENCES[i]);
-    if (accumulated >= target) break;
+  for (let i = startIndex; i < pool.length; i++) {
+    if (parts.length > 0) accumulated += 1;
+    accumulated += pool[i].length;
+    parts.push(pool[i]);
+    if (accumulated >= targetChars) break;
   }
 
   return { text: parts.join(' '), startIndex };
 }
 
-function _findValidStarts(target, exclude) {
+function _findValidStarts(pool, target, exclude) {
   const valid = [];
-  for (let i = 0; i < SENTENCES.length; i++) {
+  for (let i = 0; i < pool.length; i++) {
     if (i === exclude) continue;
     let acc = 0;
-    for (let j = i; j < SENTENCES.length; j++) {
+    for (let j = i; j < pool.length; j++) {
       if (j > i) acc += 1;
-      acc += SENTENCES[j].length;
+      acc += pool[j].length;
       if (acc >= target) { valid.push(i); break; }
     }
   }

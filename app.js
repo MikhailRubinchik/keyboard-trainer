@@ -45,8 +45,23 @@ const FINGER_IMAGE = {
 const LEVEL_COUNT      = 34;
 const LS_LEVEL_KEY     = 'klavagonki_level';
 const LS_SHOW_FINGER   = 'klavagonki_show_finger';
+const LS_TEXT_SET      = 'klavagonki_text_set';
 
 let showFinger = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
+
+// Initialise active text set from localStorage
+(function () {
+  const saved = localStorage.getItem(LS_TEXT_SET) || 'neznaika';
+  setTextSet(saved);
+  const sel = document.getElementById('text-set-select');
+  if (sel) {
+    sel.value = saved;
+    sel.addEventListener('change', () => {
+      setTextSet(sel.value);
+      localStorage.setItem(LS_TEXT_SET, sel.value);
+    });
+  }
+})();
 
 function applyFingerSetting() {
   const visible = showFinger;
