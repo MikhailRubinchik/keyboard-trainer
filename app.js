@@ -121,6 +121,12 @@ document.addEventListener('keydown', (e) => {
       toggleLevelLock();
     }
   }
+  if (e.code === 'KeyF' && e.shiftKey && !e.metaKey && !e.ctrlKey) {
+    if (screenExercise.classList.contains('active') && (!startTime || wordInput.disabled)) {
+      const row = document.querySelector('.settings-row--exercise');
+      row.classList.toggle('visible');
+    }
+  }
 });
 
 function updateLevelButtonsActive() {

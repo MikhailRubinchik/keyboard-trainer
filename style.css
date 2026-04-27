@@ -145,6 +145,11 @@ html, body {
   margin-top: 8px;
   margin-bottom: 0;
   text-align: center;
+  display: none;
+}
+
+.settings-row--exercise.visible {
+  display: block;
 }
 
 .setting-toggle {
@@ -241,6 +246,12 @@ html, body {
   color: var(--accent);
   min-width: 48px;
   text-align: right;
+}
+
+.finger-toggle-hint {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  opacity: 0.5;
 }
 
 /* ── Finger hint ─────────────────────────────────────────── */
