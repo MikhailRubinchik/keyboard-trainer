@@ -15,20 +15,85 @@ const Stats = (() => {
 
   // ── Utilities ──────────────────────────────────────────────
 
+  // ── Compact format codecs ─────────────────────────────────
+  // Ctrl/Alt+Backspace (word-erase) is stored as '⌫⌫' (2 chars) in the
+  // keystroke log. In compact form we encode it as a single sentinel char
+  // U+2326 (⌦) so that the key string stays one-char-per-keystroke.
+  const WORD_ERASE_SENTINEL = '\u2326';
+
+  function encodeKeystrokeLog(log) {
+    if (!log || !log.length) return { k: '', d: [] };
+    let k = '';
+    const d = [];
+    for (const [key, delta] of log) {
+      k += key === '⌫⌫' ? WORD_ERASE_SENTINEL : key;
+      d.push(delta);
+    }
+    return { k, d };
+  }
+
+  function decodeKeystrokeLog(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw; // old format — pass through during migration
+    const chars = [...(raw.k || '')];
+    const deltas = raw.d || [];
+    return chars.map((ch, i) => [ch === WORD_ERASE_SENTINEL ? '⌫⌫' : ch, deltas[i] ?? 0]);
+  }
+
+  function encodeErrorsDetail(detail) {
+    if (!detail || !detail.length) return [];
+    return detail.map(e => [e.word, e.charInWord, e.expected, e.attempts.join('')]);
+  }
+
+  function decodeErrorsDetail(raw) {
+    if (!raw || !raw.length) return [];
+    if (Array.isArray(raw[0])) // new format
+      return raw.map(e => ({ word: e[0], charInWord: e[1], expected: e[2], attempts: [...e[3]] }));
+    return raw; // old format — pass through during migration
+  }
+
+  function encodeBigramStats(stats) {
+    if (!stats) return {};
+    const out = {};
+    for (const [k, v] of Object.entries(stats)) out[k] = [v.avg, v.count];
+    return out;
+  }
+
+  function decodeBigramStats(raw) {
+    if (!raw) return {};
+    const entries = Object.entries(raw);
+    if (!entries.length) return {};
+    if (Array.isArray(entries[0][1])) // new format
+      return Object.fromEntries(entries.map(([k, v]) => [k, { avg: v[0], count: v[1] }]));
+    return raw; // old format — pass through during migration
+  }
+
+  // ── Serialization ─────────────────────────────────────────
+
   function parseLines(text) {
     return text
       .split('\n')
       .map(l => l.trim())
       .filter(Boolean)
       .map(l => {
-        try { return JSON.parse(l); }
-        catch { return null; }
+        try {
+          const r = JSON.parse(l);
+          return Object.assign({}, r, {
+            keystrokeLog: decodeKeystrokeLog(r.keystrokeLog),
+            errorsDetail: decodeErrorsDetail(r.errorsDetail),
+            bigramStats:  decodeBigramStats(r.bigramStats),
+          });
+        } catch { return null; }
       })
       .filter(Boolean);
   }
 
   function serializeRuns(runArray) {
-    return runArray.map(r => JSON.stringify(r)).join('\n') + '\n';
+    return runArray.map(r => JSON.stringify(Object.assign({}, r, {
+      keystrokeLog: encodeKeystrokeLog(r.keystrokeLog),
+      errorsDetail: encodeErrorsDetail(r.errorsDetail),
+      bigramStats:  encodeBigramStats(r.bigramStats),
+    }))).join('\n') + '\n';
   }
 
   function todayStr() {
@@ -373,6 +438,15 @@ const Stats = (() => {
     }
 
     runs = lsRead();
+
+    // One-time migration: if localStorage still has old-format keystrokeLog
+    // (array-of-arrays), re-serialize everything in compact format and push.
+    const rawLs = localStorage.getItem(LS_KEY) || '';
+    if (rawLs.includes('"keystrokeLog":[[')) {
+      lsWrite(runs);
+      pushToGist({ force: true });
+    }
+
     renderStats(runs);
   }
 
