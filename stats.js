@@ -170,7 +170,13 @@ const Stats = (() => {
       const data = await res.json();
       const file = data.files[GIST_FILE];
       if (!file) throw new Error('файл не найден в гисте');
-      const pulled = parseLines(file.content);
+      let content = file.content;
+      if (file.truncated) {
+        const rawRes = await fetch(file.raw_url);
+        if (!rawRes.ok) throw new Error(`ошибка загрузки raw: ${rawRes.status}`);
+        content = await rawRes.text();
+      }
+      const pulled = parseLines(content);
       runs = pulled;
       lsWrite(runs);
       renderStats(runs);
