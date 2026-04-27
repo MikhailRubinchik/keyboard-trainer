@@ -248,12 +248,6 @@ html, body {
   text-align: right;
 }
 
-.finger-toggle-hint {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  opacity: 0.5;
-}
-
 /* ── Finger hint ─────────────────────────────────────────── */
 
 .finger-hint {
