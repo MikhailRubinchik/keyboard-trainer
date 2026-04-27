@@ -122,9 +122,8 @@ document.addEventListener('keydown', (e) => {
     }
   }
   if (e.code === 'KeyF' && e.shiftKey && !e.metaKey && !e.ctrlKey) {
-    if (screenExercise.classList.contains('active') && (!startTime || wordInput.disabled)) {
-      const row = document.querySelector('.settings-row--exercise');
-      row.classList.toggle('visible');
+    if (screenList.classList.contains('active')) {
+      document.querySelector('.settings-row--main').classList.toggle('visible');
     }
   }
 });
@@ -391,9 +390,6 @@ document.addEventListener('mousedown', (e) => {
 });
 
 // After any checkbox toggle on the exercise screen, return focus to the input.
-document.getElementById('screen-exercise').addEventListener('change', (e) => {
-  if (e.target.type === 'checkbox' && !wordInput.disabled) wordInput.focus();
-});
 
 // Prevent Tab and Escape from leaving the input during an active exercise.
 document.addEventListener('keydown', (e) => {

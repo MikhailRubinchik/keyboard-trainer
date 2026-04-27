@@ -141,14 +141,13 @@ html, body {
   margin-bottom: 32px;
 }
 
-.settings-row--exercise {
-  margin-top: 8px;
-  margin-bottom: 0;
+.settings-row--main {
+  margin-top: 12px;
   text-align: center;
   display: none;
 }
 
-.settings-row--exercise.visible {
+.settings-row--main.visible {
   display: block;
 }
 

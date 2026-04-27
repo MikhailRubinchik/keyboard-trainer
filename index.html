@@ -21,6 +21,13 @@
 
     <button id="btn-start" class="btn-primary btn-start">Начать</button>
 
+    <div class="settings-row--main">
+      <label class="setting-toggle">
+        <input type="checkbox" id="setting-show-finger" checked>
+        Показывать следующий палец
+      </label>
+    </div>
+
     <div id="stats-section">
       <h2 class="stats-title">Статистика</h2>
       <div id="stats-summary"></div>
@@ -52,13 +59,6 @@
       <span id="live-progress" class="live-stat">0%</span>
       <span id="live-cpm" class="live-stat">— зн/мин</span>
       <span id="live-timer" class="live-timer">0:00</span>
-    </div>
-
-    <div class="settings-row--exercise">
-      <label class="setting-toggle">
-        <input type="checkbox" id="setting-show-finger" checked>
-        Показывать следующий палец
-      </label>
     </div>
 
     <div id="finger-hint" class="finger-hint"></div>
