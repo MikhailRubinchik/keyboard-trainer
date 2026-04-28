@@ -1417,7 +1417,7 @@ const Stats = (() => {
       }
       const xsData = dayDateMs.map(ms => xPosByMs(ms));
 
-      function lineGroupD(values, maxV, color, groupId, tipsArr, records, hidden, xs) {
+      function lineGroupD(values, maxV, color, groupId, tipsArr, records, hidden, xs, dash = '') {
         const dots = [], segments = [];
         let seg = [];
         for (let i = 0; i < values.length; i++) {
@@ -1433,7 +1433,8 @@ const Stats = (() => {
           }
         }
         if (seg.length) segments.push(seg);
-        const polylines = segments.map(s => `<polyline points="${s.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`).join('');
+        const da = dash ? ` stroke-dasharray="${dash}"` : '';
+        const polylines = segments.map(s => `<polyline points="${s.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"${da}/>`).join('');
         return `<g id="${groupId}"${hidden ? ' style="display:none"' : ''}>${polylines}${dots.join('')}</g>`;
       }
 
@@ -1511,15 +1512,25 @@ const Stats = (() => {
       ).join('');
 
       const totalCharsPerDay = allRuns.map(r => r.totalCharsDay ?? null);
-      const maxCharsDay = Math.max(...totalCharsPerDay.filter(v => v !== null)) || 1;
+      const avgCharsPerDay   = allRuns.map(r => r.chars ?? null);
+      const maxCharsDay = Math.max(...[...totalCharsPerDay, ...avgCharsPerDay].filter(v => v !== null)) || 1;
       const charsTicksD = [0, Math.round(maxCharsDay / 2), Math.round(maxCharsDay)];
       const leftAxisCharsD = charsTicksD.map(t =>
         `<line x1="${padL}" y1="${yScaleD(t, maxCharsDay).toFixed(1)}" x2="${W - padRd}" y2="${yScaleD(t, maxCharsDay).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
          <text x="${padL - 5}" y="${(yScaleD(t, maxCharsDay) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#8b5cf6">${t}</text>`
       ).join('');
-      const charsDayTips = allRuns.map(r =>
-        `${r.date} · ${r._count} заездов\nБукв всего: ${r.totalCharsDay ?? '—'}`
-      );
+      const charsDayTips    = allRuns.map(r => `${r.date} · ${r._count} заездов\nБукв всего: ${r.totalCharsDay ?? '—'}`);
+      const avgCharsDayTips = allRuns.map(r => `${r.date} · ${r._count} заездов\nБукв ср.: ${r.chars ?? '—'}`);
+      const totalSecPerDay = allRuns.map(r => r.seconds ?? null);
+      const avgSecPerDay   = allRuns.map(r => r.avgSeconds ?? null);
+      const maxSecDay = Math.max(...[...totalSecPerDay, ...avgSecPerDay].filter(v => v !== null)) || 1;
+      const secDayTicks = [0, Math.round(maxSecDay / 2), Math.round(maxSecDay)];
+      const rightAxisCharsD = secDayTicks.map(t =>
+        `<text x="${W - padRd + 5}" y="${(yScaleD(t, maxSecDay) + 4).toFixed(1)}" text-anchor="start" font-size="10" fill="#6366f1">${formatTime(t)}</text>`
+      ).join('');
+      const secDayTips    = allRuns.map(r => `${r.date} · ${r._count} заездов\nВремя: ${formatTime(r.seconds)}`);
+      const avgSecDayTips = allRuns.map(r => `${r.date} · ${r._count} заездов\nВремя ср.: ${formatTime(r.avgSeconds)}`);
+
 
       const bordersD = `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotHd}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padRd}" y1="${padT}" x2="${W - padRd}" y2="${padT + plotHd}" stroke="#d1d5db" stroke-width="1"/>
@@ -1563,10 +1574,17 @@ const Stats = (() => {
       <div class="chart-block">
         <div class="chart-legend">
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-chars-day"> <span style="color:#8b5cf6">● букв за день</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-avg-chars-day" checked> <span style="color:#8b5cf6">╌ букв ср.</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-sec-day" checked> <span style="color:#6366f1">● длительность</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-avg-sec-day" checked> <span style="color:#6366f1">╌ длит. ср.</span></label>
         </div>
         <svg id="chart-svg-chars-day" viewBox="0 0 ${W} ${Hd}" style="width:100%;display:none">
           ${leftAxisCharsD}${bordersD}
-          ${lineGroupD(totalCharsPerDay, maxCharsDay, '#8b5cf6', 'chart-group-chars-day', charsDayTips, null, false, xsData)}
+          ${lineGroupD(totalCharsPerDay, maxCharsDay, '#8b5cf6', 'chart-group-chars-day',     charsDayTips,    null, false, xsData)}
+          ${lineGroupD(avgCharsPerDay,   maxCharsDay, '#8b5cf6', 'chart-group-avg-chars-day', avgCharsDayTips, null, false, xsData, '5,3')}
+          ${lineGroupD(totalSecPerDay,   maxSecDay,   '#6366f1', 'chart-group-sec-day',       secDayTips,      null, false, xsData)}
+          ${lineGroupD(avgSecPerDay,     maxSecDay,   '#6366f1', 'chart-group-avg-sec-day',   avgSecDayTips,   null, false, xsData, '5,3')}
+          ${rightAxisCharsD}
           ${xLabelsD}
         </svg>
       </div>`;
@@ -1741,6 +1759,7 @@ const Stats = (() => {
                 return v.length ? Math.min(...v.map(r => r.errors / r.chars * 100)) : null;
               })(),
               seconds: dayRuns.reduce((s, r) => s + r.seconds, 0),
+              avgSeconds: Math.round(dayRuns.reduce((s, r) => s + r.seconds, 0) / dayRuns.length),
               totalCharsDay: dayRuns.reduce((s, r) => s + r.chars, 0),
               _count: dayRuns.length,
             }));
@@ -1792,6 +1811,21 @@ const Stats = (() => {
         if (togCharsDay) togCharsDay.addEventListener('change', () => {
           const svg = document.getElementById('chart-svg-chars-day');
           if (svg) svg.style.display = togCharsDay.checked ? 'block' : 'none';
+        });
+        const togAvgCharsDay = document.getElementById('chart-toggle-avg-chars-day');
+        if (togAvgCharsDay) togAvgCharsDay.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-avg-chars-day');
+          if (g) g.style.display = togAvgCharsDay.checked ? '' : 'none';
+        });
+        const togSecDay = document.getElementById('chart-toggle-sec-day');
+        if (togSecDay) togSecDay.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-sec-day');
+          if (g) g.style.display = togSecDay.checked ? '' : 'none';
+        });
+        const togAvgSecDay = document.getElementById('chart-toggle-avg-sec-day');
+        if (togAvgSecDay) togAvgSecDay.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-avg-sec-day');
+          if (g) g.style.display = togAvgSecDay.checked ? '' : 'none';
         });
         const togDur = document.getElementById('chart-toggle-dur');
         if (togDur) togDur.addEventListener('change', () => {
