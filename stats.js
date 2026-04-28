@@ -1510,6 +1510,17 @@ const Stats = (() => {
          <text x="${padL - 5}" y="${(yScaleD(t, maxErrAll) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#3b82f6">${t.toFixed(1)}%</text>`
       ).join('');
 
+      const totalCharsPerDay = allRuns.map(r => r.totalCharsDay ?? null);
+      const maxCharsDay = Math.max(...totalCharsPerDay.filter(v => v !== null)) || 1;
+      const charsTicksD = [0, Math.round(maxCharsDay / 2), Math.round(maxCharsDay)];
+      const leftAxisCharsD = charsTicksD.map(t =>
+        `<line x1="${padL}" y1="${yScaleD(t, maxCharsDay).toFixed(1)}" x2="${W - padRd}" y2="${yScaleD(t, maxCharsDay).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+         <text x="${padL - 5}" y="${(yScaleD(t, maxCharsDay) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#8b5cf6">${t}</text>`
+      ).join('');
+      const charsDayTips = allRuns.map(r =>
+        `${r.date} · ${r._count} заездов\nБукв всего: ${r.totalCharsDay ?? '—'}`
+      );
+
       const bordersD = `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotHd}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padRd}" y1="${padT}" x2="${W - padRd}" y2="${padT + plotHd}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotHd}" x2="${W - padRd}" y2="${padT + plotHd}" stroke="#d1d5db" stroke-width="1"/>`;
@@ -1548,6 +1559,16 @@ const Stats = (() => {
           ${lineGroupD(errs,     maxErrAll, '#3b82f6', 'chart-group-err',     tips, errRecords,    false, xsData)}
           ${xLabelsD}
         </svg>
+      </div>
+      <div class="chart-block">
+        <div class="chart-legend">
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-chars-day"> <span style="color:#8b5cf6">● букв за день</span></label>
+        </div>
+        <svg id="chart-svg-chars-day" viewBox="0 0 ${W} ${Hd}" style="width:100%;display:none">
+          ${leftAxisCharsD}${bordersD}
+          ${lineGroupD(totalCharsPerDay, maxCharsDay, '#8b5cf6', 'chart-group-chars-day', charsDayTips, null, false, xsData)}
+          ${xLabelsD}
+        </svg>
       </div>`;
     }
 
@@ -1581,6 +1602,17 @@ const Stats = (() => {
     }).join('');
     const trendLine = smoothLine(trendVals, maxCpmForecast, '#06b6d4', 'chart-group-trend', '6,3', trendDots);
 
+    const durations = allRuns.map(r => r.seconds ?? null);
+    const maxDuration = Math.max(...durations.filter(v => v !== null)) || 1;
+    const durTicks = [0, Math.round(maxDuration / 2), Math.round(maxDuration)];
+    const leftAxisDur = durTicks.map(t =>
+      `<line x1="${padL}" y1="${yScale(t, maxDuration).toFixed(1)}" x2="${W - padR}" y2="${yScale(t, maxDuration).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+       <text x="${padL - 5}" y="${(yScale(t, maxDuration) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#f97316">${formatTime(t)}</text>`
+    ).join('');
+    const durTips = allRuns.map((r, i) =>
+      `#${i + 1} · ${r.date} ${r.time ?? ''}\n${formatTime(r.seconds)}`
+    );
+
     return `<div class="chart-block">
       <div class="chart-date-range">
         <input type="date" id="chart-from" value="${fromIso}" class="chart-date-input">
@@ -1604,6 +1636,19 @@ const Stats = (() => {
         ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords)}
         ${lineGroup(errs, maxErr, '#ef4444', 'chart-group-err', tips, errRecords)}
         ${rightAxis}
+        ${xLabels}
+      </svg>
+    </div>
+    <div class="chart-block">
+      <div class="chart-legend">
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-dur"> <span style="color:#f97316">● длительность</span></label>
+      </div>
+      <svg id="chart-svg-dur" viewBox="0 0 ${W} ${H}" style="width:100%;display:none">
+        ${leftAxisDur}
+        <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
+        <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
+        <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
+        ${lineGroup(durations, maxDuration, '#f97316', 'chart-group-dur', durTips, null)}
         ${xLabels}
       </svg>
     </div>`;
@@ -1684,6 +1729,7 @@ const Stats = (() => {
                 return v.length ? Math.min(...v.map(r => r.errors / r.chars * 100)) : null;
               })(),
               seconds: dayRuns.reduce((s, r) => s + r.seconds, 0),
+              totalCharsDay: dayRuns.reduce((s, r) => s + r.chars, 0),
               _count: dayRuns.length,
             }));
         }
@@ -1729,6 +1775,16 @@ const Stats = (() => {
         if (togErrMin) togErrMin.addEventListener('change', () => {
           const g = document.getElementById('chart-group-err-min');
           if (g) g.style.display = togErrMin.checked ? '' : 'none';
+        });
+        const togCharsDay = document.getElementById('chart-toggle-chars-day');
+        if (togCharsDay) togCharsDay.addEventListener('change', () => {
+          const svg = document.getElementById('chart-svg-chars-day');
+          if (svg) svg.style.display = togCharsDay.checked ? 'block' : 'none';
+        });
+        const togDur = document.getElementById('chart-toggle-dur');
+        if (togDur) togDur.addEventListener('change', () => {
+          const svg = document.getElementById('chart-svg-dur');
+          if (svg) svg.style.display = togDur.checked ? 'block' : 'none';
         });
 
         const fromEl = document.getElementById('chart-from');
