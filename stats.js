@@ -1612,6 +1612,15 @@ const Stats = (() => {
     const durTips = allRuns.map((r, i) =>
       `#${i + 1} · ${r.date} ${r.time ?? ''}\n${r.chars} букв`
     );
+    const durSec = allRuns.map(r => r.seconds ?? null);
+    const maxDurSec = Math.max(...durSec.filter(v => v !== null)) || 1;
+    const secTicks = [0, Math.round(maxDurSec / 2), Math.round(maxDurSec)];
+    const rightAxisDur = secTicks.map(t =>
+      `<text x="${W - padR + 5}" y="${(yScale(t, maxDurSec) + 4).toFixed(1)}" text-anchor="start" font-size="10" fill="#6366f1">${formatTime(t)}</text>`
+    ).join('');
+    const secTips = allRuns.map((r, i) =>
+      `#${i + 1} · ${r.date} ${r.time ?? ''}\n${formatTime(r.seconds)}`
+    );
 
     return `<div class="chart-block">
       <div class="chart-date-range">
@@ -1642,6 +1651,7 @@ const Stats = (() => {
     <div class="chart-block">
       <div class="chart-legend">
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-dur"> <span style="color:#f97316">● букв за заезд</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-dur-sec" checked> <span style="color:#6366f1">● длительность</span></label>
       </div>
       <svg id="chart-svg-dur" viewBox="0 0 ${W} ${H}" style="width:100%;display:none">
         ${leftAxisDur}
@@ -1649,6 +1659,8 @@ const Stats = (() => {
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         ${lineGroup(durations, maxDuration, '#f97316', 'chart-group-dur', durTips, null)}
+        ${lineGroup(durSec, maxDurSec, '#6366f1', 'chart-group-dur-sec', secTips, null)}
+        ${rightAxisDur}
         ${xLabels}
       </svg>
     </div>`;
@@ -1785,6 +1797,11 @@ const Stats = (() => {
         if (togDur) togDur.addEventListener('change', () => {
           const svg = document.getElementById('chart-svg-dur');
           if (svg) svg.style.display = togDur.checked ? 'block' : 'none';
+        });
+        const togDurSec = document.getElementById('chart-toggle-dur-sec');
+        if (togDurSec) togDurSec.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-dur-sec');
+          if (g) g.style.display = togDurSec.checked ? '' : 'none';
         });
 
         const fromEl = document.getElementById('chart-from');
