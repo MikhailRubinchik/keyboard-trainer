@@ -1574,16 +1574,16 @@ const Stats = (() => {
       <div class="chart-block">
         <div class="chart-legend">
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-chars-day"> <span style="color:#8b5cf6">● букв за день</span></label>
-          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-avg-chars-day" checked> <span style="color:#8b5cf6">╌ букв ср.</span></label>
-          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-sec-day" checked> <span style="color:#6366f1">● длительность</span></label>
-          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-avg-sec-day" checked> <span style="color:#6366f1">╌ длит. ср.</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-avg-chars-day"> <span style="color:#8b5cf6">╌ букв ср.</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-sec-day"> <span style="color:#6366f1">● длительность</span></label>
+          <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-avg-sec-day"> <span style="color:#6366f1">╌ длит. ср.</span></label>
         </div>
         <svg id="chart-svg-chars-day" viewBox="0 0 ${W} ${Hd}" style="width:100%;display:none">
           ${leftAxisCharsD}${bordersD}
-          ${lineGroupD(totalCharsPerDay, maxCharsDay, '#8b5cf6', 'chart-group-chars-day',     charsDayTips,    null, false, xsData)}
-          ${lineGroupD(avgCharsPerDay,   maxCharsDay, '#8b5cf6', 'chart-group-avg-chars-day', avgCharsDayTips, null, false, xsData, '5,3')}
-          ${lineGroupD(totalSecPerDay,   maxSecDay,   '#6366f1', 'chart-group-sec-day',       secDayTips,      null, false, xsData)}
-          ${lineGroupD(avgSecPerDay,     maxSecDay,   '#6366f1', 'chart-group-avg-sec-day',   avgSecDayTips,   null, false, xsData, '5,3')}
+          ${lineGroupD(totalCharsPerDay, maxCharsDay, '#8b5cf6', 'chart-group-chars-day',     charsDayTips,    null, true, xsData)}
+          ${lineGroupD(avgCharsPerDay,   maxCharsDay, '#8b5cf6', 'chart-group-avg-chars-day', avgCharsDayTips, null, true, xsData, '5,3')}
+          ${lineGroupD(totalSecPerDay,   maxSecDay,   '#6366f1', 'chart-group-sec-day',       secDayTips,      null, true, xsData)}
+          ${lineGroupD(avgSecPerDay,     maxSecDay,   '#6366f1', 'chart-group-avg-sec-day',   avgSecDayTips,   null, true, xsData, '5,3')}
           ${rightAxisCharsD}
           ${xLabelsD}
         </svg>
@@ -1669,15 +1669,15 @@ const Stats = (() => {
     <div class="chart-block">
       <div class="chart-legend">
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-dur"> <span style="color:#f97316">● букв за заезд</span></label>
-        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-dur-sec" checked> <span style="color:#6366f1">● длительность</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-dur-sec"> <span style="color:#6366f1">● длительность</span></label>
       </div>
       <svg id="chart-svg-dur" viewBox="0 0 ${W} ${H}" style="width:100%;display:none">
         ${leftAxisDur}
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
-        ${lineGroup(durations, maxDuration, '#f97316', 'chart-group-dur', durTips, null)}
-        ${lineGroup(durSec, maxDurSec, '#6366f1', 'chart-group-dur-sec', secTips, null)}
+        ${lineGroup(durations, maxDuration, '#f97316', 'chart-group-dur', durTips, null, true)}
+        ${lineGroup(durSec, maxDurSec, '#6366f1', 'chart-group-dur-sec', secTips, null, true)}
         ${rightAxisDur}
         ${xLabels}
       </svg>
@@ -1807,36 +1807,35 @@ const Stats = (() => {
           const g = document.getElementById('chart-group-err-min');
           if (g) g.style.display = togErrMin.checked ? '' : 'none';
         });
-        const togCharsDay = document.getElementById('chart-toggle-chars-day');
-        if (togCharsDay) togCharsDay.addEventListener('change', () => {
-          const svg = document.getElementById('chart-svg-chars-day');
-          if (svg) svg.style.display = togCharsDay.checked ? 'block' : 'none';
-        });
-        const togAvgCharsDay = document.getElementById('chart-toggle-avg-chars-day');
-        if (togAvgCharsDay) togAvgCharsDay.addEventListener('change', () => {
-          const g = document.getElementById('chart-group-avg-chars-day');
-          if (g) g.style.display = togAvgCharsDay.checked ? '' : 'none';
-        });
-        const togSecDay = document.getElementById('chart-toggle-sec-day');
-        if (togSecDay) togSecDay.addEventListener('change', () => {
-          const g = document.getElementById('chart-group-sec-day');
-          if (g) g.style.display = togSecDay.checked ? '' : 'none';
-        });
-        const togAvgSecDay = document.getElementById('chart-toggle-avg-sec-day');
-        if (togAvgSecDay) togAvgSecDay.addEventListener('change', () => {
-          const g = document.getElementById('chart-group-avg-sec-day');
-          if (g) g.style.display = togAvgSecDay.checked ? '' : 'none';
-        });
-        const togDur = document.getElementById('chart-toggle-dur');
-        if (togDur) togDur.addEventListener('change', () => {
-          const svg = document.getElementById('chart-svg-dur');
-          if (svg) svg.style.display = togDur.checked ? 'block' : 'none';
-        });
-        const togDurSec = document.getElementById('chart-toggle-dur-sec');
-        if (togDurSec) togDurSec.addEventListener('change', () => {
-          const g = document.getElementById('chart-group-dur-sec');
-          if (g) g.style.display = togDurSec.checked ? '' : 'none';
-        });
+        function wireGroupChart(svgId, pairs) {
+          // pairs: [[checkboxId, groupId], ...]
+          // SVG shown when any checkbox checked, hidden when all unchecked
+          function syncSvg() {
+            const svg = document.getElementById(svgId);
+            if (!svg) return;
+            const any = pairs.some(([id]) => document.getElementById(id)?.checked);
+            svg.style.display = any ? 'block' : 'none';
+          }
+          pairs.forEach(([togId, grpId]) => {
+            const el = document.getElementById(togId);
+            if (!el) return;
+            el.addEventListener('change', () => {
+              const g = document.getElementById(grpId);
+              if (g) g.style.display = el.checked ? '' : 'none';
+              syncSvg();
+            });
+          });
+        }
+        wireGroupChart('chart-svg-chars-day', [
+          ['chart-toggle-chars-day',     'chart-group-chars-day'],
+          ['chart-toggle-avg-chars-day', 'chart-group-avg-chars-day'],
+          ['chart-toggle-sec-day',       'chart-group-sec-day'],
+          ['chart-toggle-avg-sec-day',   'chart-group-avg-sec-day'],
+        ]);
+        wireGroupChart('chart-svg-dur', [
+          ['chart-toggle-dur',     'chart-group-dur'],
+          ['chart-toggle-dur-sec', 'chart-group-dur-sec'],
+        ]);
 
         const fromEl = document.getElementById('chart-from');
         const toEl   = document.getElementById('chart-to');
