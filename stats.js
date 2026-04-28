@@ -1602,15 +1602,15 @@ const Stats = (() => {
     }).join('');
     const trendLine = smoothLine(trendVals, maxCpmForecast, '#06b6d4', 'chart-group-trend', '6,3', trendDots);
 
-    const durations = allRuns.map(r => r.seconds ?? null);
+    const durations = allRuns.map(r => r.chars ?? null);
     const maxDuration = Math.max(...durations.filter(v => v !== null)) || 1;
     const durTicks = [0, Math.round(maxDuration / 2), Math.round(maxDuration)];
     const leftAxisDur = durTicks.map(t =>
       `<line x1="${padL}" y1="${yScale(t, maxDuration).toFixed(1)}" x2="${W - padR}" y2="${yScale(t, maxDuration).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
-       <text x="${padL - 5}" y="${(yScale(t, maxDuration) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#f97316">${formatTime(t)}</text>`
+       <text x="${padL - 5}" y="${(yScale(t, maxDuration) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#f97316">${t}</text>`
     ).join('');
     const durTips = allRuns.map((r, i) =>
-      `#${i + 1} · ${r.date} ${r.time ?? ''}\n${formatTime(r.seconds)}`
+      `#${i + 1} · ${r.date} ${r.time ?? ''}\n${r.chars} букв`
     );
 
     return `<div class="chart-block">
@@ -1641,7 +1641,7 @@ const Stats = (() => {
     </div>
     <div class="chart-block">
       <div class="chart-legend">
-        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-dur"> <span style="color:#f97316">● длительность</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-dur"> <span style="color:#f97316">● букв за заезд</span></label>
       </div>
       <svg id="chart-svg-dur" viewBox="0 0 ${W} ${H}" style="width:100%;display:none">
         ${leftAxisDur}
