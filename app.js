@@ -535,8 +535,8 @@ wordInput.addEventListener('keydown', (e) => {
     const deltaMs = now - lastKeyTime;
     const tenths  = Math.round(deltaMs / 100);
     if (tenths > 0) runIntervalMap[tenths] = (runIntervalMap[tenths] || 0) + 1;
-    if (deltaMs > 5000) {
-      runIdleMs += deltaMs - 5000;
+    if (deltaMs > 3000) {
+      runIdleMs += deltaMs - 3000;
       if (runIdleMs >= 180_000) { abandonRun(); return; }
     }
   }
@@ -571,7 +571,7 @@ function resetIdleAbandonTimer() {
   clearTimeout(idleAbandonTimer);
   if (!startTime || wordInput.disabled) return;
   // Fire when remaining idle budget (180s total, 5s free per gap) would be exhausted
-  const remaining = 180_000 - runIdleMs + 5000;
+  const remaining = 180_000 - runIdleMs + 3000;
   idleAbandonTimer = setTimeout(abandonRun, remaining);
 }
 
