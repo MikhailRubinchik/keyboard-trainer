@@ -100,7 +100,7 @@ function getRecommendedLevel(avgCpm) {
 
 function loadLevel() {
   const saved = parseInt(localStorage.getItem(LS_LEVEL_KEY), 10);
-  currentLevel = (saved >= 1 && saved <= LEVEL_COUNT) ? saved : 1;
+  currentLevel = (saved >= 1 && saved <= LEVEL_COUNT) ? saved : 16;
 }
 
 function saveLevel(n) {
@@ -923,12 +923,6 @@ async function finishRun() {
       speechSynthesis.cancel();
       speechSynthesis.speak(utter);
     }
-  }
-
-  const newAvg = Stats.getRecentAvgCpm();
-  if (newAvg > 0) {
-    const recommended = getRecommendedLevel(newAvg);
-    if (recommended !== currentLevel) saveLevel(recommended);
   }
 
   updateLevelProgressHint();
