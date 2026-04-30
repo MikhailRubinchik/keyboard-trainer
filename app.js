@@ -1020,11 +1020,6 @@ async function init() {
   showScreen('list');
   await Stats.init();
 
-  // Set level based on recent average speed
-  const recentAvg = Stats.getRecentAvgCpm();
-  if (recentAvg > 0) {
-    saveLevel(getRecommendedLevel(recentAvg));
-  }
 
   updateLevelButtonsActive();
   updateLevelHint();
