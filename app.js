@@ -755,7 +755,7 @@ function handleChar(key) {
       bigramStats:    cpBigramStats,
       text:           chars.join(''),
       errorPositions: cpErrorPositions,
-      noFinger:       noFinger,
+      noFinger:       !showFinger,
       keystrokeLog:   keystrokeLog.slice(),
       incomplete:     true,
     });
@@ -908,7 +908,7 @@ async function finishRun() {
     errorPositions,
     idleSeconds,
     lazy,
-    noFinger,
+    noFinger: !showFinger,
     keystrokeLog,
   });
 
