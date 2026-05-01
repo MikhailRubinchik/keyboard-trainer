@@ -580,6 +580,14 @@ button:active  { transform: scale(0.97); }
 }
 
 
+.player-level-display {
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 4px 0 2px;
+  color: var(--text);
+}
+
 .level-progress-hint {
   font-size: 0.85rem;
   color: var(--text-dim);

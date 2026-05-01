@@ -978,31 +978,38 @@ function updateLevelHint() {
 // ── Level progress hint below stats summary ───────────────────
 
 function updateLevelProgressHint() {
-  const hint = document.getElementById('level-progress-hint');
-  if (!hint) return;
+  const displayEl = document.getElementById('player-level-display');
+  const hintEl    = document.getElementById('level-progress-hint');
 
-  if (currentLevel >= LEVEL_COUNT) {
-    hint.textContent = 'Максимальный уровень достигнут!';
+  const recentAvg   = Stats.getRecentAvgCpm();
+  const playerLevel = getRecommendedLevel(recentAvg);
+
+  if (displayEl) {
+    displayEl.textContent = recentAvg > 0 ? `Уровень ${playerLevel}` : '';
+  }
+
+  if (!hintEl) return;
+
+  if (recentAvg === 0) {
+    hintEl.textContent = '';
     return;
   }
 
-  const nextLevel = currentLevel + 1;
-  const threshold = LEVEL_THRESHOLDS[currentLevel - 1];
-  const recentAvg = Stats.getRecentAvgCpm();
-
-  let firstLine;
-  if (recentAvg === 0) {
-    firstLine = `Для перехода на уровень ${nextLevel} нужна средняя скорость ${threshold} зн/мин`;
-  } else {
-    const remaining = threshold - recentAvg;
-    firstLine = remaining <= 0
-      ? `Средняя скорость за последние 15 заездов уже достаточна для уровня ${nextLevel}!`
-      : `Для перехода на уровень ${nextLevel} нужна скорость ${threshold} зн/мин — осталось ${remaining} зн/мин`;
+  if (playerLevel >= LEVEL_COUNT) {
+    hintEl.textContent = 'Максимальный уровень достигнут!';
+    return;
   }
 
-  const further = LEVEL_THRESHOLDS.slice(currentLevel).map(t => t).join(', ');
+  const nextLevel = playerLevel + 1;
+  const threshold = LEVEL_THRESHOLDS[playerLevel - 1];
+  const remaining = threshold - recentAvg;
 
-  hint.innerHTML = `${firstLine}<br><span style="opacity:0.6;font-size:0.85em">Далее: ${further} зн/мин</span>`;
+  const firstLine = remaining <= 0
+    ? `Скорости уже достаточно для уровня ${nextLevel}!`
+    : `До уровня ${nextLevel}: ещё ${remaining} зн/мин (нужно ${threshold})`;
+
+  const further = LEVEL_THRESHOLDS.slice(playerLevel).join(', ');
+  hintEl.innerHTML = `${firstLine}<br><span style="opacity:0.6;font-size:0.85em">Далее: ${further} зн/мин</span>`;
 }
 
 // ── Initialization ────────────────────────────────────────────
