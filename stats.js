@@ -96,6 +96,16 @@ const Stats = (() => {
     }))).join('\n') + '\n';
   }
 
+  function serializeRunsForGist(runArray) {
+    return runArray.map(r => JSON.stringify(Object.assign({}, r, {
+      keystrokeLog:   encodeKeystrokeLog(r.keystrokeLog),
+      errorsDetail:   undefined,
+      bigramStats:    undefined,
+      intervalMap:    undefined,
+      errorPositions: undefined,
+    }))).join('\n') + '\n';
+  }
+
   function todayStr() {
     return new Date().toLocaleDateString('ru-RU');
   }
@@ -203,7 +213,7 @@ const Stats = (() => {
       const ver = typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'unknown';
       await gistFetch('PATCH', gistId, token, {
         description: `Клавогонки — статистика (${ver})`,
-        files: { [GIST_FILE]: { content: serializeRuns(runs) } },
+        files: { [GIST_FILE]: { content: serializeRunsForGist(runs) } },
       });
       const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setSyncStatus('↑ ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
@@ -242,7 +252,14 @@ const Stats = (() => {
         content = await rawRes.text();
       }
       const pulled = parseLines(content);
-      runs = pulled;
+      let prefixLen = 0;
+      while (
+        prefixLen < runs.length &&
+        prefixLen < pulled.length &&
+        runs[prefixLen].date === pulled[prefixLen].date &&
+        runs[prefixLen].time === pulled[prefixLen].time
+      ) prefixLen++;
+      runs = runs.slice(0, prefixLen).concat(pulled.slice(prefixLen));
       lsWrite(runs);
       renderStats(runs);
       saveSyncConfig('', gistId);
