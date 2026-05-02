@@ -308,8 +308,19 @@ const Stats = (() => {
     let wordSoFar    = '';
     let junkBuffer   = '';
 
-    for (const [key] of run.keystrokeLog) {
+    const intervalMap      = {};
+    const bigramRaw        = {};   // bigram → [deltaMs, ...]
+    let timeAcc            = 0;
+    let lastCorrectTimeAcc = null;
+    let lastCorrectChar    = null;
+
+    for (const [key, deltaMs] of run.keystrokeLog) {
       if (cursor >= chars.length) break;
+
+      timeAcc += deltaMs;
+      const tenths = Math.round(deltaMs / 100);
+      if (tenths > 0) intervalMap[tenths] = (intervalMap[tenths] || 0) + 1;
+
       if (key === '⌫⌫') {
         if (junkBuffer.length > 0) {
           const sp = junkBuffer.lastIndexOf(' ');
@@ -337,6 +348,14 @@ const Stats = (() => {
             if (!errors[cursor]) errors[cursor] = { expected, attempts: [] };
             errors[cursor].attempts.push(key);
           } else {
+            if (lastCorrectChar !== null) {
+              const bigram = lastCorrectChar + expected;
+              const delta  = timeAcc - lastCorrectTimeAcc;
+              if (!bigramRaw[bigram]) bigramRaw[bigram] = [];
+              bigramRaw[bigram].push(delta);
+            }
+            lastCorrectTimeAcc = timeAcc;
+            lastCorrectChar    = expected;
             cursor++;
             if (expected === ' ') { wordStart = cursor; wordSoFar = ''; }
             else                  { wordSoFar += expected; }
@@ -361,7 +380,13 @@ const Stats = (() => {
       if (unique.length) errorPositions[Number(pos)] = unique;
     }
 
-    return { errorsDetail, errorPositions };
+    const bigramStats = {};
+    for (const [bigram, times] of Object.entries(bigramRaw)) {
+      const sum = times.reduce((s, t) => s + t, 0);
+      bigramStats[bigram] = { avg: Math.round(sum / times.length), count: times.length };
+    }
+
+    return { errorsDetail, errorPositions, intervalMap, bigramStats };
   }
 
   // ── Public API ─────────────────────────────────────────────
@@ -522,14 +547,16 @@ const Stats = (() => {
 
     runs = lsRead();
 
-    // Recompute errorsDetail/errorPositions for runs that arrived from gist without them
+    // Recompute derived fields for runs that arrived from gist without them
     {
       let dirty = false;
       for (const r of runs) {
-        if (r.keystrokeLog?.length && r.text && !r.errorsDetail?.length) {
+        if (r.keystrokeLog?.length && r.text && (!r.intervalMap || !r.bigramStats)) {
           const d = recomputeDerivedFields(r);
           r.errorsDetail   = d.errorsDetail;
           r.errorPositions = d.errorPositions;
+          r.intervalMap    = d.intervalMap;
+          r.bigramStats    = d.bigramStats;
           dirty = true;
         }
       }
