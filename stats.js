@@ -298,6 +298,72 @@ const Stats = (() => {
     }
   }
 
+  // ── Derived field recompute (from keystrokeLog + text) ────────
+
+  function recomputeDerivedFields(run) {
+    const chars      = [...run.text];
+    const errors     = {};   // pos → { expected, attempts[] }
+    let cursor       = 0;
+    let wordStart    = 0;
+    let wordSoFar    = '';
+    let junkBuffer   = '';
+
+    for (const [key] of run.keystrokeLog) {
+      if (cursor >= chars.length) break;
+      if (key === '⌫⌫') {
+        if (junkBuffer.length > 0) {
+          const sp = junkBuffer.lastIndexOf(' ');
+          junkBuffer = sp >= 0 ? junkBuffer.slice(0, sp) : '';
+        } else {
+          cursor    -= wordSoFar.length;
+          wordSoFar  = '';
+        }
+      } else if (key === '⌫') {
+        if (junkBuffer.length > 0) {
+          junkBuffer = junkBuffer.slice(0, -1);
+        } else if (cursor > wordStart) {
+          cursor--;
+          wordSoFar = wordSoFar.slice(0, -1);
+        }
+      } else {
+        if (junkBuffer.length > 0) {
+          junkBuffer += key;
+          if (!errors[cursor]) errors[cursor] = { expected: chars[cursor], attempts: [] };
+          errors[cursor].attempts.push(key);
+        } else {
+          const expected = chars[cursor];
+          if (key !== expected) {
+            junkBuffer += key;
+            if (!errors[cursor]) errors[cursor] = { expected, attempts: [] };
+            errors[cursor].attempts.push(key);
+          } else {
+            cursor++;
+            if (expected === ' ') { wordStart = cursor; wordSoFar = ''; }
+            else                  { wordSoFar += expected; }
+          }
+        }
+      }
+    }
+
+    const errorsDetail = Object.entries(errors)
+      .filter(([, v]) => v.attempts.length)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([pos, v]) => {
+        const p = Number(pos);
+        let s = p; while (s > 0 && chars[s - 1] !== ' ') s--;
+        let e = p; while (e < chars.length && chars[e] !== ' ') e++;
+        return { word: chars.slice(s, e).join(''), charInWord: p - s, expected: v.expected, attempts: v.attempts };
+      });
+
+    const errorPositions = {};
+    for (const [pos, v] of Object.entries(errors)) {
+      const unique = [...new Set(v.attempts)];
+      if (unique.length) errorPositions[Number(pos)] = unique;
+    }
+
+    return { errorsDetail, errorPositions };
+  }
+
   // ── Public API ─────────────────────────────────────────────
 
   async function init() {
@@ -455,6 +521,20 @@ const Stats = (() => {
     }
 
     runs = lsRead();
+
+    // Recompute errorsDetail/errorPositions for runs that arrived from gist without them
+    {
+      let dirty = false;
+      for (const r of runs) {
+        if (r.keystrokeLog?.length && r.text && !r.errorsDetail?.length) {
+          const d = recomputeDerivedFields(r);
+          r.errorsDetail   = d.errorsDetail;
+          r.errorPositions = d.errorPositions;
+          dirty = true;
+        }
+      }
+      if (dirty) lsWrite(runs);
+    }
 
     // One-time migration: if localStorage still has old-format keystrokeLog
     // (array-of-arrays), re-serialize everything in compact format and push.
