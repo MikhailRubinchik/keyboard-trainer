@@ -8,6 +8,7 @@ const Stats = (() => {
 
   let runs = [];   // all loaded run records
   let tableMode = 'runs';  // 'runs' | 'days'
+  let lastInProgress = null; // last incomplete run, updated by renderStats
   let chartFromIso = '';
   let chartToIso   = '';
   let renderChartsNow = () => {}; // set after first renderStats
@@ -427,14 +428,14 @@ const Stats = (() => {
       tableMode = 'runs';
       btnRuns.classList.add('active');
       btnDays.classList.remove('active');
-      renderTable(runs.filter(r => !r.incomplete));
+      renderTable(runs.filter(r => !r.incomplete), lastInProgress);
       renderChartsNow();
     });
     btnDays.addEventListener('click', () => {
       tableMode = 'days';
       btnDays.classList.add('active');
       btnRuns.classList.remove('active');
-      renderTable(runs.filter(r => !r.incomplete));
+      renderTable(runs.filter(r => !r.incomplete), lastInProgress);
       renderChartsNow();
     });
 
@@ -1911,6 +1912,7 @@ const Stats = (() => {
     // A run is truly incomplete only if it hasn't reached totalChars
     const trulyIncomplete = r => r.incomplete && (!r.totalChars || r.chars < r.totalChars);
     const inProgress = lastRun && trulyIncomplete(lastRun) ? lastRun : null;
+    lastInProgress = inProgress;
 
     allRuns = allRuns.filter(r => !trulyIncomplete(r));
 
