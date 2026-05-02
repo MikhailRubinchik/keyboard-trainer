@@ -1430,6 +1430,23 @@ const Stats = (() => {
       : maxCpm;
     const maxErr = Math.max(...errs.filter(v => v !== null)) || 1;
 
+    // Error trend regression — computed early because maxErrForecast is used by rightAxis
+    const errNonNull0 = errs.map((v, i) => [i, v]).filter(([, v]) => v !== null);
+    let errTrendVals = null;
+    if (errNonNull0.length >= 2) {
+      const eN     = errNonNull0.length;
+      const eSumX  = errNonNull0.reduce((s, [i])    => s + i,     0);
+      const eSumX2 = errNonNull0.reduce((s, [i])    => s + i * i, 0);
+      const eSumY  = errNonNull0.reduce((s, [, v])  => s + v,     0);
+      const eSumXY = errNonNull0.reduce((s, [i, v]) => s + i * v, 0);
+      const eB = (eN * eSumXY - eSumX * eSumY) / (eN * eSumX2 - eSumX * eSumX);
+      const eA = (eSumY - eB * eSumX) / eN;
+      errTrendVals = Array.from({length: n + 10}, (_, i) => Math.max(0, eA + eB * i));
+    }
+    const maxErrForecast = errTrendVals
+      ? Math.max(maxErr, ...[n, n+3, n+6, n+9].map(i => errTrendVals[i]))
+      : maxErr;
+
     // Draws a line+dots wrapped in <g>, skipping null values
     // tips: tooltip strings per run; records: 'record'|'' per run
     function lineGroup(values, maxV, color, groupId, tips, records, hidden = false) {
@@ -1768,22 +1785,7 @@ const Stats = (() => {
       return `#${i + 1} · Угасающее: ${result} зн/мин\n${prev} × 0.9 + ${cpms[i]} × 0.1 = ${result}`;
     });
 
-    // Error trend (linear regression on non-null error values, extended like CPM trend)
-    const errNonNull = errs.map((v, i) => [i, v]).filter(([, v]) => v !== null);
-    let errTrendVals = null;
-    if (errNonNull.length >= 2) {
-      const eN     = errNonNull.length;
-      const eSumX  = errNonNull.reduce((s, [i])    => s + i,     0);
-      const eSumX2 = errNonNull.reduce((s, [i])    => s + i * i, 0);
-      const eSumY  = errNonNull.reduce((s, [, v])  => s + v,     0);
-      const eSumXY = errNonNull.reduce((s, [i, v]) => s + i * v, 0);
-      const eB = (eN * eSumXY - eSumX * eSumY) / (eN * eSumX2 - eSumX * eSumX);
-      const eA = (eSumY - eB * eSumX) / eN;
-      errTrendVals = Array.from({length: n + 10}, (_, i) => Math.max(0, eA + eB * i));
-    }
-    const maxErrForecast = errTrendVals
-      ? Math.max(maxErr, ...[n, n+3, n+6, n+9].map(i => errTrendVals[i]))
-      : maxErr;
+    // Error trend forecast dots (errTrendVals/maxErrForecast computed earlier)
     const errTrendDots = errTrendVals ? [n, n+3, n+6, n+9].map(i => {
       const v = errTrendVals[i];
       const x = xPos(i).toFixed(1), y = yScale(v, maxErrForecast).toFixed(1);
