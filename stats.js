@@ -1742,10 +1742,11 @@ const Stats = (() => {
        <text x="${padL - 5}" y="${(yScale(t, maxCpmForecast) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#3b82f6">${t}</text>`
     ).join('');
 
-    function smoothLine(vals, maxV, color, groupId, dash, extra = '') {
+    function smoothLine(vals, maxV, color, groupId, dash, extra = '', hidden = false) {
       const pts = vals.map((v, i) => `${xPos(i).toFixed(1)},${yScale(v, maxV).toFixed(1)}`);
       const da = dash ? ` stroke-dasharray="${dash}"` : '';
-      return `<g id="${groupId}"><polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" opacity="0.8"${da}/>${extra}</g>`;
+      const disp = hidden ? ' style="display:none"' : '';
+      return `<g id="${groupId}"${disp}><polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" opacity="0.8"${da}/>${extra}</g>`;
     }
     const trendDots = [n, n+3, n+6, n+9].map(i => {
       const v = trendVals[i];
@@ -1766,6 +1767,20 @@ const Stats = (() => {
       const prev = Math.round(emaVals[i - 1]);
       return `#${i + 1} · Угасающее: ${result} зн/мин\n${prev} × 0.9 + ${cpms[i]} × 0.1 = ${result}`;
     });
+
+    // Error trend (linear regression on non-null error values)
+    const errNonNull = errs.map((v, i) => [i, v]).filter(([, v]) => v !== null);
+    let errTrendVals = null;
+    if (errNonNull.length >= 2) {
+      const eN    = errNonNull.length;
+      const eSumX  = errNonNull.reduce((s, [i])    => s + i,     0);
+      const eSumX2 = errNonNull.reduce((s, [i])    => s + i * i, 0);
+      const eSumY  = errNonNull.reduce((s, [, v])  => s + v,     0);
+      const eSumXY = errNonNull.reduce((s, [i, v]) => s + i * v, 0);
+      const eB = (eN * eSumXY - eSumX * eSumY) / (eN * eSumX2 - eSumX * eSumX);
+      const eA = (eSumY - eB * eSumX) / eN;
+      errTrendVals = Array.from({length: n}, (_, i) => eA + eB * i);
+    }
 
     const durations = allRuns.map(r => r.chars ?? null);
     const maxDuration = Math.max(...durations.filter(v => v !== null)) || 1;
@@ -1799,6 +1814,7 @@ const Stats = (() => {
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-ema"> <span style="color:#f97316">● угасающее</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-rolling5"> <span style="color:#a855f7">● ср-5, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#ef4444">● ошибки, %</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-trend"> <span style="color:#b91c1c">╌ тренд ошибок</span></label>
       </div>
       <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
         ${leftAxisRun}
@@ -1811,6 +1827,7 @@ const Stats = (() => {
         ${lineGroup(emaVals.map(Math.round), maxCpmForecast, '#f97316', 'chart-group-ema', emaTips, null, true)}
         ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords)}
         ${lineGroup(errs, maxErr, '#ef4444', 'chart-group-err', tips, errRecords)}
+        ${errTrendVals ? smoothLine(errTrendVals, maxErr, '#b91c1c', 'chart-group-err-trend', '6,3', '', true) : ''}
         ${rightAxis}
         ${xLabels}
       </svg>
@@ -1940,6 +1957,11 @@ const Stats = (() => {
         if (togTrend) togTrend.addEventListener('change', () => {
           const g = document.getElementById('chart-group-trend');
           if (g) g.style.display = togTrend.checked ? '' : 'none';
+        });
+        const togErrTrend = document.getElementById('chart-toggle-err-trend');
+        if (togErrTrend) togErrTrend.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-err-trend');
+          if (g) g.style.display = togErrTrend.checked ? '' : 'none';
         });
         const togEma = document.getElementById('chart-toggle-ema');
         if (togEma) togEma.addEventListener('change', () => {
