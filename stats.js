@@ -286,6 +286,18 @@ const Stats = (() => {
         !runs[prefixLen].incomplete  // чекпоинт может стать завершённым в гисте — не пропускаем
       ) prefixLen++;
       runs = runs.slice(0, prefixLen).concat(pulled.slice(prefixLen));
+      // Recompute derived fields for newly pulled runs (gist strips errorsDetail etc.)
+      let dirty = false;
+      for (const r of runs) {
+        if (r.keystrokeLog?.length && r.text && (!r.intervalMap || !r.bigramStats || !r.errorsDetail)) {
+          const d = recomputeDerivedFields(r);
+          r.errorsDetail   = d.errorsDetail;
+          r.errorPositions = d.errorPositions;
+          r.intervalMap    = d.intervalMap;
+          r.bigramStats    = d.bigramStats;
+          dirty = true;
+        }
+      }
       lsWrite(runs);
       renderStats(runs);
       saveSyncConfig('', gistId);
@@ -578,7 +590,7 @@ const Stats = (() => {
     {
       let dirty = false;
       for (const r of runs) {
-        if (r.keystrokeLog?.length && r.text && (!r.intervalMap || !r.bigramStats)) {
+        if (r.keystrokeLog?.length && r.text && (!r.intervalMap || !r.bigramStats || !r.errorsDetail)) {
           const d = recomputeDerivedFields(r);
           r.errorsDetail   = d.errorsDetail;
           r.errorPositions = d.errorPositions;
