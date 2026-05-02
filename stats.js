@@ -123,6 +123,16 @@ const Stats = (() => {
     return allRuns.slice(-5);
   }
 
+  function calcEma(runsArr, alpha = 0.1) {
+    const rs = runsArr.filter(r => !r.incomplete);
+    if (!rs.length) return null;
+    let ema = rs[0].cpm;
+    for (let i = 1; i < rs.length; i++) {
+      ema = ema * (1 - alpha) + rs[i].cpm * alpha;
+    }
+    return Math.round(ema);
+  }
+
   function lsRead() {
     return parseLines(localStorage.getItem(LS_KEY) || '');
   }
@@ -2001,16 +2011,10 @@ const Stats = (() => {
       renderCharts(minIso, maxIso);
     }
 
-    const today       = todayStr();
-    const lastDate    = allRuns[allRuns.length - 1]?.date;
-    const lastDayRuns = lastDate ? allRuns.filter(r => r.date === lastDate) : [];
-    const lastDayLabel = lastDate === today ? 'Сегодня'
-      : lastDate === (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toLocaleDateString('ru-RU'); })() ? 'Вчера'
-      : lastDate;
-    const last5R    = last5Runs(allRuns);
-    const allCpm     = allRuns.map(r => r.cpm);
-    const lastDayCpm = lastDayRuns.map(r => r.cpm);
-    const last5Cpm  = last5R.map(r => r.cpm);
+    const last5R  = last5Runs(allRuns);
+    const allCpm  = allRuns.map(r => r.cpm);
+    const last5Cpm = last5R.map(r => r.cpm);
+    const emaValue = calcEma(allRuns);
 
     summaryEl.innerHTML = `
       <div class="summary-group clickable-card" data-period="all">
@@ -2048,21 +2052,13 @@ const Stats = (() => {
           </div>
         </div>
       </div>` : ''}
-      ${lastDayRuns.length ? `
-      <div class="summary-group clickable-card" data-period="lastday">
-        <div class="summary-group-title">${lastDayLabel}</div>
+      ${emaValue !== null ? `
+      <div class="summary-group">
+        <div class="summary-group-title">Угасающее среднее</div>
         <div class="summary-row">
           <div class="summary-item">
-            <span class="summary-label">Макс. скорость</span>
-            <span class="summary-value">${max(lastDayCpm)} зн/мин</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">Средняя скорость</span>
-            <span class="summary-value">${avg(lastDayCpm)} зн/мин</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">Заездов</span>
-            <span class="summary-value">${lastDayRuns.length}</span>
+            <span class="summary-label">Скорость (α=0.1)</span>
+            <span class="summary-value">${emaValue} зн/мин</span>
           </div>
         </div>
       </div>` : ''}
