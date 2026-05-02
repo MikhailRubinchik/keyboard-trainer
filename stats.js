@@ -1796,7 +1796,7 @@ const Stats = (() => {
       <div class="chart-legend">
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● скорость, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-trend" checked> <span style="color:#06b6d4">● тренд</span></label>
-        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-ema" checked> <span style="color:#f97316">● угасающее</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-ema"> <span style="color:#f97316">● угасающее</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-rolling5"> <span style="color:#a855f7">● ср-5, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#ef4444">● ошибки, %</span></label>
       </div>
@@ -1808,7 +1808,7 @@ const Stats = (() => {
         ${levelDividers}
         ${trendLine}
         ${lineGroup(cpmRolling5, maxCpmForecast, '#a855f7', 'chart-group-rolling5', rolling5Tips, rolling5Records, true)}
-        ${lineGroup(emaVals.map(Math.round), maxCpmForecast, '#f97316', 'chart-group-ema', emaTips, null, false)}
+        ${lineGroup(emaVals.map(Math.round), maxCpmForecast, '#f97316', 'chart-group-ema', emaTips, null, true)}
         ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords)}
         ${lineGroup(errs, maxErr, '#ef4444', 'chart-group-err', tips, errRecords)}
         ${rightAxis}
