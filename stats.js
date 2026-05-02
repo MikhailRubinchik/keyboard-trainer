@@ -176,13 +176,12 @@ const Stats = (() => {
     el.className   = 'sync-status' + (isError ? ' sync-status--error' : '');
   }
 
-  async function gistFetch(method, gistId, token, body, signal) {
+  async function gistFetch(method, gistId, token, body) {
     const url = gistId
       ? `https://api.github.com/gists/${gistId}`
       : 'https://api.github.com/gists';
     const res = await fetch(url, {
       method,
-      signal,
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type':  'application/json',
@@ -211,18 +210,13 @@ const Stats = (() => {
 
   let lastPushMs = 0;
   const PUSH_THROTTLE_MS = 20_000; // не чаще раза в 20 секунд (автоматические пуши)
-  let pendingPushAbort = null; // AbortController для текущего in-flight пуша
 
   async function pushToGist({ force = false } = {}) {
     const { token, gistId } = getSyncConfig();
     if (!token || !gistId) return;
     const now = Date.now();
     if (!force && now - lastPushMs < PUSH_THROTTLE_MS) return;
-    // Отменяем предыдущий in-flight пуш (чекпоинт), если стартует финальный
-    if (force && pendingPushAbort) { pendingPushAbort.abort(); pendingPushAbort = null; }
     lastPushMs = now;
-    const abort = new AbortController();
-    pendingPushAbort = abort;
     const btn = document.getElementById('btn-push-gist');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Отправляю…'; }
     try {
@@ -230,16 +224,14 @@ const Stats = (() => {
       await gistFetch('PATCH', gistId, token, {
         description: `Клавогонки — статистика (${ver})`,
         files: { [GIST_FILE]: { content: serializeRunsForGist(runs) } },
-      }, abort.signal);
+      });
       const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setSyncStatus('↑ ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
       setRefreshStatus(`отправлено в ${timeStr}`);
     } catch (e) {
-      if (e.name === 'AbortError') return; // отменён финальным пушем — норм
       const msg = e.message || String(e);
       setRefreshStatus('↑ ' + msg);
     } finally {
-      if (pendingPushAbort === abort) pendingPushAbort = null;
       if (btn) { btn.disabled = false; btn.textContent = '↑ Отправить'; }
     }
   }
@@ -624,7 +616,7 @@ const Stats = (() => {
     runs.push(entry);
     lsWrite(runs);
     renderStats(runs);
-    pushToGist({ force: !entry.incomplete }); // fire-and-forget; завершённые пушим всегда, чекпоинт — с троттлом
+    if (!entry.incomplete) pushToGist({ force: true }); // чекпоинты в гист не пушим — только завершённые
   }
 
   // ── Rendering ──────────────────────────────────────────────
