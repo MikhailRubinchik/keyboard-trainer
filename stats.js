@@ -616,7 +616,7 @@ const Stats = (() => {
     runs.push(entry);
     lsWrite(runs);
     renderStats(runs);
-    if (!entry.incomplete) pushToGist({ force: true }); // чекпоинты в гист не пушим — только завершённые
+    pushToGist({ force: !entry.incomplete }); // fire-and-forget; завершённые заезды пушим всегда
   }
 
   // ── Rendering ──────────────────────────────────────────────
