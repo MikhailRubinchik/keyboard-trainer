@@ -1759,9 +1759,12 @@ const Stats = (() => {
     for (let i = 0; i < cpms.length; i++) {
       emaVals.push(i === 0 ? cpms[0] : emaVals[i - 1] * 0.9 + cpms[i] * 0.1);
     }
-    const emaTips = emaVals.map((v, i) =>
-      `#${i + 1} · Угасающее среднее: ${Math.round(v)} зн/мин`
-    );
+    const emaTips = emaVals.map((v, i) => {
+      const result = Math.round(v);
+      if (i === 0) return `#1 · Угасающее: ${result} зн/мин\nНачальное значение`;
+      const prev = Math.round(emaVals[i - 1]);
+      return `#${i + 1} · Угасающее: ${result} зн/мин\n${prev} × 0.9 + ${cpms[i]} × 0.1 = ${result}`;
+    });
 
     const durations = allRuns.map(r => r.chars ?? null);
     const maxDuration = Math.max(...durations.filter(v => v !== null)) || 1;
