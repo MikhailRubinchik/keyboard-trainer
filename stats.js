@@ -975,7 +975,7 @@ const Stats = (() => {
 
 
       const lvlBadge      = lc != null ? ` <span class="run-badge run-badge--level">→${lc}</span>` : '';
-      const noFingerBadge = r.noFinger ? ' <span class="run-badge run-badge--nofinger" title="Без подсказки пальца">без&nbsp;👆</span>' : '';
+      const noFingerBadge = r.noFinger ? '' : ' <span class="run-badge run-badge--finger" title="С подсказкой пальца">👆</span>';
       const replayBtn = (r.keystrokeLog?.length && r.text)
         ? ' <button class="btn-replay-run" title="Виртуальный заезд">▶</button>' : '';
       return `

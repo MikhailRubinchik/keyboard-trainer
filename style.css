@@ -528,6 +528,25 @@ button:active  { transform: scale(0.97); }
   color: var(--text-dim);
 }
 
+.storage-warning {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
+  background: #dc2626;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 14px 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: warning-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes warning-pulse {
+  0%, 100% { background: #dc2626; }
+  50%       { background: #991b1b; }
+}
+
 .chart-date-range {
   display: flex;
   align-items: center;
@@ -883,7 +902,7 @@ button:active  { transform: scale(0.97); }
   color: #92400e;
 }
 
-.run-badge--nofinger {
+.run-badge--finger {
   background: #f0f9ff;
   color: #0369a1;
 }
