@@ -228,11 +228,25 @@ const Stats = (() => {
       const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setSyncStatus('↑ ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
       setRefreshStatus(`отправлено в ${timeStr}`);
+      checkStorageWarning();
     } catch (e) {
       const msg = e.message || String(e);
       setRefreshStatus('↑ ' + msg);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = '↑ Отправить'; }
+    }
+  }
+
+  function checkStorageWarning() {
+    const el = document.getElementById('storage-warning');
+    if (!el) return;
+    const raw = localStorage.getItem(LS_KEY) || '';
+    const pct = Math.round(raw.length * 2 / (5 * 1024 * 1024) * 100);
+    if (pct >= 50) {
+      el.textContent = `⚠️ Хранилище заполнено на ${pct}%! Скоро данные перестанут сохраняться. Срочно сделай экспорт .txt и сообщи папе!`;
+      el.classList.remove('hidden');
+    } else {
+      el.classList.add('hidden');
     }
   }
 
@@ -282,6 +296,7 @@ const Stats = (() => {
       setSyncStatus(`↓ Загружено ${pulled.length} заездов${progressNote}`);
       const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setRefreshStatus(`обновлено в ${timeStr}`);
+      checkStorageWarning();
     } catch (e) {
       setSyncStatus('↓ Ошибка: ' + e.message, true);
       setRefreshStatus('ошибка обновления');
@@ -1912,6 +1927,7 @@ const Stats = (() => {
       const gistPct  = Math.round(gistStr.length / (10 * 1024 * 1024) * 100);
       sizeElEarly.textContent = `Локал: ${lsKb} КБ / 5 МБ (${lsPct}%) · Гист: ${gistKb} КБ / 10 МБ (${gistPct}%)`;
     }
+    checkStorageWarning();
 
     if (!allRuns.length) {
       summaryEl.innerHTML = '<p style="color:var(--text-dim);font-size:0.9rem">Заездов пока нет.</p>';
