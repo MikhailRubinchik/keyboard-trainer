@@ -1754,6 +1754,15 @@ const Stats = (() => {
     }).join('');
     const trendLine = smoothLine(trendVals, maxCpmForecast, '#06b6d4', 'chart-group-trend', '6,3', trendDots);
 
+    // EMA (α=0.1)
+    const emaVals = [];
+    for (let i = 0; i < cpms.length; i++) {
+      emaVals.push(i === 0 ? cpms[0] : emaVals[i - 1] * 0.9 + cpms[i] * 0.1);
+    }
+    const emaTips = emaVals.map((v, i) =>
+      `#${i + 1} · Угасающее среднее: ${Math.round(v)} зн/мин`
+    );
+
     const durations = allRuns.map(r => r.chars ?? null);
     const maxDuration = Math.max(...durations.filter(v => v !== null)) || 1;
     const durTicks = [0, Math.round(maxDuration / 2), Math.round(maxDuration)];
@@ -1783,6 +1792,7 @@ const Stats = (() => {
       <div class="chart-legend">
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● скорость, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-trend" checked> <span style="color:#06b6d4">● тренд</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-ema" checked> <span style="color:#f97316">● угасающее</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-rolling5"> <span style="color:#a855f7">● ср-5, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#ef4444">● ошибки, %</span></label>
       </div>
@@ -1794,6 +1804,7 @@ const Stats = (() => {
         ${levelDividers}
         ${trendLine}
         ${lineGroup(cpmRolling5, maxCpmForecast, '#a855f7', 'chart-group-rolling5', rolling5Tips, rolling5Records, true)}
+        ${lineGroup(emaVals.map(Math.round), maxCpmForecast, '#f97316', 'chart-group-ema', emaTips, null, false)}
         ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords)}
         ${lineGroup(errs, maxErr, '#ef4444', 'chart-group-err', tips, errRecords)}
         ${rightAxis}
@@ -1925,6 +1936,11 @@ const Stats = (() => {
         if (togTrend) togTrend.addEventListener('change', () => {
           const g = document.getElementById('chart-group-trend');
           if (g) g.style.display = togTrend.checked ? '' : 'none';
+        });
+        const togEma = document.getElementById('chart-toggle-ema');
+        if (togEma) togEma.addEventListener('change', () => {
+          const g = document.getElementById('chart-group-ema');
+          if (g) g.style.display = togEma.checked ? '' : 'none';
         });
         const togRolling5 = document.getElementById('chart-toggle-rolling5');
         if (togRolling5) togRolling5.addEventListener('change', () => {
