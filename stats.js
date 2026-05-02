@@ -267,7 +267,8 @@ const Stats = (() => {
         prefixLen < runs.length &&
         prefixLen < pulled.length &&
         runs[prefixLen].date === pulled[prefixLen].date &&
-        runs[prefixLen].time === pulled[prefixLen].time
+        runs[prefixLen].time === pulled[prefixLen].time &&
+        !runs[prefixLen].incomplete  // чекпоинт может стать завершённым в гисте — не пропускаем
       ) prefixLen++;
       runs = runs.slice(0, prefixLen).concat(pulled.slice(prefixLen));
       lsWrite(runs);
