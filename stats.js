@@ -1903,10 +1903,14 @@ const Stats = (() => {
 
     const sizeElEarly = document.getElementById('storage-size');
     if (sizeElEarly) {
-      const raw = localStorage.getItem('klavagonki_stats') || '';
-      const kb  = Math.round(raw.length * 2 / 1024);
-      const pct = Math.round(raw.length * 2 / (5 * 1024 * 1024) * 100);
-      sizeElEarly.textContent = `${kb} КБ / ~5 МБ (${pct}%)`;
+      const raw     = localStorage.getItem('klavagonki_stats') || '';
+      const lsBytes = raw.length * 2;
+      const lsKb    = Math.round(lsBytes / 1024);
+      const lsPct   = Math.round(lsBytes / (5 * 1024 * 1024) * 100);
+      const gistStr  = serializeRunsForGist(runs);
+      const gistKb   = Math.round(gistStr.length / 1024);
+      const gistPct  = Math.round(gistStr.length / (10 * 1024 * 1024) * 100);
+      sizeElEarly.textContent = `Локал: ${lsKb} КБ / 5 МБ (${lsPct}%) · Гист: ${gistKb} КБ / 10 МБ (${gistPct}%)`;
     }
 
     if (!allRuns.length) {
