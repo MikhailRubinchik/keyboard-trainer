@@ -954,7 +954,7 @@ button:active  { transform: scale(0.97); }
 .tx-ok      { color: var(--text-main); }
 .tx-wrong   { }
 .tx-correct { color: var(--text-main); }
-.tx-untyped { color: #bbb; }
+.tx-untyped { color: #ccc; opacity: 0.5; }
 .tx-stop-marker {
   display: inline-block;
   width: 2px;
@@ -971,6 +971,15 @@ button:active  { transform: scale(0.97); }
   font-size: 1em;
 
   margin-right: 2px;
+}
+
+.incomplete-note {
+  font-size: 0.85rem;
+  color: #b45309;
+  background: #fef3c7;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
 }
 
 .freq-divider {

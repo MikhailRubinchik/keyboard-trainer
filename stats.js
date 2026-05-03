@@ -1353,8 +1353,12 @@ const Stats = (() => {
     const stopAt = (run.incomplete && run.text && run.text.length > run.chars)
       ? run.chars : undefined;
 
+    const incompleteNote = stopAt !== undefined
+      ? `<p class="incomplete-note">⚠️ Заезд не завершён — напечатано ${run.chars} из ${run.text.length} символов. Ошибки показаны только для напечатанной части.</p>`
+      : '';
     const textBlock = run.text
       ? '<p class="freq-section-title">Текст упражнения</p>'
+      + incompleteNote
       + buildTextWithErrorsHtml(run.text, run.errorPositions || {}, stopAt)
       + '<div class="freq-divider"></div>'
       : '';
