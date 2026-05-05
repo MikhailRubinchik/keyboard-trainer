@@ -252,7 +252,7 @@ function startExercise(level) {
   runBigramRaw     = {};
   runIdleMs        = 0;
   isAbortedRun     = false;
-  lastCheckpointCursor = 0;
+  lastCheckpointCursor = -9; // first checkpoint fires after 1 char
   keystrokeLog     = [];
   lastKeystrokeTime = null;
   clearTimeout(idleAbandonTimer);
