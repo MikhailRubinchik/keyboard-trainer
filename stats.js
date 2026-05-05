@@ -2114,6 +2114,8 @@ const Stats = (() => {
           shadeRect.setAttribute('opacity', '0');
           svg.prepend(shadeRect);
 
+          svg.querySelectorAll('circle').forEach(c => { c.dataset.r = c.getAttribute('r'); });
+
           svg.addEventListener('mouseover', e => {
             const el = e.target.closest('[data-tip]');
             if (!el) return;
@@ -2135,6 +2137,13 @@ const Stats = (() => {
               shadeRect.setAttribute('width', (plotR - 46).toFixed(1));
               shadeRect.setAttribute('height', Math.max(0, bottom - shadeY).toFixed(1));
               shadeRect.setAttribute('opacity', '1');
+
+              svg.querySelectorAll('circle').forEach(c => {
+                const origR = parseFloat(c.dataset.r);
+                c.setAttribute('r', parseFloat(c.getAttribute('cy')) > cy
+                  ? (origR / 1.5).toFixed(2)
+                  : c.dataset.r);
+              });
             }
           });
           svg.addEventListener('mousemove', e => {
@@ -2145,6 +2154,7 @@ const Stats = (() => {
             if (!e.target.closest('[data-tip]')) return;
             tip.classList.remove('visible');
             shadeRect.setAttribute('opacity', '0');
+            svg.querySelectorAll('circle').forEach(c => c.setAttribute('r', c.dataset.r));
           });
         });
       }
