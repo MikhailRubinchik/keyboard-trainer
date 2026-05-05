@@ -2144,11 +2144,12 @@ const Stats = (() => {
                   ? (origR / 1.5).toFixed(2)
                   : c.dataset.r);
               });
+
+              const svgRect = svg.getBoundingClientRect();
+              const screenY = svgRect.top + (cy / totalH) * svgRect.height;
+              tip.style.left = (svgRect.right + 8) + 'px';
+              tip.style.top  = (screenY - tip.offsetHeight / 2) + 'px';
             }
-          });
-          svg.addEventListener('mousemove', e => {
-            tip.style.left = (e.clientX + 12) + 'px';
-            tip.style.top  = (e.clientY - 48) + 'px';
           });
           svg.addEventListener('mouseout', e => {
             if (!e.target.closest('[data-tip]')) return;
