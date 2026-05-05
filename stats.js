@@ -1728,7 +1728,7 @@ const Stats = (() => {
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm-max"> <span style="color:#16a34a">● макс. скорость</span></label>
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm-min"> <span style="color:#f59e0b">● мин. скорость</span></label>
         </div>
-        <svg viewBox="0 0 ${W} ${Hd}" style="width:100%;display:block">
+        <svg viewBox="0 0 ${W} ${Hd}" style="width:100%;display:block" data-plot-r="${W - padRd}">
           ${leftAxisCpm}${bordersD}${levelDividersD}
           ${trendLineDt}
           ${lineGroupD(cpmMaxes, maxCpmForecastD, '#16a34a', 'chart-group-cpm-max', tips, cpmMaxRecords, true,  xsData)}
@@ -1743,7 +1743,7 @@ const Stats = (() => {
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-max"> <span style="color:#16a34a">● макс. ошибки</span></label>
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-min"> <span style="color:#f59e0b">● мин. ошибки</span></label>
         </div>
-        <svg viewBox="0 0 ${W} ${Hd}" style="width:100%;display:block">
+        <svg viewBox="0 0 ${W} ${Hd}" style="width:100%;display:block" data-plot-r="${W - padRd}">
           ${leftAxisErr}${bordersD}
           ${lineGroupD(errMaxes, maxErrAll, '#16a34a', 'chart-group-err-max', tips, errMaxRecords, true,  xsData)}
           ${lineGroupD(errMins,  maxErrAll, '#f59e0b', 'chart-group-err-min', tips, errMinRecords, true,  xsData)}
@@ -1758,7 +1758,7 @@ const Stats = (() => {
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-sec-day"> <span style="color:#6366f1">● длительность</span></label>
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-avg-sec-day"> <span style="color:#6366f1">╌ длит. ср.</span></label>
         </div>
-        <svg id="chart-svg-chars-day" viewBox="0 0 ${W} ${Hd}" style="width:100%;display:none">
+        <svg id="chart-svg-chars-day" viewBox="0 0 ${W} ${Hd}" style="width:100%;display:none" data-plot-r="${W - padRd}">
           ${leftAxisCharsD}${bordersD}
           ${lineGroupD(totalCharsPerDay, maxCharsDay, '#8b5cf6', 'chart-group-chars-day',     charsDayTips,    null, true, xsData)}
           ${lineGroupD(avgCharsPerDay,   maxCharsDay, '#8b5cf6', 'chart-group-avg-chars-day', avgCharsDayTips, null, true, xsData, '5,3')}
@@ -1878,7 +1878,7 @@ const Stats = (() => {
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-ema"> <span style="color:#f97316">● угасающее ошибок</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-rolling5"> <span style="color:#a855f7">● ср-5 ошибок</span></label>
       </div>
-      <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block" data-plot-r="${W - padR}">
         ${leftAxisRun}
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
@@ -1901,7 +1901,7 @@ const Stats = (() => {
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-dur"> <span style="color:#f97316">● букв за заезд</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-dur-sec"> <span style="color:#6366f1">● длительность</span></label>
       </div>
-      <svg id="chart-svg-dur" viewBox="0 0 ${W} ${H}" style="width:100%;display:none">
+      <svg id="chart-svg-dur" viewBox="0 0 ${W} ${H}" style="width:100%;display:none" data-plot-r="${W - padR}">
         ${leftAxisDur}
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
@@ -2108,6 +2108,12 @@ const Stats = (() => {
           document.body.appendChild(tip);
         }
         chartsEl.querySelectorAll('svg').forEach(svg => {
+          const shadeRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          shadeRect.setAttribute('fill', 'rgba(0,0,0,0.08)');
+          shadeRect.setAttribute('pointer-events', 'none');
+          shadeRect.setAttribute('opacity', '0');
+          svg.prepend(shadeRect);
+
           svg.addEventListener('mouseover', e => {
             const el = e.target.closest('[data-tip]');
             if (!el) return;
@@ -2117,6 +2123,19 @@ const Stats = (() => {
               tip.appendChild(document.createTextNode(line));
             });
             tip.classList.add('visible');
+
+            const cy = parseFloat(el.getAttribute('cy'));
+            if (!isNaN(cy)) {
+              const totalH = parseFloat(svg.getAttribute('viewBox').split(' ')[3]);
+              const plotR  = parseFloat(svg.dataset.plotR || '714');
+              const bottom = totalH - 26;
+              const shadeY = Math.min(cy, bottom);
+              shadeRect.setAttribute('x', '46');
+              shadeRect.setAttribute('y', shadeY.toFixed(1));
+              shadeRect.setAttribute('width', (plotR - 46).toFixed(1));
+              shadeRect.setAttribute('height', Math.max(0, bottom - shadeY).toFixed(1));
+              shadeRect.setAttribute('opacity', '1');
+            }
           });
           svg.addEventListener('mousemove', e => {
             tip.style.left = (e.clientX + 12) + 'px';
@@ -2125,6 +2144,7 @@ const Stats = (() => {
           svg.addEventListener('mouseout', e => {
             if (!e.target.closest('[data-tip]')) return;
             tip.classList.remove('visible');
+            shadeRect.setAttribute('opacity', '0');
           });
         });
       }
