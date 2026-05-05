@@ -598,6 +598,10 @@ button:active  { transform: scale(0.97); }
   opacity: 1;
 }
 
+tr.row--chart-selected td {
+  background: rgba(59, 130, 246, 0.18);
+  transition: background 0.2s;
+}
 
 .player-level-display {
   font-size: 2rem;

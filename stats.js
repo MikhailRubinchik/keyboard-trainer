@@ -992,7 +992,7 @@ const Stats = (() => {
       const replayBtn = (r.keystrokeLog?.length && r.text)
         ? ' <button class="btn-replay-run" title="Виртуальный заезд">▶</button>' : '';
       return `
-      <tr${r.lazy ? ' class="row--lazy"' : ''}>
+      <tr${r.lazy ? ' class="row--lazy"' : ''} data-run-key="${r.date}~${r.time ?? ''}">
         <td class="run-num">${i + 1}${replayBtn}</td>
         <td title="${r.date}${r.time ? ' · ' + fmtAmPm(r.time) : ''}">${r.date}${noFingerBadge}</td>
         <td>${r.level ?? r.exercise ?? '—'}${lvlBadge}</td>
@@ -1050,7 +1050,7 @@ const Stats = (() => {
         ? d.levelChanges.map(lv => `<span class="run-badge run-badge--level">→${lv}</span>`).join('')
         : '';
       return `
-      <tr>
+      <tr data-run-key="${d.date}">
         <td class="${d.dateClass}">${d.date}</td>
         <td>${d.avgLevel}${lvlBadge ? ' ' + lvlBadge : ''}</td>
         <td class="${d.countClass}">${d.count}</td>
@@ -1489,7 +1489,7 @@ const Stats = (() => {
           seg.push(`${x},${y}`);
           const tip = tips ? tips[i].replace(/"/g, '&quot;') : '';
           const isRecord = records && records[i] === 'record';
-          dots.push(`<circle cx="${x}" cy="${y}" r="${isRecord ? 6 : 4}" fill="${color}" data-tip="${tip}" style="cursor:pointer"/>`);
+          dots.push(`<circle cx="${x}" cy="${y}" r="${isRecord ? 6 : 4}" fill="${color}" data-tip="${tip}" data-idx="${i}" style="cursor:pointer"/>`);
           if (isRecord) dots.push(
             `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#fbbf24" style="pointer-events:none">★</text>`
           );
@@ -1608,7 +1608,7 @@ const Stats = (() => {
             seg.push(`${x},${y}`);
             const tip = tipsArr ? tipsArr[i].replace(/"/g, '&quot;') : '';
             const isRecord = records && records[i] === 'record';
-            dots.push(`<circle cx="${x}" cy="${y}" r="${isRecord ? 6 : 4}" fill="${color}" data-tip="${tip}" style="cursor:pointer"/>`);
+            dots.push(`<circle cx="${x}" cy="${y}" r="${isRecord ? 6 : 4}" fill="${color}" data-tip="${tip}" data-idx="${i}" style="cursor:pointer"/>`);
             if (isRecord) dots.push(`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#fbbf24" style="pointer-events:none">★</text>`);
           }
         }
@@ -2156,6 +2156,21 @@ const Stats = (() => {
             tip.classList.remove('visible');
             shadeRect.setAttribute('opacity', '0');
             svg.querySelectorAll('circle').forEach(c => c.setAttribute('r', c.dataset.r));
+          });
+          svg.addEventListener('click', e => {
+            const el = e.target.closest('[data-idx]');
+            if (!el) return;
+            const idx = parseInt(el.dataset.idx, 10);
+            const run = chartRuns[idx];
+            if (!run) return;
+            const key = run._count !== undefined
+              ? run.date
+              : run.date + '~' + (run.time ?? '');
+            document.querySelectorAll('tr.row--chart-selected').forEach(r => r.classList.remove('row--chart-selected'));
+            const row = document.querySelector(`tr[data-run-key="${key}"]`);
+            if (!row) return;
+            row.classList.add('row--chart-selected');
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
           });
         });
       }
