@@ -204,9 +204,6 @@ let runIdleMs        = 0;     // accumulated idle time (gaps > 5s) in ms
 let isAbortedRun     = false; // true when auto-stopped due to idle
 let idleAbandonTimer = null;  // fires abandonRun() if no key pressed long enough
 
-let carAngle  = -Math.PI / 2;
-let carRafId  = null;
-let carLastTs = null;
 
 // ── Screens ───────────────────────────────────────────────────
 
@@ -277,7 +274,7 @@ function startExercise(level) {
   resultOverlay.classList.add('hidden');
   showScreen('exercise');
   wordInput.focus();
-  startCar();
+  resetCarPos();
 }
 
 // ── Text rendering ────────────────────────────────────────────
@@ -480,34 +477,21 @@ function stopTimer() {
   }
 }
 
-// ── Track car animation ───────────────────────────────────────
+// ── Track car ─────────────────────────────────────────────────
 
-const CAR_TRACK_CX = 200, CAR_TRACK_CY = 65;
-const CAR_TRACK_RX = 159, CAR_TRACK_RY = 46;
+const CAR_X_START = 28;
+const CAR_X_END   = 466;
 
-function tickCar(ts) {
-  if (carLastTs === null) carLastTs = ts;
-  const dt = Math.min((ts - carLastTs) / 1000, 0.1);
-  carLastTs = ts;
-  const cpm = elapsedSeconds > 0 ? cursor / (elapsedSeconds / 60) : 0;
-  carAngle += (cpm / 200) * (2 * Math.PI / 12) * dt;
-  const x   = CAR_TRACK_CX + CAR_TRACK_RX * Math.cos(carAngle);
-  const y   = CAR_TRACK_CY + CAR_TRACK_RY * Math.sin(carAngle);
-  const deg = Math.atan2(CAR_TRACK_RY * Math.cos(carAngle), -CAR_TRACK_RX * Math.sin(carAngle)) * 180 / Math.PI;
+function updateCarPos() {
+  const progress = chars.length > 0 ? cursor / chars.length : 0;
+  const x = CAR_X_START + progress * (CAR_X_END - CAR_X_START);
   const car = document.getElementById('track-car');
-  if (car) car.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${deg.toFixed(1)})`);
-  carRafId = requestAnimationFrame(tickCar);
+  if (car) car.setAttribute('transform', `translate(${x.toFixed(1)},36)`);
 }
 
-function startCar() {
-  carAngle  = -Math.PI / 2;
-  carLastTs = null;
-  if (carRafId) cancelAnimationFrame(carRafId);
-  carRafId = requestAnimationFrame(tickCar);
-}
-
-function stopCar() {
-  if (carRafId) { cancelAnimationFrame(carRafId); carRafId = null; }
+function resetCarPos() {
+  const car = document.getElementById('track-car');
+  if (car) car.setAttribute('transform', `translate(${CAR_X_START},36)`);
 }
 
 // ── Main keydown handler ──────────────────────────────────────
@@ -751,6 +735,7 @@ function handleChar(key) {
   lastCorrectChar = expected;
 
   cursor++;
+  updateCarPos();
 
   if (cursor - lastCheckpointCursor >= 10 && cursor < chars.length) {
     lastCheckpointCursor = cursor;
@@ -827,6 +812,7 @@ function handleBackspace() {
   if (cursor <= wordStart) return;
 
   cursor--;
+  updateCarPos();
   charStates[cursor] = 'pending';
   wordSoFar = wordSoFar.slice(0, -1);
   updateWordDisplay();
@@ -970,7 +956,6 @@ btnBack.addEventListener('click', () => {
     if (!confirm('Прервать упражнение и выйти?')) return;
   }
   stopTimer();
-  stopCar();
   clearIdleTimer();
   resultOverlay.classList.add('hidden');
   wordInput.disabled = true;
