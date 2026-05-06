@@ -8,6 +8,9 @@
 </head>
 <body>
 
+  <!-- ======= Storage warning banner ======= -->
+  <div id="storage-warning" class="storage-warning hidden"></div>
+
   <!-- ======= Home screen ======= -->
   <div id="screen-list" class="screen active">
     <h1 class="app-title">Клавогонки</h1>
@@ -68,6 +71,24 @@
       <span id="live-progress" class="live-stat">0%</span>
       <span id="live-cpm" class="live-stat">— зн/мин</span>
       <span id="live-timer" class="live-timer">0:00</span>
+    </div>
+
+    <div id="track-container" class="track-container">
+      <svg id="track-svg" viewBox="0 0 400 130" style="width:100%;display:block">
+        <rect width="400" height="130" fill="#15803d" rx="6"/>
+        <ellipse cx="200" cy="65" rx="175" ry="54" fill="#2d3748"/>
+        <ellipse cx="200" cy="65" rx="143" ry="38" fill="#16a34a"/>
+        <ellipse cx="200" cy="65" rx="159" ry="46" fill="none" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="9,6"/>
+        <rect x="196" y="11" width="8" height="16" fill="white" opacity="0.7" rx="1"/>
+        <g id="track-car" transform="translate(200,19) rotate(0)">
+          <rect x="-13" y="-7" width="6" height="4" rx="1" fill="#111827"/>
+          <rect x="-13" y="3" width="6" height="4" rx="1" fill="#111827"/>
+          <rect x="7" y="-7" width="6" height="4" rx="1" fill="#111827"/>
+          <rect x="7" y="3" width="6" height="4" rx="1" fill="#111827"/>
+          <rect x="-11" y="-5" width="22" height="10" rx="3" fill="#dc2626"/>
+          <rect x="2" y="-4" width="6" height="4" rx="1" fill="#bfdbfe" opacity="0.8"/>
+        </g>
+      </svg>
     </div>
 
     <div id="finger-hint" class="finger-hint"></div>

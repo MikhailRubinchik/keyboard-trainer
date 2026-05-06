@@ -204,6 +204,10 @@ let runIdleMs        = 0;     // accumulated idle time (gaps > 5s) in ms
 let isAbortedRun     = false; // true when auto-stopped due to idle
 let idleAbandonTimer = null;  // fires abandonRun() if no key pressed long enough
 
+let carAngle  = -Math.PI / 2;
+let carRafId  = null;
+let carLastTs = null;
+
 // ── Screens ───────────────────────────────────────────────────
 
 function showScreen(name) {
@@ -273,6 +277,7 @@ function startExercise(level) {
   resultOverlay.classList.add('hidden');
   showScreen('exercise');
   wordInput.focus();
+  startCar();
 }
 
 // ── Text rendering ────────────────────────────────────────────
@@ -473,6 +478,36 @@ function stopTimer() {
   if (startTime) {
     elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
   }
+}
+
+// ── Track car animation ───────────────────────────────────────
+
+const CAR_TRACK_CX = 200, CAR_TRACK_CY = 65;
+const CAR_TRACK_RX = 159, CAR_TRACK_RY = 46;
+
+function tickCar(ts) {
+  if (carLastTs === null) carLastTs = ts;
+  const dt = Math.min((ts - carLastTs) / 1000, 0.1);
+  carLastTs = ts;
+  const cpm = elapsedSeconds > 0 ? cursor / (elapsedSeconds / 60) : 0;
+  carAngle += (cpm / 200) * (2 * Math.PI / 12) * dt;
+  const x   = CAR_TRACK_CX + CAR_TRACK_RX * Math.cos(carAngle);
+  const y   = CAR_TRACK_CY + CAR_TRACK_RY * Math.sin(carAngle);
+  const deg = Math.atan2(CAR_TRACK_RY * Math.cos(carAngle), -CAR_TRACK_RX * Math.sin(carAngle)) * 180 / Math.PI;
+  const car = document.getElementById('track-car');
+  if (car) car.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${deg.toFixed(1)})`);
+  carRafId = requestAnimationFrame(tickCar);
+}
+
+function startCar() {
+  carAngle  = -Math.PI / 2;
+  carLastTs = null;
+  if (carRafId) cancelAnimationFrame(carRafId);
+  carRafId = requestAnimationFrame(tickCar);
+}
+
+function stopCar() {
+  if (carRafId) { cancelAnimationFrame(carRafId); carRafId = null; }
 }
 
 // ── Main keydown handler ──────────────────────────────────────
@@ -935,6 +970,7 @@ btnBack.addEventListener('click', () => {
     if (!confirm('Прервать упражнение и выйти?')) return;
   }
   stopTimer();
+  stopCar();
   clearIdleTimer();
   resultOverlay.classList.add('hidden');
   wordInput.disabled = true;

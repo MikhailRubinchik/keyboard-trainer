@@ -239,6 +239,12 @@ html, body {
 
 /* ── Exercise screen ─────────────────────────────────────── */
 
+.track-container {
+  margin: 0 auto 14px;
+  max-width: 400px;
+  width: 100%;
+}
+
 .exercise-header {
   display: flex;
   align-items: center;
