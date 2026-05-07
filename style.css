@@ -240,9 +240,46 @@ html, body {
 /* ── Exercise screen ─────────────────────────────────────── */
 
 .track-container {
-  margin: 0 auto 14px;
+  margin: 0 auto 8px;
   max-width: 400px;
   width: 100%;
+}
+
+.car-color-picker {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  justify-content: center;
+  margin: 0 auto 12px;
+  max-width: 400px;
+}
+
+.car-color-label {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-right: 2px;
+}
+
+.car-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  outline: none;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.18);
+  transition: transform 0.1s;
+}
+
+.car-swatch:hover {
+  transform: scale(1.2);
+}
+
+.car-swatch.active {
+  border-color: white;
+  outline: 2px solid #6b7280;
+  outline-offset: 1px;
 }
 
 .exercise-header {

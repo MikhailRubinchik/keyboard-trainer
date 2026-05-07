@@ -46,6 +46,7 @@ const LEVEL_COUNT      = 34;
 const LS_LEVEL_KEY     = 'klavagonki_level';
 const LS_SHOW_FINGER   = 'klavagonki_show_finger';
 const LS_TEXT_SET      = 'klavagonki_text_set';
+const LS_CAR_COLOR     = 'klavagonki_car_color';
 
 let showFinger = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
 
@@ -476,6 +477,30 @@ function stopTimer() {
     elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
   }
 }
+
+// ── Car color ─────────────────────────────────────────────────
+
+let carColor = localStorage.getItem(LS_CAR_COLOR) || '#dc2626';
+
+function applyCarColor(color) {
+  carColor = color;
+  const trackBody  = document.getElementById('track-car-body');
+  const finishBody = document.getElementById('finish-car-body');
+  if (trackBody)  trackBody.setAttribute('fill', color);
+  if (finishBody) finishBody.setAttribute('fill', color);
+  document.querySelectorAll('.car-swatch').forEach(s => {
+    s.classList.toggle('active', s.dataset.color === color);
+  });
+}
+
+document.querySelectorAll('.car-swatch').forEach(swatch => {
+  swatch.addEventListener('click', () => {
+    localStorage.setItem(LS_CAR_COLOR, swatch.dataset.color);
+    applyCarColor(swatch.dataset.color);
+  });
+});
+
+applyCarColor(carColor);
 
 // ── Track car ─────────────────────────────────────────────────
 
