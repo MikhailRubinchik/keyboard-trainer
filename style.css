@@ -282,6 +282,16 @@ html, body {
   outline-offset: 1px;
 }
 
+.car-color-picker.locked .car-swatch {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
+.car-color-picker.locked .car-color-label {
+  opacity: 0.35;
+}
+
 .exercise-header {
   display: flex;
   align-items: center;

@@ -273,6 +273,7 @@ function startExercise(level) {
   updateWordDisplay();
 
   resultOverlay.classList.add('hidden');
+  document.querySelector('.car-color-picker')?.classList.remove('locked');
   showScreen('exercise');
   wordInput.focus();
   resetCarPos();
@@ -456,6 +457,7 @@ function updateFingerHint() {
 // ── Timer ─────────────────────────────────────────────────────
 
 function startTimer() {
+  document.querySelector('.car-color-picker')?.classList.add('locked');
   startTime = Date.now();
   const now = new Date();
   runStartDate = now.toLocaleDateString('ru-RU');
@@ -495,6 +497,7 @@ function applyCarColor(color) {
 
 document.querySelectorAll('.car-swatch').forEach(swatch => {
   swatch.addEventListener('click', () => {
+    if (startTime) return;
     localStorage.setItem(LS_CAR_COLOR, swatch.dataset.color);
     applyCarColor(swatch.dataset.color);
   });
