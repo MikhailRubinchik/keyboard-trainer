@@ -423,7 +423,7 @@ html, body {
   font-size: 1.6rem;
   font-weight: 700;
   color: var(--accent);
-  margin-bottom: 28px;
+  margin-bottom: 16px;
 }
 
 .result-stats {

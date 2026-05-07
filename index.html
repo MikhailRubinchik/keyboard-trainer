@@ -122,7 +122,35 @@
   <!-- ======= Result overlay ======= -->
   <div id="result-overlay" class="result-overlay hidden">
     <div class="result-card">
-      <h2 class="result-title">Заезд завершён!</h2>
+      <h2 class="result-title" style="display:none"></h2>
+      <svg id="finish-svg" viewBox="0 0 300 150" style="width:100%;max-width:300px;display:block;margin:0 auto 10px">
+        <rect width="300" height="150" fill="#d1fae5" rx="6"/>
+        <rect x="0" y="96" width="300" height="54" fill="#1f2937"/>
+        <line x1="0" y1="96" x2="300" y2="96" stroke="white" stroke-width="1.5" opacity="0.3"/>
+        <line x1="0" y1="123" x2="300" y2="123" stroke="#374151" stroke-width="1.5" stroke-dasharray="18,10"/>
+        <rect x="242" y="96" width="7" height="9" fill="white"/>
+        <rect x="242" y="105" width="7" height="9" fill="#111"/>
+        <rect x="242" y="114" width="7" height="9" fill="white"/>
+        <rect x="242" y="123" width="7" height="9" fill="#111"/>
+        <rect x="242" y="132" width="7" height="9" fill="white"/>
+        <rect x="242" y="141" width="7" height="9" fill="#111"/>
+        <g transform="translate(225,123)">
+          <rect x="-11" y="-8" width="6" height="5" rx="1" fill="#111827"/>
+          <rect x="-11" y="3" width="6" height="5" rx="1" fill="#111827"/>
+          <rect x="5" y="-8" width="6" height="5" rx="1" fill="#111827"/>
+          <rect x="5" y="3" width="6" height="5" rx="1" fill="#111827"/>
+          <rect x="-10" y="-6" width="20" height="12" rx="3" fill="#dc2626"/>
+          <rect x="2" y="-5" width="6" height="5" rx="1" fill="#bfdbfe" opacity="0.8"/>
+        </g>
+        <rect x="143" y="68" width="4" height="28" fill="#92400e" rx="1"/>
+        <rect x="40" y="8" width="210" height="60" fill="#fef9c3" rx="3"/>
+        <rect x="40" y="8" width="210" height="60" fill="none" stroke="#d97706" stroke-width="2" rx="3"/>
+        <text x="145" y="38" text-anchor="middle" dominant-baseline="central" font-size="21" font-weight="800" fill="#78350f" font-family="system-ui,sans-serif">Ура, финиш!</text>
+        <g id="finish-record-badge" style="display:none">
+          <polygon points="200,8 250,8 250,58" fill="#dc2626"/>
+          <text x="225" y="33" text-anchor="middle" dominant-baseline="central" transform="rotate(45,225,33)" font-size="10" font-weight="700" fill="white" font-family="system-ui,sans-serif">рекорд</text>
+        </g>
+      </svg>
       <p id="result-record-label" class="result-record-label"></p>
       <div class="result-stats">
         <div class="result-stat">

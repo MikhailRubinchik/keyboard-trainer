@@ -829,7 +829,10 @@ function abandonRun() {
   wordInput.disabled = true;
   isAbortedRun = true;
 
-  document.querySelector('.result-title').textContent = 'Заезд прерван';
+  const titleEl = document.querySelector('.result-title');
+  if (titleEl) { titleEl.textContent = 'Заезд прерван'; titleEl.style.display = ''; }
+  const finishSvg = document.getElementById('finish-svg');
+  if (finishSvg) finishSvg.style.display = 'none';
   const recordEl = document.getElementById('result-record-label');
   if (recordEl) { recordEl.textContent = 'Перерыв больше 3 минут — заезд не засчитан'; recordEl.className = 'result-record-label result-record-label--aborted'; }
   resultTime.textContent   = Stats.formatTime(elapsedSeconds);
@@ -879,6 +882,9 @@ async function finishRun() {
         + (recordLabel === 'repeat' ? ' result-record-label--repeat' : '');
     }
   }
+  const finishBadge = document.getElementById('finish-record-badge');
+  if (finishBadge) finishBadge.style.display = (!lazy && recordLabel === 'record') ? '' : 'none';
+
   playFanfare();
 
   resultOverlay.classList.remove('hidden');
@@ -967,7 +973,10 @@ function doNext() {
   resultOverlay.classList.add('hidden');
   if (isAbortedRun) {
     isAbortedRun = false;
-    document.querySelector('.result-title').textContent = 'Заезд завершён!';
+    const titleEl = document.querySelector('.result-title');
+    if (titleEl) { titleEl.textContent = ''; titleEl.style.display = 'none'; }
+    const finishSvg = document.getElementById('finish-svg');
+    if (finishSvg) finishSvg.style.display = '';
     btnNext.textContent = 'Следующий →';
     restoreFingerSetting();
     showScreen('list');
