@@ -124,12 +124,14 @@ const Stats = (() => {
     return allRuns.slice(-5);
   }
 
-  function calcEma(runsArr, alpha = 0.1) {
+  function calcEma(runsArr) {
     const rs = runsArr.filter(r => !r.incomplete);
     if (!rs.length) return null;
-    let ema = rs[0].cpm;
-    for (let i = 1; i < rs.length; i++) {
-      ema = ema * (1 - alpha) + rs[i].cpm * alpha;
+    let ema = 0;
+    for (let i = 0; i < rs.length; i++) {
+      const n = i + 1;
+      const w = n < 50 ? 1 / n : 1 / 50;
+      ema = ema + w * (rs[i].cpm - ema);
     }
     return Math.round(ema);
   }
@@ -1801,16 +1803,22 @@ const Stats = (() => {
     }).join('');
     const trendLine = smoothLine(trendVals, maxCpmForecast, '#06b6d4', 'chart-group-trend', '6,3', trendDots);
 
-    // EMA (α=0.1)
+    // Скользящее среднее (формула Клавогонок)
     const emaVals = [];
+    let _ema = 0;
     for (let i = 0; i < cpms.length; i++) {
-      emaVals.push(i === 0 ? cpms[0] : emaVals[i - 1] * 0.9 + cpms[i] * 0.1);
+      const n = i + 1;
+      const w = n < 50 ? 1 / n : 1 / 50;
+      _ema = _ema + w * (cpms[i] - _ema);
+      emaVals.push(_ema);
     }
     const emaTips = emaVals.map((v, i) => {
       const result = Math.round(v);
-      if (i === 0) return `#1 · Угасающее: ${result} зн/мин\nНачальное значение`;
+      if (i === 0) return `#1 · Скользящее: ${result} зн/мин\nНачальное значение`;
       const prev = Math.round(emaVals[i - 1]);
-      return `#${i + 1} · Угасающее: ${result} зн/мин\n${prev} × 0.9 + ${cpms[i]} × 0.1 = ${result}`;
+      const n = i + 1;
+      const denom = n < 50 ? n : 50;
+      return `#${i + 1} · Скользящее: ${result} зн/мин\n${prev} + 1/${denom} × (${cpms[i]} − ${prev}) = ${result}`;
     });
 
     // Error trend forecast dots (errTrendVals/maxErrForecast computed earlier)
@@ -1871,11 +1879,11 @@ const Stats = (() => {
       <div class="chart-legend">
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● скорость, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-trend" checked> <span style="color:#06b6d4">● тренд</span></label>
-        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-ema"> <span style="color:#f97316">● угасающее</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-ema"> <span style="color:#f97316">● скользящее</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-rolling5"> <span style="color:#a855f7">● ср-5, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#ef4444">● ошибки, %</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-trend"> <span style="color:#b91c1c">╌ тренд ошибок</span></label>
-        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-ema"> <span style="color:#f97316">● угасающее ошибок</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-ema"> <span style="color:#f97316">● скользящее ошибок</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-rolling5"> <span style="color:#a855f7">● ср-5 ошибок</span></label>
       </div>
       <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block" data-plot-r="${W - padR}">
@@ -2138,11 +2146,19 @@ const Stats = (() => {
               shadeRect.setAttribute('height', Math.max(0, bottom - shadeY).toFixed(1));
               shadeRect.setAttribute('opacity', '1');
 
+              const hoveredGroup = el.closest('g');
               svg.querySelectorAll('circle').forEach(c => {
                 const origR = parseFloat(c.dataset.r);
-                c.setAttribute('r', parseFloat(c.getAttribute('cy')) > cy
-                  ? (origR / 1.5).toFixed(2)
-                  : c.dataset.r);
+                const sameSeries = hoveredGroup && hoveredGroup.contains(c);
+                c.setAttribute('r', (sameSeries && parseFloat(c.getAttribute('cy')) <= cy)
+                  ? c.dataset.r
+                  : (origR / 1.5).toFixed(2));
+              });
+              chartsEl.querySelectorAll('svg').forEach(otherSvg => {
+                if (otherSvg === svg) return;
+                otherSvg.querySelectorAll('circle').forEach(c => {
+                  c.setAttribute('r', (parseFloat(c.dataset.r) / 1.5).toFixed(2));
+                });
               });
 
               const svgRect = svg.getBoundingClientRect();
@@ -2155,7 +2171,7 @@ const Stats = (() => {
             if (!e.target.closest('[data-tip]')) return;
             tip.classList.remove('visible');
             shadeRect.setAttribute('opacity', '0');
-            svg.querySelectorAll('circle').forEach(c => c.setAttribute('r', c.dataset.r));
+            chartsEl.querySelectorAll('circle').forEach(c => c.setAttribute('r', c.dataset.r));
           });
           svg.addEventListener('click', e => {
             const el = e.target.closest('[data-idx]');
@@ -2222,10 +2238,10 @@ const Stats = (() => {
       </div>` : ''}
       ${emaValue !== null ? `
       <div class="summary-group">
-        <div class="summary-group-title">Угасающее среднее</div>
+        <div class="summary-group-title">Скользящее среднее</div>
         <div class="summary-row">
           <div class="summary-item">
-            <span class="summary-label">Скорость (α=0.1)</span>
+            <span class="summary-label">Скользящее среднее</span>
             <span class="summary-value">${emaValue} зн/мин</span>
           </div>
         </div>
