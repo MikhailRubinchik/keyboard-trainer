@@ -133,7 +133,7 @@ const Stats = (() => {
       const w = n < 50 ? 1 / n : 1 / 50;
       ema = ema + w * (rs[i].cpm - ema);
     }
-    return Math.round(ema);
+    return parseFloat(ema.toFixed(1));
   }
 
   function lsRead() {
@@ -1813,9 +1813,9 @@ const Stats = (() => {
       emaVals.push(_ema);
     }
     const emaTips = emaVals.map((v, i) => {
-      const result = Math.round(v);
+      const result = v.toFixed(1);
       if (i === 0) return `#1 · Скользящее: ${result} зн/мин\nНачальное значение`;
-      const prev = Math.round(emaVals[i - 1]);
+      const prev = emaVals[i - 1].toFixed(1);
       const n = i + 1;
       const denom = n < 50 ? n : 50;
       return `#${i + 1} · Скользящее: ${result} зн/мин\n${prev} + 1/${denom} × (${cpms[i]} − ${prev}) = ${result}`;
@@ -1894,7 +1894,7 @@ const Stats = (() => {
         ${levelDividers}
         ${trendLine}
         ${lineGroup(cpmRolling5, maxCpmForecast, '#a855f7', 'chart-group-rolling5', rolling5Tips, rolling5Records, true)}
-        ${lineGroup(emaVals.map(Math.round), maxCpmForecast, '#f97316', 'chart-group-ema', emaTips, null, true)}
+        ${lineGroup(emaVals, maxCpmForecast, '#f97316', 'chart-group-ema', emaTips, null, true)}
         ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords)}
         ${lineGroup(errs, maxErrForecast, '#ef4444', 'chart-group-err', tips, errRecords)}
         ${lineGroup(errEmaVals, maxErrForecast, '#f97316', 'chart-group-err-ema', errEmaTips, null, true)}
