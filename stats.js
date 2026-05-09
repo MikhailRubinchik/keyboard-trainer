@@ -433,105 +433,95 @@ const Stats = (() => {
   // ── Achievements ───────────────────────────────────────────
 
   const ACHIEVEMENTS_KEY = 'diana_achievements';
-  const ACHIEVEMENTS_ORDER_KEY = 'diana_achievements_order';
 
-  const ACHIEVEMENTS_DEFAULT = [
-    'Прогулки с пещерным человеком',
-    'Серию прогулок со всеми (остался Ал)',
-    'Строить башню до облаков в майнкрафте',
-    'Найти подземный город на обычной карте',
-    'Портал на обычной карте',
-    'Строить годзилу в майнкрафте',
-    'Смотреть Алладина',
-    'Смотреть все фильмы из вселенной годзилы и конга (остался конг)',
-    'Смотреть все фильмы про парк юрского периода (остался последний)',
-    'Дойти до рекорда в 100',
-    'Дойти до средней в 100',
-    'Дойти до рекорда в 100 с наклейками',
-    'Дойти до средней в 100 с наклейками',
-    'Дойти до рекорда в 100 с подвеской',
-    'Дойти до средней в 100 с подвеской',
-    'Дойти до рекорда в 100 на Винни-Пухе',
-    'Дойти до средней в 100 на Винни-Пухе',
-    'Пройти в клавогонках упражнение из соло на 100',
-    'Пройти в клавогонках упражнение из соло с 9 ошибками',
-    'Дойти до рекорда в 100 с много знаков препинания',
-    'Дойти до средней в 100 с много знаков препинания',
-    'Дочитать Незнайку в Солнечном городе',
-    'Дочитать Незнайку на Луне',
-    'Дочитать Незнайку на Луне 2',
-    'Найти подводный замок на обычной карте',
+  const ACHIEVEMENTS_SECTIONS = [
+    {
+      title: 'Майнкрафт',
+      items: [
+        'Строить башню до облаков в майнкрафте',
+        'Найти подземный город на обычной карте',
+        'Портал на обычной карте',
+        'Строить годзилу в майнкрафте',
+        'Найти подводный замок на обычной карте',
+      ],
+    },
+    {
+      title: 'Просмотр',
+      items: [
+        'Смотреть Алладина',
+        'Смотреть все фильмы из вселенной годзилы и конга (остался конг)',
+        'Смотреть все фильмы про парк юрского периода (остался последний)',
+      ],
+    },
+    {
+      title: 'Клавогонки',
+      items: [
+        'Дойти до рекорда в 100',
+        'Дойти до средней в 100',
+        'Дойти до рекорда в 100 с наклейками',
+        'Дойти до средней в 100 с наклейками',
+        'Дойти до рекорда в 100 с подвеской',
+        'Дойти до средней в 100 с подвеской',
+        'Дойти до рекорда в 100 на Винни-Пухе',
+        'Дойти до средней в 100 на Винни-Пухе',
+        'Пройти в клавогонках упражнение из соло на 100',
+        'Пройти в клавогонках упражнение из соло с 9 ошибками',
+        'Дойти до рекорда в 100 с много знаков препинания',
+        'Дойти до средней в 100 с много знаков препинания',
+      ],
+    },
+    {
+      title: 'Другое',
+      items: [
+        'Прогулки с пещерным человеком',
+        'Серию прогулок со всеми (остался Ал)',
+        'Дочитать Незнайку в Солнечном городе',
+        'Дочитать Незнайку на Луне',
+        'Дочитать Незнайку на Луне 2',
+        'Накопить на Т-Rex',
+      ],
+    },
   ];
 
   function initAchievements() {
     const btn   = document.getElementById('btn-achievements');
     const panel = document.getElementById('achievements-panel');
-    const list  = document.getElementById('achievements-list');
 
-    // Load checked state
     const checked = JSON.parse(localStorage.getItem(ACHIEVEMENTS_KEY) || '{}');
 
-    // Load order (array of achievement texts)
-    let order = JSON.parse(localStorage.getItem(ACHIEVEMENTS_ORDER_KEY) || 'null');
-    if (!order || order.length !== ACHIEVEMENTS_DEFAULT.length) order = [...ACHIEVEMENTS_DEFAULT];
-
-    function saveOrder() {
-      localStorage.setItem(ACHIEVEMENTS_ORDER_KEY, JSON.stringify(order));
-    }
-
     function renderList() {
+      const list = document.getElementById('achievements-list');
       list.innerHTML = '';
-      order.forEach((text, idx) => {
-        const li = document.createElement('li');
-        li.dataset.idx = idx;
-        li.draggable = true;
-        if (checked[text]) li.classList.add('done');
 
-        const box = document.createElement('span');
-        box.className = 'achievement-check';
-        if (checked[text]) box.textContent = '✓';
+      ACHIEVEMENTS_SECTIONS.forEach(section => {
+        const header = document.createElement('li');
+        header.className = 'achievement-section-header';
+        header.textContent = section.title;
+        list.appendChild(header);
 
-        const label = document.createElement('span');
-        label.textContent = text;
+        section.items.forEach(text => {
+          const li = document.createElement('li');
+          li.draggable = true;
+          if (checked[text]) li.classList.add('done');
 
-        li.appendChild(box);
-        li.appendChild(label);
+          const box = document.createElement('span');
+          box.className = 'achievement-check';
+          if (checked[text]) box.textContent = '✓';
 
-        // Toggle only in unlock mode (indicated by green button)
-        li.addEventListener('click', () => {
-          const unlocked = document.getElementById('btn-achievements')?.classList.contains('achievements-unlocked');
-          if (!unlocked) return;
-          checked[text] = !checked[text];
-          localStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(checked));
-          renderList();
+          const label = document.createElement('span');
+          label.textContent = text;
+
+          li.appendChild(box);
+          li.appendChild(label);
+
+          li.addEventListener('click', () => {
+            checked[text] = !checked[text];
+            localStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(checked));
+            renderList();
+          });
+
+          list.appendChild(li);
         });
-
-        // Drag-and-drop reorder
-        li.addEventListener('dragstart', e => {
-          e.dataTransfer.effectAllowed = 'move';
-          li.classList.add('dragging');
-          e.dataTransfer.setData('text/plain', String(idx));
-        });
-        li.addEventListener('dragend', () => li.classList.remove('dragging'));
-        li.addEventListener('dragover', e => {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = 'move';
-          li.classList.add('drag-over');
-        });
-        li.addEventListener('dragleave', () => li.classList.remove('drag-over'));
-        li.addEventListener('drop', e => {
-          e.preventDefault();
-          li.classList.remove('drag-over');
-          const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
-          const toIdx   = idx;
-          if (fromIdx === toIdx) return;
-          const moved = order.splice(fromIdx, 1)[0];
-          order.splice(toIdx, 0, moved);
-          saveOrder();
-          renderList();
-        });
-
-        list.appendChild(li);
       });
     }
 
@@ -539,18 +529,6 @@ const Stats = (() => {
 
     btn.addEventListener('click', () => panel.classList.toggle('hidden'));
   }
-
-  // Shift+F toggles unlock mode for checking achievements
-  document.addEventListener('keydown', e => {
-    if (e.shiftKey && e.key === 'F') {
-      e.preventDefault();
-      const btn = document.getElementById('btn-achievements');
-      if (!btn) return;
-      const unlocked = btn.classList.toggle('achievements-unlocked');
-      const hint = document.getElementById('achievements-unlock-hint');
-      if (hint) hint.style.display = unlocked ? 'block' : 'none';
-    }
-  });
 
   // ── Public API ─────────────────────────────────────────────
 

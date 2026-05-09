@@ -1430,3 +1430,19 @@ tr.row--chart-selected td {
   color: #15803d;
   margin-bottom: 0.5rem;
 }
+
+.achievement-section-header {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim, #9ca3af);
+  margin-top: 0.7rem;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  cursor: default !important;
+}
+
+.achievement-section-header:first-child {
+  margin-top: 0;
+}
