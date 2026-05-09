@@ -1338,3 +1338,84 @@ tr.row--chart-selected td {
   display: none !important;
 }
 
+
+/* ── Achievements ────────────────────────────────────────── */
+
+#achievements-section {
+  margin: 0 0 1.2rem 0;
+}
+
+.btn-achievements {
+  background: none;
+  border: 1.5px solid var(--border, #d1d5db);
+  border-radius: 8px;
+  padding: 0.4rem 1rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: var(--text, #1f2937);
+  transition: background 0.15s;
+}
+
+.btn-achievements:hover {
+  background: var(--bg-hover, #f3f4f6);
+}
+
+.achievements-panel {
+  margin-top: 0.6rem;
+  border: 1.5px solid var(--border, #d1d5db);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  background: var(--bg-card, #fff);
+}
+
+.achievements-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.achievements-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  color: var(--text, #1f2937);
+  cursor: default;
+  user-select: none;
+}
+
+.achievements-list li.done {
+  color: var(--text-dim, #9ca3af);
+  text-decoration: line-through;
+}
+
+.achievement-check {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 1.5px solid var(--border, #d1d5db);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  background: #fff;
+}
+
+.achievements-list li.done .achievement-check {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #fff;
+}
+
+.achievements-list li.dragging {
+  opacity: 0.4;
+}
+
+.achievements-list li.drag-over {
+  outline: 2px dashed #3b82f6;
+  border-radius: 4px;
+}
