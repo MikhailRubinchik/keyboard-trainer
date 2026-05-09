@@ -1419,3 +1419,9 @@ tr.row--chart-selected td {
   outline: 2px dashed #3b82f6;
   border-radius: 4px;
 }
+
+.btn-achievements.achievements-unlocked {
+  border-color: #22c55e;
+  color: #15803d;
+  background: #f0fdf4;
+}

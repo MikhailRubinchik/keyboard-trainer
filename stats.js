@@ -539,13 +539,15 @@ const Stats = (() => {
     btn.addEventListener('click', () => panel.classList.toggle('hidden'));
   }
 
-  // Track Shift+F state
+  // Shift+F toggles unlock mode for checking achievements
   let shiftFActive = false;
   document.addEventListener('keydown', e => {
-    if (e.shiftKey && e.key === 'F') shiftFActive = true;
-  });
-  document.addEventListener('keyup', e => {
-    if (!e.shiftKey || e.key === 'F') shiftFActive = false;
+    if (e.shiftKey && e.key === 'F') {
+      e.preventDefault();
+      shiftFActive = !shiftFActive;
+      const btn = document.getElementById('btn-achievements');
+      if (btn) btn.classList.toggle('achievements-unlocked', shiftFActive);
+    }
   });
 
   // ── Public API ─────────────────────────────────────────────
