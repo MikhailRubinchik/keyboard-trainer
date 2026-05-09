@@ -83,20 +83,21 @@
 
     <div id="track-container" class="track-container">
       <svg id="track-svg" viewBox="0 0 500 72" style="width:100%;display:block">
-        <rect width="500" height="72" fill="#f0fdf4" rx="6"/>
-        <rect x="18" y="22" width="464" height="28" fill="#1f2937" rx="2"/>
-        <line x1="18" y1="22" x2="482" y2="22" stroke="white" stroke-width="1.5" opacity="0.35"/>
-        <line x1="18" y1="50" x2="482" y2="50" stroke="white" stroke-width="1.5" opacity="0.35"/>
-        <line x1="18" y1="36" x2="482" y2="36" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="18,10"/>
-        <rect x="18" y="22" width="7" height="28" fill="white" opacity="0.65"/>
-        <rect x="475" y="22" width="7" height="10" fill="white"/>
-        <rect x="475" y="32" width="7" height="8" fill="#111827"/>
-        <rect x="475" y="40" width="7" height="10" fill="white"/>
-        <g id="track-car" transform="translate(28,36)">
+        <rect width="500" height="72" fill="#f0fdf4"/>
+        <rect x="0" y="22" width="500" height="28" fill="#1f2937"/>
+        <line x1="0" y1="22" x2="500" y2="22" stroke="white" stroke-width="1.5" opacity="0.35"/>
+        <line x1="0" y1="50" x2="500" y2="50" stroke="white" stroke-width="1.5" opacity="0.35"/>
+        <line x1="0" y1="36" x2="500" y2="36" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="18,10"/>
+        <rect x="0" y="22" width="7" height="28" fill="white" opacity="0.65"/>
+        <rect x="493" y="22" width="7" height="10" fill="white"/>
+        <rect x="493" y="32" width="7" height="8" fill="#111827"/>
+        <rect x="493" y="40" width="7" height="10" fill="white"/>
+        <g id="track-car" transform="translate(18,36)">
           <rect x="-11" y="-8" width="6" height="5" rx="1" fill="#111827"/>
           <rect x="-11" y="3" width="6" height="5" rx="1" fill="#111827"/>
           <rect x="5" y="-8" width="6" height="5" rx="1" fill="#111827"/>
           <rect x="5" y="3" width="6" height="5" rx="1" fill="#111827"/>
+          <rect x="-12" y="-7" width="24" height="14" rx="4" fill="white" opacity="0.35"/>
           <rect id="track-car-body" x="-10" y="-6" width="20" height="12" rx="3" fill="#dc2626"/>
           <rect x="2" y="-5" width="6" height="5" rx="1" fill="#bfdbfe" opacity="0.8"/>
         </g>
@@ -112,6 +113,11 @@
       <button class="car-swatch" data-color="#ea580c" style="background:#ea580c"></button>
       <button class="car-swatch" data-color="#0891b2" style="background:#0891b2"></button>
       <button class="car-swatch" data-color="#db2777" style="background:#db2777"></button>
+      <button class="car-swatch" data-color="#86efac" style="background:#86efac"></button>
+      <button class="car-swatch" data-color="#111827" style="background:#111827"></button>
+      <button class="car-swatch" data-color="#78350f" style="background:#78350f"></button>
+      <button class="car-swatch" data-color="#f9fafb" style="background:#f9fafb;border:1px solid #d1d5db"></button>
+      <button class="car-swatch" data-color="#9ca3af" style="background:#9ca3af"></button>
     </div>
 
     <div id="finger-hint" class="finger-hint"></div>

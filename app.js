@@ -507,8 +507,8 @@ applyCarColor(carColor);
 
 // ── Track car ─────────────────────────────────────────────────
 
-const CAR_X_START = 28;
-const CAR_X_END   = 466;
+const CAR_X_START = 18;
+const CAR_X_END   = 484;
 
 function updateCarPos() {
   const progress = chars.length > 0 ? cursor / chars.length : 0;
