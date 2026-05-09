@@ -504,7 +504,13 @@ const Stats = (() => {
         header.textContent = section.title;
         list.appendChild(header);
 
-        section.items.forEach(text => {
+        const sorted = [...section.items].sort((a, b) => {
+          const ca = checked[a] ? 1 : 0;
+          const cb = checked[b] ? 1 : 0;
+          return cb - ca;
+        });
+
+        sorted.forEach(text => {
           const li = document.createElement('li');
           li.draggable = true;
           if (checked[text]) li.classList.add('done');
