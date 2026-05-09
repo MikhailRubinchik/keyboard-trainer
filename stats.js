@@ -497,9 +497,10 @@ const Stats = (() => {
         li.appendChild(box);
         li.appendChild(label);
 
-        // Toggle only when Shift+F is pressed (tracked globally)
+        // Toggle only in unlock mode (indicated by green button)
         li.addEventListener('click', () => {
-          if (!shiftFActive) return;
+          const unlocked = document.getElementById('btn-achievements')?.classList.contains('achievements-unlocked');
+          if (!unlocked) return;
           checked[text] = !checked[text];
           localStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(checked));
           renderList();
@@ -540,13 +541,14 @@ const Stats = (() => {
   }
 
   // Shift+F toggles unlock mode for checking achievements
-  let shiftFActive = false;
   document.addEventListener('keydown', e => {
     if (e.shiftKey && e.key === 'F') {
       e.preventDefault();
-      shiftFActive = !shiftFActive;
       const btn = document.getElementById('btn-achievements');
-      if (btn) btn.classList.toggle('achievements-unlocked', shiftFActive);
+      if (!btn) return;
+      const unlocked = btn.classList.toggle('achievements-unlocked');
+      const hint = document.getElementById('achievements-unlock-hint');
+      if (hint) hint.style.display = unlocked ? 'block' : 'none';
     }
   });
 

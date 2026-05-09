@@ -1425,3 +1425,9 @@ tr.row--chart-selected td {
   color: #15803d;
   background: #f0fdf4;
 }
+
+.achievements-unlock-hint {
+  font-size: 0.8rem;
+  color: #15803d;
+  margin-bottom: 0.5rem;
+}
