@@ -541,6 +541,7 @@ const Stats = (() => {
         li.appendChild(label);
 
         li.addEventListener('click', () => {
+          if (!getSyncConfig().token) return;
           const ch = JSON.parse(localStorage.getItem(ACHIEVEMENTS_KEY) || '{}');
           ch[text] = !ch[text];
           localStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(ch));
