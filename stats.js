@@ -156,9 +156,10 @@ const Stats = (() => {
 
   // ── Gist sync ──────────────────────────────────────────────
 
-  const GIST_TOKEN_KEY = 'klavogonki_gist_token';
-  const GIST_ID_KEY    = 'klavogonki_gist_id';
-  const GIST_FILE      = 'klavogonki-stats.json';
+  const GIST_TOKEN_KEY        = 'klavogonki_gist_token';
+  const GIST_ID_KEY           = 'klavogonki_gist_id';
+  const GIST_FILE             = 'klavogonki-stats.json';
+  const GIST_ACHIEVEMENTS_FILE = 'klavogonki-achievements.json';
 
   function getSyncConfig() {
     return {
@@ -226,7 +227,10 @@ const Stats = (() => {
       const ver = typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'unknown';
       await gistFetch('PATCH', gistId, token, {
         description: `Клавогонки — статистика (${ver})`,
-        files: { [GIST_FILE]: { content: serializeRunsForGist(runs) } },
+        files: {
+          [GIST_FILE]:             { content: serializeRunsForGist(runs) },
+          [GIST_ACHIEVEMENTS_FILE]: { content: localStorage.getItem(ACHIEVEMENTS_KEY) || '{}' },
+        },
       });
       const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setSyncStatus('↑ ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
@@ -301,6 +305,17 @@ const Stats = (() => {
         }
       }
       lsWrite(runs);
+      const achFile = data.files[GIST_ACHIEVEMENTS_FILE];
+      if (achFile) {
+        const achContent = achFile.truncated
+          ? await (await fetch(achFile.raw_url)).text()
+          : achFile.content;
+        try {
+          JSON.parse(achContent); // validate
+          localStorage.setItem(ACHIEVEMENTS_KEY, achContent);
+          renderAchievements();
+        } catch (_) {}
+      }
       renderStats(runs);
       saveSyncConfig('', gistId);
       document.getElementById('btn-refresh-gist')?.classList.remove('hidden');
@@ -326,7 +341,10 @@ const Stats = (() => {
       const data   = await gistFetch('POST', null, token, {
         description: 'Клавогонки — статистика',
         public:      true,
-        files:       { [GIST_FILE]: { content: serializeRuns(runs) } },
+        files: {
+          [GIST_FILE]:             { content: serializeRuns(runs) },
+          [GIST_ACHIEVEMENTS_FILE]: { content: localStorage.getItem(ACHIEVEMENTS_KEY) || '{}' },
+        },
       });
       const gistId = data.id;
       saveSyncConfig(token, gistId);
@@ -493,56 +511,51 @@ const Stats = (() => {
     },
   ];
 
+  function renderAchievements() {
+    const list    = document.getElementById('achievements-list');
+    if (!list) return;
+    const checked = JSON.parse(localStorage.getItem(ACHIEVEMENTS_KEY) || '{}');
+    list.innerHTML = '';
+
+    ACHIEVEMENTS_SECTIONS.forEach(section => {
+      const header = document.createElement('li');
+      header.className = 'achievement-section-header';
+      header.textContent = section.title;
+      list.appendChild(header);
+
+      const sorted = [...section.items].sort((a, b) => (checked[b] ? 1 : 0) - (checked[a] ? 1 : 0));
+
+      sorted.forEach(text => {
+        const li = document.createElement('li');
+        li.draggable = true;
+        if (checked[text]) li.classList.add('done');
+
+        const box = document.createElement('span');
+        box.className = 'achievement-check';
+        if (checked[text]) box.textContent = '✓';
+
+        const label = document.createElement('span');
+        label.textContent = text;
+
+        li.appendChild(box);
+        li.appendChild(label);
+
+        li.addEventListener('click', () => {
+          const ch = JSON.parse(localStorage.getItem(ACHIEVEMENTS_KEY) || '{}');
+          ch[text] = !ch[text];
+          localStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(ch));
+          renderAchievements();
+        });
+
+        list.appendChild(li);
+      });
+    });
+  }
+
   function initAchievements() {
     const btn   = document.getElementById('btn-achievements');
     const panel = document.getElementById('achievements-panel');
-
-    const checked = JSON.parse(localStorage.getItem(ACHIEVEMENTS_KEY) || '{}');
-
-    function renderList() {
-      const list = document.getElementById('achievements-list');
-      list.innerHTML = '';
-
-      ACHIEVEMENTS_SECTIONS.forEach(section => {
-        const header = document.createElement('li');
-        header.className = 'achievement-section-header';
-        header.textContent = section.title;
-        list.appendChild(header);
-
-        const sorted = [...section.items].sort((a, b) => {
-          const ca = checked[a] ? 1 : 0;
-          const cb = checked[b] ? 1 : 0;
-          return cb - ca;
-        });
-
-        sorted.forEach(text => {
-          const li = document.createElement('li');
-          li.draggable = true;
-          if (checked[text]) li.classList.add('done');
-
-          const box = document.createElement('span');
-          box.className = 'achievement-check';
-          if (checked[text]) box.textContent = '✓';
-
-          const label = document.createElement('span');
-          label.textContent = text;
-
-          li.appendChild(box);
-          li.appendChild(label);
-
-          li.addEventListener('click', () => {
-            checked[text] = !checked[text];
-            localStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(checked));
-            renderList();
-          });
-
-          list.appendChild(li);
-        });
-      });
-    }
-
-    renderList();
-
+    renderAchievements();
     btn.addEventListener('click', () => panel.classList.toggle('hidden'));
   }
 
