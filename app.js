@@ -44,11 +44,13 @@ const FINGER_IMAGE = {
 
 const LEVEL_COUNT      = 34;
 const LS_LEVEL_KEY     = 'klavagonki_level';
-const LS_SHOW_FINGER   = 'klavagonki_show_finger';
-const LS_TEXT_SET      = 'klavagonki_text_set';
-const LS_CAR_COLOR     = 'klavagonki_car_color';
+const LS_SHOW_FINGER        = 'klavagonki_show_finger';
+const LS_SHOW_CURRENT_CHAR  = 'klavagonki_show_current_char';
+const LS_TEXT_SET           = 'klavagonki_text_set';
+const LS_CAR_COLOR          = 'klavagonki_car_color';
 
-let showFinger = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
+let showFinger       = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
+let showCurrentChar  = localStorage.getItem(LS_SHOW_CURRENT_CHAR) !== 'false';
 
 // Initialise active text set from localStorage
 (function () {
@@ -78,6 +80,17 @@ function initFingerSetting() {
     showFinger = cb.checked;
     localStorage.setItem(LS_SHOW_FINGER, showFinger);
     applyFingerSetting();
+  });
+}
+
+function initCurrentCharSetting() {
+  const cb = document.getElementById('setting-show-current-char');
+  if (!cb) return;
+  cb.checked = showCurrentChar;
+  cb.addEventListener('change', () => {
+    showCurrentChar = cb.checked;
+    localStorage.setItem(LS_SHOW_CURRENT_CHAR, showCurrentChar);
+    updateDisplay();
   });
 }
 
@@ -307,7 +320,7 @@ function updateDisplay() {
   const spans = textDisplay.querySelectorAll('span');
   spans.forEach((span, i) => {
     span.className = '';
-    if (i === cursor) {
+    if (i === cursor && showCurrentChar) {
       span.classList.add(junkBuffer.length > 0 ? 'char--current-error' : 'char--current-ok');
     } else if (i < cursor) {
       span.classList.add('char--correct');
@@ -1075,6 +1088,7 @@ function updateLevelProgressHint() {
 async function init() {
   loadLevel();
   initFingerSetting();
+  initCurrentCharSetting();
 
   // Level buttons on home screen
   renderLevelButtons('level-buttons-main', (n) => {
