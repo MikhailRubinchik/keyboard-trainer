@@ -318,10 +318,23 @@ function renderText() {
 
 function updateDisplay() {
   const spans = textDisplay.querySelectorAll('span');
+  const inError = junkBuffer.length > 0;
+  let wordEnd = cursor;
+  if (highlightMode === 'word-error' && inError) {
+    while (wordEnd < chars.length && chars[wordEnd] !== ' ') wordEnd++;
+  }
   spans.forEach((span, i) => {
     span.className = '';
-    if (i === cursor && highlightMode === 'full') {
-      span.classList.add(junkBuffer.length > 0 ? 'char--current-error' : 'char--current-ok');
+    if (highlightMode === 'word-error' && inError) {
+      if (i >= wordStart && i < wordEnd) {
+        span.classList.add('char--current-error');
+      } else if (i < cursor) {
+        span.classList.add('char--correct');
+      } else {
+        span.classList.add('char--pending');
+      }
+    } else if (i === cursor && highlightMode === 'full') {
+      span.classList.add(inError ? 'char--current-error' : 'char--current-ok');
     } else if (i < cursor) {
       if (highlightMode === 'none' && i >= wordStart) {
         span.classList.add('char--pending');
