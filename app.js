@@ -333,6 +333,8 @@ function updateDisplay() {
       } else {
         span.classList.add('char--pending');
       }
+    } else if (highlightMode === 'blind') {
+      span.classList.add('char--pending');
     } else if (i === cursor && highlightMode === 'full') {
       span.classList.add(inError ? 'char--current-error' : 'char--current-ok');
     } else if (i < cursor) {
