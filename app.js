@@ -44,13 +44,13 @@ const FINGER_IMAGE = {
 
 const LEVEL_COUNT      = 34;
 const LS_LEVEL_KEY     = 'klavagonki_level';
-const LS_SHOW_FINGER        = 'klavagonki_show_finger';
-const LS_SHOW_CURRENT_CHAR  = 'klavagonki_show_current_char';
-const LS_TEXT_SET           = 'klavagonki_text_set';
-const LS_CAR_COLOR          = 'klavagonki_car_color';
+const LS_SHOW_FINGER      = 'klavagonki_show_finger';
+const LS_HIGHLIGHT_MODE   = 'klavagonki_highlight_mode';
+const LS_TEXT_SET         = 'klavagonki_text_set';
+const LS_CAR_COLOR        = 'klavagonki_car_color';
 
-let showFinger       = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
-let showCurrentChar  = localStorage.getItem(LS_SHOW_CURRENT_CHAR) !== 'false';
+let showFinger      = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
+let highlightMode   = localStorage.getItem(LS_HIGHLIGHT_MODE) || 'full'; // 'full' | 'prefix' | 'none'
 
 // Initialise active text set from localStorage
 (function () {
@@ -83,13 +83,13 @@ function initFingerSetting() {
   });
 }
 
-function initCurrentCharSetting() {
-  const cb = document.getElementById('setting-show-current-char');
-  if (!cb) return;
-  cb.checked = showCurrentChar;
-  cb.addEventListener('change', () => {
-    showCurrentChar = cb.checked;
-    localStorage.setItem(LS_SHOW_CURRENT_CHAR, showCurrentChar);
+function initHighlightSetting() {
+  const sel = document.getElementById('setting-highlight-mode');
+  if (!sel) return;
+  sel.value = highlightMode;
+  sel.addEventListener('change', () => {
+    highlightMode = sel.value;
+    localStorage.setItem(LS_HIGHLIGHT_MODE, highlightMode);
     updateDisplay();
   });
 }
@@ -320,11 +320,10 @@ function updateDisplay() {
   const spans = textDisplay.querySelectorAll('span');
   spans.forEach((span, i) => {
     span.className = '';
-    if (i === cursor && showCurrentChar) {
+    if (i === cursor && highlightMode === 'full') {
       span.classList.add(junkBuffer.length > 0 ? 'char--current-error' : 'char--current-ok');
     } else if (i < cursor) {
-      // Without current-char highlight: keep current word pending until space is pressed
-      if (!showCurrentChar && i >= wordStart) {
+      if (highlightMode === 'none' && i >= wordStart) {
         span.classList.add('char--pending');
       } else {
         span.classList.add('char--correct');
@@ -1093,7 +1092,7 @@ function updateLevelProgressHint() {
 async function init() {
   loadLevel();
   initFingerSetting();
-  initCurrentCharSetting();
+  initHighlightSetting();
 
   // Level buttons on home screen
   renderLevelButtons('level-buttons-main', (n) => {
