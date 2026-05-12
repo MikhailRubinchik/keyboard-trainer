@@ -323,7 +323,12 @@ function updateDisplay() {
     if (i === cursor && showCurrentChar) {
       span.classList.add(junkBuffer.length > 0 ? 'char--current-error' : 'char--current-ok');
     } else if (i < cursor) {
-      span.classList.add('char--correct');
+      // Without current-char highlight: keep current word pending until space is pressed
+      if (!showCurrentChar && i >= wordStart) {
+        span.classList.add('char--pending');
+      } else {
+        span.classList.add('char--correct');
+      }
     } else {
       span.classList.add('char--pending');
     }
