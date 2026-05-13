@@ -141,10 +141,14 @@ const Stats = (() => {
   }
 
   function lsWrite(runArray) {
-    const trimmed = runArray.map(r =>
-      ({ ...r, errorsDetail: undefined, bigramStats: undefined, intervalMap: undefined, errorPositions: undefined })
-    );
-    localStorage.setItem(LS_KEY, serializeRuns(trimmed));
+    const content = runArray.map(r => JSON.stringify(Object.assign({}, r, {
+      keystrokeLog:   encodeKeystrokeLog(r.keystrokeLog),
+      errorsDetail:   undefined,
+      bigramStats:    undefined,
+      intervalMap:    undefined,
+      errorPositions: undefined,
+    }))).join('\n') + '\n';
+    localStorage.setItem(LS_KEY, content);
   }
 
   function exportTxt() {
