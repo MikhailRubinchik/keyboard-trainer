@@ -2117,6 +2117,14 @@ const Stats = (() => {
       const gistKb   = Math.round(gistStr.length * 2 / 1024);
       const gistPct  = Math.round(gistStr.length * 2 / (10 * 1024 * 1024) * 100);
       sizeElEarly.textContent = `Локал: ${lsKb} КБ / 5 МБ (${lsPct}%) · Гист: ${gistKb} КБ / 10 МБ (${gistPct}%)`;
+      if (navigator.storage?.estimate) {
+        navigator.storage.estimate().then(({ usage, quota }) => {
+          const usageKb = Math.round(usage / 1024);
+          const quotaKb = Math.round(quota / 1024);
+          const pct = Math.round(usage / quota * 100);
+          sizeElEarly.textContent += ` · Системно: ${usageKb} КБ / ${quotaKb} КБ (${pct}%)`;
+        });
+      }
     }
     checkStorageWarning();
 
