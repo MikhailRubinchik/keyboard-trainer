@@ -141,12 +141,8 @@ const Stats = (() => {
   }
 
   function lsWrite(runArray) {
-    const KEEP_FULL = 10;
-    const cutoff = runArray.length - KEEP_FULL;
-    const trimmed = runArray.map((r, i) =>
-      i < cutoff
-        ? { ...r, errorsDetail: undefined, bigramStats: undefined, intervalMap: undefined, errorPositions: undefined }
-        : r
+    const trimmed = runArray.map(r =>
+      ({ ...r, errorsDetail: undefined, bigramStats: undefined, intervalMap: undefined, errorPositions: undefined })
     );
     localStorage.setItem(LS_KEY, serializeRuns(trimmed));
   }
