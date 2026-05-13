@@ -141,7 +141,14 @@ const Stats = (() => {
   }
 
   function lsWrite(runArray) {
-    localStorage.setItem(LS_KEY, serializeRuns(runArray));
+    const KEEP_FULL = 10;
+    const cutoff = runArray.length - KEEP_FULL;
+    const trimmed = runArray.map((r, i) =>
+      i < cutoff && r.keystrokeLog?.length
+        ? { ...r, keystrokeLog: [] }
+        : r
+    );
+    localStorage.setItem(LS_KEY, serializeRuns(trimmed));
   }
 
   function exportTxt() {
