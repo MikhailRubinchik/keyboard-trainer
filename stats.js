@@ -148,7 +148,15 @@ const Stats = (() => {
       intervalMap:    undefined,
       errorPositions: undefined,
     }))).join('\n') + '\n';
-    localStorage.setItem(LS_KEY, content);
+    try {
+      localStorage.setItem(LS_KEY, content);
+    } catch (e) {
+      const el = document.getElementById('storage-warning');
+      if (el) {
+        el.textContent = '🚨 Хранилище переполнено! Заезд НЕ сохранён. Срочно сообщи папе!';
+        el.classList.remove('hidden');
+      }
+    }
   }
 
   function exportTxt() {
