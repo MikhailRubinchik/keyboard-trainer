@@ -144,8 +144,8 @@ const Stats = (() => {
     const KEEP_FULL = 10;
     const cutoff = runArray.length - KEEP_FULL;
     const trimmed = runArray.map((r, i) =>
-      i < cutoff && r.keystrokeLog?.length
-        ? { ...r, keystrokeLog: [] }
+      i < cutoff
+        ? { ...r, errorsDetail: undefined, bigramStats: undefined, intervalMap: undefined, errorPositions: undefined }
         : r
     );
     localStorage.setItem(LS_KEY, serializeRuns(trimmed));
