@@ -257,8 +257,8 @@ const Stats = (() => {
     if (!el) return;
     const raw = localStorage.getItem(LS_KEY) || '';
     const pct = Math.round(raw.length * 2 / (5 * 1024 * 1024) * 100);
-    if (pct >= 50) {
-      el.textContent = `⚠️ Хранилище заполнено на ${pct}%! Скоро данные перестанут сохраняться. Срочно сделай экспорт .txt и сообщи папе!`;
+    if (pct >= 80) {
+      el.textContent = `⚠️ Хранилище заполнено на ${pct}%! Скоро данные перестанут сохраняться. Срочно сообщи папе!`;
       el.classList.remove('hidden');
     } else {
       el.classList.add('hidden');
