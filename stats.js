@@ -2110,21 +2110,14 @@ const Stats = (() => {
     const sizeElEarly = document.getElementById('storage-size');
     if (sizeElEarly) {
       const raw     = localStorage.getItem('klavagonki_stats') || '';
-      const lsBytes = raw.length * 2;
+      const lsBytes = new TextEncoder().encode(raw).length;
       const lsKb    = Math.round(lsBytes / 1024);
       const lsPct   = Math.round(lsBytes / (5 * 1024 * 1024) * 100);
-      const gistStr  = serializeRunsForGist(runs);
-      const gistKb   = Math.round(gistStr.length * 2 / 1024);
-      const gistPct  = Math.round(gistStr.length * 2 / (10 * 1024 * 1024) * 100);
+      const gistStr   = serializeRunsForGist(runs);
+      const gistBytes = new TextEncoder().encode(gistStr).length;
+      const gistKb    = Math.round(gistBytes / 1024);
+      const gistPct   = Math.round(gistBytes / (10 * 1024 * 1024) * 100);
       sizeElEarly.textContent = `Локал: ${lsKb} КБ / 5 МБ (${lsPct}%) · Гист: ${gistKb} КБ / 10 МБ (${gistPct}%)`;
-      if (navigator.storage?.estimate) {
-        navigator.storage.estimate().then(({ usage, quota }) => {
-          const usageKb = Math.round(usage / 1024);
-          const quotaKb = Math.round(quota / 1024);
-          const pct = Math.round(usage / quota * 100);
-          sizeElEarly.textContent += ` · Системно: ${usageKb} КБ / ${quotaKb} КБ (${pct}%)`;
-        });
-      }
     }
     checkStorageWarning();
 
