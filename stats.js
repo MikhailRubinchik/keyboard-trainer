@@ -239,6 +239,7 @@ const Stats = (() => {
           [GIST_ACHIEVEMENTS_FILE]: { content: localStorage.getItem(ACHIEVEMENTS_KEY) || '{}' },
         },
       });
+      lsWrite(runs); // apply trim to localStorage
       const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setSyncStatus('↑ ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
       setRefreshStatus(`отправлено в ${timeStr}`);
