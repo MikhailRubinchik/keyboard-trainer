@@ -1513,6 +1513,14 @@ const Stats = (() => {
       + '<div class="freq-divider"></div>'
       : '';
 
+    if (!run.errorsDetail && run.keystrokeLog?.length && run.text) {
+      const d = recomputeDerivedFields(run);
+      run.errorsDetail   = d.errorsDetail;
+      run.errorPositions = d.errorPositions;
+      run.intervalMap    = d.intervalMap;
+      run.bigramStats    = d.bigramStats;
+    }
+
     if (!run.errorsDetail) {
       showErrorModal(title, textBlock + '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>');
       return;
