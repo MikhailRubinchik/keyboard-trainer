@@ -197,6 +197,7 @@ let runStartDate   = '';   // записывается при первом на�
 let runStartTime   = '';
 let timerInterval  = null;
 let elapsedSeconds = 0;
+let resumeElapsedOffset = 0;  // seconds already elapsed when continuing a run
 let errorCount     = 0;
 let idleTimer      = null;
 
@@ -256,6 +257,9 @@ function startExercise(level) {
   junkBuffer = '';
   startTime  = null;
   elapsedSeconds = 0;
+  resumeElapsedOffset = 0;
+  runStartDate = '';
+  runStartTime = '';
   errorCount      = 0;
   samePosMistakes = 0;
   lastMistakePos  = -1;
@@ -291,6 +295,86 @@ function startExercise(level) {
   wordInput.focus();
   resetCarPos();
 }
+
+window.startContinueRun = function(run) {
+  if (!run.text) return;
+
+  // Restore run identity (date/time preserved so saveRun can replace it)
+  runStartDate = run.date || '';
+  runStartTime = run.time || '';
+  resumeElapsedOffset = run.seconds || 0;
+
+  chars      = [...run.text];
+  cursor     = run.chars || 0;
+  charStates = new Array(chars.length).fill('pending');
+
+  // Reconstruct wordStart / wordSoFar from cursor position
+  const textSoFar   = run.text.slice(0, cursor);
+  const lastSpaceIdx = textSoFar.lastIndexOf(' ');
+  wordStart  = lastSpaceIdx === -1 ? 0 : lastSpaceIdx + 1;
+  wordSoFar  = run.text.slice(wordStart, cursor);
+
+  junkBuffer  = '';
+  startTime   = null;
+  elapsedSeconds = resumeElapsedOffset;
+  errorCount  = run.errors || 0;
+  samePosMistakes = 0;
+  lastMistakePos  = -1;
+  runIntervalMap  = run.intervalMap ? { ...run.intervalMap } : {};
+  runBigramRaw    = {};
+  runIdleMs       = 0;
+  isAbortedRun    = false;
+  lastKeyTime     = null;
+  lastCorrectTime = null;
+  lastCorrectChar = null;
+  lastCheckpointCursor = cursor;
+  keystrokeLog    = run.keystrokeLog ? [...run.keystrokeLog] : [];
+  lastKeystrokeTime = null;
+
+  // Restore error tracking
+  runErrors = {};
+  if (run.errorPositions) {
+    for (const [pos, attempts] of Object.entries(run.errorPositions)) {
+      runErrors[Number(pos)] = { expected: chars[Number(pos)], attempts: [...attempts] };
+    }
+  }
+
+  currentLevel = run.level || currentLevel;
+  updateLevelButtonsActive();
+
+  noFinger = run.noFinger || false;
+  const cb = document.getElementById('setting-show-finger');
+  if (noFinger) {
+    showFinger = false;
+    if (cb) { cb.checked = false; cb.disabled = true; }
+  } else {
+    showFinger = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
+    if (cb) { cb.disabled = false; cb.checked = showFinger; }
+  }
+  applyFingerSetting();
+
+  exerciseLevelLabel.textContent = `Уровень ${currentLevel}`;
+  liveTimer.textContent    = Stats.formatTime(resumeElapsedOffset);
+  liveProgress.textContent = chars.length ? Math.round(cursor / chars.length * 100) + '%' : '0%';
+  liveCpm.textContent      = '— зн/мин';
+
+  clearTimeout(idleAbandonTimer);
+  idleAbandonTimer = null;
+
+  renderText();
+  updateDisplay();
+  updateFingerHint();
+
+  wordInput.value = '';
+  wordInput.disabled = false;
+  updateWordDisplay();
+
+  resultOverlay.classList.add('hidden');
+  document.querySelector('.car-color-picker')?.classList.add('locked');
+  showScreen('exercise');
+  wordInput.focus();
+  updateCarPos();
+};
 
 // ── Text rendering ────────────────────────────────────────────
 
@@ -492,10 +576,12 @@ function startTimer() {
   document.querySelector('.car-color-picker')?.classList.add('locked');
   startTime = Date.now();
   const now = new Date();
-  runStartDate = now.toLocaleDateString('ru-RU');
-  runStartTime = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  if (!runStartDate) {
+    runStartDate = now.toLocaleDateString('ru-RU');
+    runStartTime = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
   timerInterval = setInterval(() => {
-    elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+    elapsedSeconds = resumeElapsedOffset + Math.floor((Date.now() - startTime) / 1000);
     liveTimer.textContent    = Stats.formatTime(elapsedSeconds);
     liveProgress.textContent = chars.length ? Math.round(cursor / chars.length * 100) + '%' : '0%';
     liveCpm.textContent      = elapsedSeconds > 0
@@ -508,7 +594,7 @@ function stopTimer() {
   clearInterval(timerInterval);
   timerInterval = null;
   if (startTime) {
-    elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+    elapsedSeconds = resumeElapsedOffset + Math.floor((Date.now() - startTime) / 1000);
   }
 }
 

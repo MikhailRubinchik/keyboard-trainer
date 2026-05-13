@@ -776,8 +776,14 @@ const Stats = (() => {
       keystrokeLog:   record.keystrokeLog   || [],
     };
 
-    // Replace last entry if it was a checkpoint (incomplete)
-    if (runs.length > 0 && runs[runs.length - 1].incomplete) runs.pop();
+    // Replace matching incomplete entry (last checkpoint or continued run matched by date+time)
+    const matchIdx = runs.findLastIndex(r => r.incomplete &&
+      r.date === entry.date && (r.time ?? '') === (entry.time ?? ''));
+    if (matchIdx !== -1) {
+      runs.splice(matchIdx, 1);
+    } else if (runs.length > 0 && runs[runs.length - 1].incomplete) {
+      runs.pop();
+    }
 
     runs.push(entry);
     lsWrite(runs);
@@ -1145,9 +1151,11 @@ const Stats = (() => {
       const pct = totalChars
         ? Math.round(inProgress.chars / totalChars * 100) + '%'
         : '—';
+      const continueBtn = (inProgress.text && inProgress.chars < (inProgress.totalChars || inProgress.text.length))
+        ? ' <button class="btn-continue-run" title="Продолжить заезд">▶▶</button>' : '';
       return `
       <tr class="row--in-progress">
-        <td class="run-num">⏳</td>
+        <td class="run-num">⏳${continueBtn}</td>
         <td title="${inProgress.date}${inProgress.time ? ' · ' + fmtAmPm(inProgress.time) : ''}">${inProgress.date}</td>
         <td>${inProgress.level ?? '—'}</td>
         <td>${totalChars ?? inProgress.chars} (${pct})</td>
@@ -1235,6 +1243,8 @@ const Stats = (() => {
           if (inProgress) {
             tr.classList.add('clickable-row');
             tr.addEventListener('click', () => showRunDetail(inProgress));
+            const cb = tr.querySelector('.btn-continue-run');
+            if (cb) cb.addEventListener('click', e => { e.stopPropagation(); window.startContinueRun?.(inProgress); });
           }
           return;
         }
