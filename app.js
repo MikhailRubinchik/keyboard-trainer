@@ -216,6 +216,7 @@ let runBigramRaw    = {};    // bigram → [deltaMs, ...]
 
 let keystrokeLog     = [];   // [[key, deltaMs], ...] full keystroke sequence
 let lastKeystrokeTime = null;
+let correctTimestamps = [];  // Date.now() of each correct keystroke, for rolling CPM
 
 let runIdleMs        = 0;     // accumulated idle time (gaps > 5s) in ms
 let isAbortedRun     = false; // true when auto-stopped due to idle
@@ -261,6 +262,7 @@ function startExercise(level) {
   lastCorrectTime  = null;
   lastCorrectChar  = null;
   runBigramRaw     = {};
+  correctTimestamps = [];
   runIdleMs        = 0;
   isAbortedRun     = false;
   lastCheckpointCursor = -9; // first checkpoint fires after 1 char
@@ -569,8 +571,12 @@ function startTimer() {
     elapsedSeconds = resumeElapsedOffset + Math.floor((Date.now() - startTime) / 1000);
     liveTimer.textContent    = Stats.formatTime(elapsedSeconds);
     liveProgress.textContent = chars.length ? Math.round(cursor / chars.length * 100) + '%' : '0%';
-    liveCpm.textContent      = elapsedSeconds > 0
-      ? Math.round(cursor / (elapsedSeconds / 60)) + ' зн/мин'
+    const now30 = Date.now();
+    const cutoff = now30 - 30000;
+    const recentChars = correctTimestamps.filter(t => t >= cutoff).length;
+    const windowSec = Math.min(elapsedSeconds, 30);
+    liveCpm.textContent = windowSec >= 3
+      ? Math.round(recentChars / (windowSec / 60)) + ' зн/мин'
       : '— зн/мин';
   }, 250);
 }
@@ -864,6 +870,7 @@ function handleChar(key) {
   }
   lastCorrectTime = correctNow;
   lastCorrectChar = expected;
+  correctTimestamps.push(correctNow);
 
   cursor++;
   updateCarPos();
