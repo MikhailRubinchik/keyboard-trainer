@@ -770,7 +770,12 @@ tr.row--chart-selected td {
 
 /* Stats table */
 #stats-table-wrap {
-  overflow-x: auto;
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 16px;
+  box-sizing: border-box;
 }
 
 .stats-table {
