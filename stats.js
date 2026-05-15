@@ -2110,18 +2110,18 @@ const Stats = (() => {
         <line x1="${W - padRd}" y1="${padT}" x2="${W - padRd}" y2="${padT + plotHd}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotHd}" x2="${W - padRd}" y2="${padT + plotHd}" stroke="#d1d5db" stroke-width="1"/>`;
 
-      return `<div class="chart-date-range">
+      return `<div class="chart-block-inner"><div class="chart-date-range">
         <input type="date" id="chart-from" value="${fromIso}" class="chart-date-input">
         <span style="color:var(--text-dim)">—</span>
         <input type="date" id="chart-to" value="${toIso}" class="chart-date-input">
-      </div>
+      </div></div>
       <div class="chart-block">
-        <div class="chart-legend">
+        <div class="chart-block-inner"><div class="chart-legend">
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● ср. скорость, зн/мин</span></label>
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-trend" checked> <span style="color:#06b6d4">● тренд</span></label>
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm-max"> <span style="color:#16a34a">● макс. скорость</span></label>
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm-min"> <span style="color:#f59e0b">● мин. скорость</span></label>
-        </div>
+        </div></div>
         <svg viewBox="0 0 ${W} ${Hd}" style="width:100%;display:block" data-plot-r="${W - padRd}">
           ${leftAxisCpm}${bordersD}${levelDividersD}
           ${trendLineDt}
@@ -2132,11 +2132,11 @@ const Stats = (() => {
         </svg>
       </div>
       <div class="chart-block">
-        <div class="chart-legend">
+        <div class="chart-block-inner"><div class="chart-legend">
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#3b82f6">● ср. ошибки, %</span></label>
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-max"> <span style="color:#16a34a">● макс. ошибки</span></label>
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-min"> <span style="color:#f59e0b">● мин. ошибки</span></label>
-        </div>
+        </div></div>
         <svg viewBox="0 0 ${W} ${Hd}" style="width:100%;display:block" data-plot-r="${W - padRd}">
           ${leftAxisErr}${bordersD}
           ${lineGroupD(errMaxes, maxErrAll, '#16a34a', 'chart-group-err-max', tips, errMaxRecords, true,  xsData)}
@@ -2146,12 +2146,12 @@ const Stats = (() => {
         </svg>
       </div>
       <div class="chart-block">
-        <div class="chart-legend">
+        <div class="chart-block-inner"><div class="chart-legend">
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-chars-day"> <span style="color:#8b5cf6">● букв за день</span></label>
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-avg-chars-day"> <span style="color:#8b5cf6">╌ букв ср.</span></label>
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-sec-day"> <span style="color:#6366f1">● длительность</span></label>
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-avg-sec-day"> <span style="color:#6366f1">╌ длит. ср.</span></label>
-        </div>
+        </div></div>
         <svg id="chart-svg-chars-day" viewBox="0 0 ${W} ${Hd}" style="width:100%;display:none" data-plot-r="${W - padRd}">
           ${leftAxisCharsD}${bordersD}
           ${lineGroupD(totalCharsPerDay, maxCharsDay, '#8b5cf6', 'chart-group-chars-day',     charsDayTips,    null, true, xsData)}
@@ -2277,6 +2277,7 @@ const Stats = (() => {
     );
 
     return `<div class="chart-block">
+      <div class="chart-block-inner">
       <div class="chart-date-range">
         <input type="date" id="chart-from" value="${fromIso}" class="chart-date-input">
         <span style="color:var(--text-dim)">—</span>
@@ -2291,6 +2292,7 @@ const Stats = (() => {
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-trend"> <span style="color:#b91c1c">╌ тренд ошибок</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-ema"> <span style="color:#f97316">● скользящее ошибок</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-rolling5"> <span style="color:#a855f7">● ср-10 ошибок</span></label>
+      </div>
       </div>
       <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block" data-plot-r="${W - padR}">
         ${leftAxisRun}
@@ -2312,9 +2314,11 @@ const Stats = (() => {
       </svg>
     </div>
     <div class="chart-block">
+      <div class="chart-block-inner">
       <div class="chart-legend">
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-dur"> <span style="color:#f97316">● букв за заезд</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-dur-sec"> <span style="color:#6366f1">● длительность</span></label>
+      </div>
       </div>
       <svg id="chart-svg-dur" viewBox="0 0 ${W} ${H}" style="width:100%;display:none" data-plot-r="${W - padR}">
         ${leftAxisDur}

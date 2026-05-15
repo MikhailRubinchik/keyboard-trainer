@@ -552,9 +552,20 @@ button:active  { transform: scale(0.97); }
   margin: 16px 0;
 }
 
+#stats-charts {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .chart-block {
   flex: 1;
   min-width: 0;
+}
+
+.chart-block-inner {
+  padding: 0 16px;
 }
 
 .chart-title {
