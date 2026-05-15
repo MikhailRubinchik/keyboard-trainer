@@ -403,13 +403,14 @@ function renderText() {
 function updateDisplay() {
   const spans = textDisplay.querySelectorAll('span');
   const inError = junkBuffer.length > 0;
+  const isWordError = highlightMode === 'word-error' || highlightMode === 'word-error-blind';
   let wordEnd = cursor;
-  if (highlightMode === 'word-error' && inError) {
+  if (isWordError && inError) {
     while (wordEnd < chars.length && chars[wordEnd] !== ' ') wordEnd++;
   }
   spans.forEach((span, i) => {
     span.className = '';
-    if (highlightMode === 'word-error' && inError) {
+    if (isWordError && inError) {
       if (i >= wordStart && i < wordEnd) {
         span.classList.add('char--current-error');
       } else if (i < cursor) {
@@ -496,12 +497,12 @@ function updateWordDisplay() {
 
   for (const ch of junkBuffer) {
     const span = document.createElement('span');
-    span.className = 'wchar--wrong';
+    if (highlightMode !== 'word-error-blind') span.className = 'wchar--wrong';
     span.textContent = ch === ' ' ? '\u00A0' : ch;
     wordDisplay.appendChild(span);
   }
 
-  wordDisplay.classList.toggle('has-error', junkBuffer.length > 0);
+  wordDisplay.classList.toggle('has-error', junkBuffer.length > 0 && highlightMode !== 'word-error-blind');
 }
 
 wordInput.addEventListener('focus', () => wordDisplay.classList.add('focused'));
