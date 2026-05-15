@@ -1506,8 +1506,18 @@ const Stats = (() => {
   function showErrorModal(title, html, speedChartHtml = '') {
     document.getElementById('error-detail-title').textContent = title;
     document.getElementById('error-detail-body').innerHTML = html;
-    const chartEl = document.getElementById('error-detail-speed-chart');
+    const chartEl  = document.getElementById('error-detail-speed-chart');
+    const toggleBtn = document.getElementById('btn-toggle-speed-chart');
     chartEl.innerHTML = speedChartHtml;
+    chartEl.classList.add('hidden');
+    if (toggleBtn) {
+      toggleBtn.textContent = 'График скорости';
+      toggleBtn.style.display = speedChartHtml ? '' : 'none';
+      toggleBtn.onclick = () => {
+        const hidden = chartEl.classList.toggle('hidden');
+        toggleBtn.textContent = hidden ? 'График скорости' : 'Скрыть график';
+      };
+    }
     document.getElementById('error-detail-overlay').classList.remove('hidden');
 
     const svg = chartEl.querySelector('svg');

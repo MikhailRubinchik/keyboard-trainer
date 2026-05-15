@@ -857,8 +857,14 @@ tr.row--chart-selected td {
   padding: 8px 16px 4px;
   box-sizing: border-box;
 }
-.error-detail-speed-chart:empty {
+.error-detail-speed-chart:empty,
+.error-detail-speed-chart.hidden {
   display: none;
+}
+
+.btn-speed-chart-toggle {
+  font-size: 0.75rem;
+  margin-right: 4px;
 }
 
 .error-detail-card {
