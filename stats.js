@@ -1942,7 +1942,6 @@ const Stats = (() => {
     const cpmMaxRecords = hasDayLines ? computeRecords(allRuns.map(r => ({ cpm: r.cpmMax ?? 0 }))) : null;
     const cpmMinRecords = hasDayLines ? computeRecords(allRuns.map(r => ({ cpm: r.cpmMin ?? 0 }))) : null;
     const errRecords = computeErrorRecords(allRuns);
-    const lvlChanges = computeLevelChanges(allRuns);
 
     // Rolling 5-run average
     const cpmRolling10 = cpms.map((_, i) =>
@@ -1973,12 +1972,6 @@ const Stats = (() => {
     );
 
     // Vertical dividers for level transitions
-    const levelDividers = lvlChanges.map((lc, i) => {
-      if (lc == null) return '';
-      const x = xPos(i).toFixed(1);
-      return `<line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + plotH}" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,3" opacity="0.7"/>
-              <text x="${(parseFloat(x) + 3).toFixed(1)}" y="${(padT + 11).toFixed(1)}" font-size="9" fill="#b45309">→${lc}</text>`;
-    }).join('');
 
     // Left Y axis (CPM) ticks
     const cpmTicks = [0, Math.round(maxCpmScale / 2), Math.round(maxCpmScale)];
@@ -2050,12 +2043,6 @@ const Stats = (() => {
       const errMaxRecords = computeErrorRecords(allRuns.map(r => ({ errors: r.errPctMax ?? null, chars: r.errPctMax != null ? 100 : 0 })));
       const errMinRecords = computeErrorRecords(allRuns.map(r => ({ errors: r.errPctMin ?? null, chars: r.errPctMin != null ? 100 : 0 })));
 
-      const levelDividersD = lvlChanges.map((lc, i) => {
-        if (lc == null) return '';
-        const x = xsData[i].toFixed(1);
-        return `<line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + plotHd}" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,3" opacity="0.7"/>
-                <text x="${(parseFloat(x) + 3).toFixed(1)}" y="${(padT + 11).toFixed(1)}" font-size="9" fill="#b45309">→${lc}</text>`;
-      }).join('');
 
       // Day trend (avg CPM only, regression on actual day offsets)
       const dayOffsets = dayDateMs.map(ms => (ms - minDateMs) / 86400000);
@@ -2156,7 +2143,7 @@ const Stats = (() => {
           <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm-min"> <span style="color:#f59e0b">● мин. скорость</span></label>
         </div></div>
         <svg viewBox="0 0 ${W} ${Hd}" style="width:100%;display:block" data-plot-r="${W - padRd}">
-          ${leftAxisCpm}${bordersD}${levelDividersD}
+          ${leftAxisCpm}${bordersD}
           ${trendLineDt}
           ${lineGroupD(cpmMaxes, maxCpmForecastD, '#16a34a', 'chart-group-cpm-max', tips, cpmMaxRecords, true,  xsData)}
           ${lineGroupD(cpmMins,  maxCpmForecastD, '#f59e0b', 'chart-group-cpm-min', tips, cpmMinRecords, true,  xsData)}
@@ -2338,7 +2325,6 @@ const Stats = (() => {
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${(padT + plotH / 2).toFixed(1)}" x2="${W - padR}" y2="${(padT + plotH / 2).toFixed(1)}" stroke="#d1d5db" stroke-width="1" stroke-dasharray="4,3"/>
-        ${levelDividers}
         ${lowerTrendLine}
         ${trendLine}
         ${lineGroup(cpmRolling10, maxCpmForecast, '#a855f7', 'chart-group-rolling5', rolling10Tips, rolling10Records, true, null, yScaleCpm)}
