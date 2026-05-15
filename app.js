@@ -481,7 +481,7 @@ function updateWordDisplay() {
 
   for (const ch of junkBuffer) {
     const span = document.createElement('span');
-    if (highlightMode !== 'word-error-blind') span.className = 'wchar--wrong';
+    if (highlightMode !== 'word-error-blind' && highlightMode !== 'none') span.className = 'wchar--wrong';
     span.textContent = ch === ' ' ? '\u00A0' : ch;
     wordDisplay.appendChild(span);
   }
