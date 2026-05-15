@@ -9,8 +9,9 @@ const Stats = (() => {
   let runs = [];   // all loaded run records
   let tableMode = 'runs';  // 'runs' | 'days'
   let lastInProgress = null; // last incomplete run, updated by renderStats
-  let chartFromIso = '';
-  let chartToIso   = '';
+  let chartFromIso    = '';
+  let chartToIso      = '';
+  let chartDefaultFrom = ''; // date of run[max(0,n-50)], updated on renderStats
   let renderChartsNow = () => {}; // set after first renderStats
   let replayState = null;
 
@@ -2624,6 +2625,7 @@ const Stats = (() => {
       }
 
       const defaultFromIso = ruToIso(complete[Math.max(0, complete.length - 50)].date);
+      chartDefaultFrom = defaultFromIso;
       renderChartsNow = () => renderCharts(chartFromIso || defaultFromIso, chartToIso || maxIso);
       renderCharts(chartFromIso || defaultFromIso, chartToIso || maxIso);
     }
@@ -2728,7 +2730,13 @@ const Stats = (() => {
   }
 
   function calcStars(cpm) {
-    const cpms = runs.filter(r => !r.incomplete).map(r => r.cpm);
+    const complete = runs.filter(r => !r.incomplete);
+    const fromIso = chartFromIso || chartDefaultFrom;
+    const toIso   = chartToIso   || ruToIso(complete[complete.length - 1]?.date || '');
+    const visible = fromIso
+      ? complete.filter(r => { const iso = ruToIso(r.date); return iso >= fromIso && (!toIso || iso <= toIso); })
+      : complete;
+    const cpms = (visible.length >= 2 ? visible : complete).map(r => r.cpm);
     const n = cpms.length;
     if (n < 2) return 3;
     const xs = cpms.map((_, i) => i);
