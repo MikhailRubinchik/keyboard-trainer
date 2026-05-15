@@ -1591,6 +1591,7 @@ const Stats = (() => {
       <text x="${padL - 2}" y="${(padT + 4).toFixed(1)}" text-anchor="end" font-size="8" fill="#9ca3af">${maxCpm}</text>
       <text x="${padL - 2}" y="${(padT + plotH).toFixed(1)}" text-anchor="end" font-size="8" fill="#9ca3af">0</text>
       <line x1="${padL}" y1="${yAvg}" x2="${W - padR}" y2="${yAvg}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
+      <text x="${(W - padR - 2).toFixed(1)}" y="${(parseFloat(yAvg) - 2).toFixed(1)}" text-anchor="end" font-size="8" fill="#94a3b8">ср. ${avgCpm}</text>
       ${xTicks}
       <polyline points="${polyline}" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round" opacity="0.9"/>
     </svg>`;
