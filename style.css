@@ -1009,6 +1009,15 @@ tr.row--chart-selected td {
 .result-record-label--aborted { color: #b91c1c; }
 .result-record-label--lazy    { color: #b45309; }
 
+.result-stars {
+  text-align: center;
+  font-size: 2rem;
+  letter-spacing: 4px;
+  margin: 4px 0 8px;
+}
+.result-star--lit   { color: #f59e0b; }
+.result-star--dim   { color: #d1d5db; }
+
 .run-text-wrap {
   font-family: var(--font-mono, 'Courier New', monospace);
   font-size: 1.05rem;

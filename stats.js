@@ -2611,5 +2611,24 @@ const Stats = (() => {
     return Math.round(recent.reduce((s, r) => s + r.cpm, 0) / recent.length);
   }
 
-  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount };
+  function calcStars(cpm) {
+    const cpms = runs.filter(r => !r.incomplete).map(r => r.cpm);
+    const n = cpms.length;
+    if (n < 2) return 3;
+    const xs = cpms.map((_, i) => i);
+    const sx  = xs.reduce((s, x) => s + x, 0);
+    const sy  = cpms.reduce((s, y) => s + y, 0);
+    const sxy = xs.reduce((s, x, i) => s + x * cpms[i], 0);
+    const sx2 = xs.reduce((s, x) => s + x * x, 0);
+    const denom = n * sx2 - sx * sx || 1;
+    const b = (n * sxy - sx * sy) / denom;
+    const a = (sy - b * sx) / n;
+    const trend = a + b * (n - 1);
+    const lower = trend * 0.9;
+    if (cpm >= trend) return 3;
+    if (cpm >= lower) return 2;
+    return 1;
+  }
+
+  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount, calcStars };
 })();

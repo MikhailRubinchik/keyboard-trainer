@@ -1023,6 +1023,16 @@ async function finishRun() {
   const finishBadge = document.getElementById('finish-record-badge');
   if (finishBadge) finishBadge.style.display = (!lazy && recordLabel === 'record') ? '' : 'none';
 
+  const starsEl = document.getElementById('result-stars');
+  if (starsEl && !lazy) {
+    const stars = Stats.calcStars(cpm);
+    starsEl.innerHTML = [1,2,3].map(i =>
+      `<span class="${i <= stars ? 'result-star--lit' : 'result-star--dim'}">★</span>`
+    ).join('');
+  } else if (starsEl) {
+    starsEl.innerHTML = '';
+  }
+
   playFanfare();
 
   resultOverlay.classList.remove('hidden');
