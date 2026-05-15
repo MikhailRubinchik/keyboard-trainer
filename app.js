@@ -849,7 +849,13 @@ function recordError(key) {
 // to junkBuffer. The text cursor does not advance until all junk is
 // cleared via Backspace.
 
-function handleChar(key) {
+function handleChar(rawKey) {
+  // Mac CapsLock quirk: Ё key produces 'ё' even when CapsLock is on
+  const expected0 = chars[cursor];
+  const key = (rawKey === 'ё' && expected0 === 'Ё') ? 'Ё'
+            : (rawKey === 'Ё' && expected0 === 'ё') ? 'ё'
+            : rawKey;
+
   if (junkBuffer.length > 0) {
     junkBuffer += key;
     errorCount++;
