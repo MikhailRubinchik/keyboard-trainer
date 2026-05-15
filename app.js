@@ -67,7 +67,7 @@ let highlightMode   = localStorage.getItem(LS_HIGHLIGHT_MODE) || 'full'; // 'ful
 })();
 
 function applyFingerSetting() {
-  const visible = showFinger;
+  const visible = highlightMode === 'finger';
   fingerHint.style.display = visible ? '' : 'none';
   document.querySelector('.hand-image-row').style.display = visible ? '' : 'none';
 }
@@ -87,9 +87,11 @@ function initHighlightSetting() {
   const sel = document.getElementById('setting-highlight-mode');
   if (!sel) return;
   sel.value = highlightMode;
+  applyFingerSetting();
   sel.addEventListener('change', () => {
     highlightMode = sel.value;
     localStorage.setItem(LS_HIGHLIGHT_MODE, highlightMode);
+    applyFingerSetting();
     updateDisplay();
   });
 }
@@ -230,21 +232,11 @@ function showScreen(name) {
 // ── Start exercise ────────────────────────────────────────────
 
 function restoreFingerSetting() {
-  showFinger = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
-  const cb = document.getElementById('setting-show-finger');
-  if (cb) { cb.disabled = false; cb.checked = showFinger; }
+  applyFingerSetting();
 }
 
 function startExercise(level) {
-  noFinger = Stats.getTodayRunCount() % 2 === 0;
-  const cb = document.getElementById('setting-show-finger');
-  if (noFinger) {
-    showFinger = false;
-    if (cb) { cb.checked = false; cb.disabled = true; }
-  } else {
-    showFinger = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
-    if (cb) { cb.disabled = false; cb.checked = showFinger; }
-  }
+  noFinger = highlightMode !== 'finger';
   applyFingerSetting();
   const result = getRandomExercise(LEVEL_SIZES[level - 1], lastStartIndex);
   lastStartIndex = result.startIndex;
@@ -342,15 +334,7 @@ window.startContinueRun = function(run) {
   currentLevel = run.level || currentLevel;
   updateLevelButtonsActive();
 
-  noFinger = run.noFinger || false;
-  const cb = document.getElementById('setting-show-finger');
-  if (noFinger) {
-    showFinger = false;
-    if (cb) { cb.checked = false; cb.disabled = true; }
-  } else {
-    showFinger = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
-    if (cb) { cb.disabled = false; cb.checked = showFinger; }
-  }
+  noFinger = highlightMode !== 'finger';
   applyFingerSetting();
 
   exerciseLevelLabel.textContent = `Уровень ${currentLevel}`;
@@ -420,7 +404,7 @@ function updateDisplay() {
       }
     } else if (highlightMode === 'blind') {
       span.classList.add('char--pending');
-    } else if (i === cursor && highlightMode === 'full') {
+    } else if (i === cursor && (highlightMode === 'full' || highlightMode === 'finger')) {
       span.classList.add(inError ? 'char--current-error' : 'char--current-ok');
     } else if (i < cursor) {
       if (highlightMode === 'none' && i >= wordStart) {
@@ -922,7 +906,7 @@ function handleChar(key) {
       bigramStats:    cpBigramStats,
       text:           chars.join(''),
       errorPositions: cpErrorPositions,
-      noFinger:       !showFinger,
+      noFinger:       highlightMode !== 'finger',
       keystrokeLog:   keystrokeLog.slice(),
       incomplete:     true,
     });
@@ -1082,7 +1066,7 @@ async function finishRun() {
     errorPositions,
     idleSeconds,
     lazy,
-    noFinger: !showFinger,
+    noFinger: highlightMode !== 'finger',
     keystrokeLog,
   });
 
@@ -1193,7 +1177,6 @@ function updateLevelProgressHint() {
 
 async function init() {
   loadLevel();
-  initFingerSetting();
   initHighlightSetting();
 
   // Level buttons on home screen
