@@ -75,6 +75,7 @@ function _saveSentenceVisits(id, visits) {
   currentTextSetId = saved;
   sentenceVisits   = _loadSentenceVisits(saved);
   setTextSet(saved);
+  Stats.setTextSetId(saved);
   const sel = document.getElementById('text-set-select');
   if (sel) {
     sel.value = saved;
@@ -83,6 +84,7 @@ function _saveSentenceVisits(id, visits) {
       sentenceVisits   = _loadSentenceVisits(sel.value);
       setTextSet(sel.value);
       localStorage.setItem(LS_TEXT_SET, sel.value);
+      Stats.setTextSetId(sel.value);
     });
   }
 })();

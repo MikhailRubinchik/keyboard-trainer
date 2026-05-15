@@ -1729,12 +1729,9 @@ const Stats = (() => {
     }
     if (!foundIndices.length) return '';
 
-    // Load cumulative visit counts — find the entry whose array length matches current SENTENCES
+    // Load cumulative visit counts for current text set
     const allVisits = JSON.parse(localStorage.getItem('klavagonki_sentence_visits') || '{}');
-    let visits = [];
-    for (const v of Object.values(allVisits)) {
-      if (Array.isArray(v) && v.length === n) { visits = v; break; }
-    }
+    const visits = allVisits[_currentTextSetId] || [];
 
     const hist = new Map();
     for (const i of foundIndices) {
@@ -2776,5 +2773,8 @@ const Stats = (() => {
     return 1;
   }
 
-  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount, calcStars };
+  let _currentTextSetId = 'neznaika';
+  function setTextSetId(id) { _currentTextSetId = id; }
+
+  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount, calcStars, setTextSetId };
 })();
