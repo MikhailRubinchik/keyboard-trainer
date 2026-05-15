@@ -486,7 +486,7 @@ function updateWordDisplay() {
     wordDisplay.appendChild(span);
   }
 
-  wordDisplay.classList.toggle('has-error', junkBuffer.length > 0 && highlightMode !== 'word-error-blind');
+  wordDisplay.classList.toggle('has-error', junkBuffer.length > 0);
 }
 
 wordInput.addEventListener('focus', () => wordDisplay.classList.add('focused'));
