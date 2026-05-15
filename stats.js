@@ -2195,7 +2195,7 @@ const Stats = (() => {
     // CPM scale: maps actual data range to top half (minCpm→midpoint, maxCpm→top)
     const cpmBottom = Math.max(0, Math.floor(Math.min(...cpms) * 0.95));
     const yScaleCpm = v => padT + (1 - (v - cpmBottom) / (maxCpmForecast - cpmBottom)) * (plotH / 2);
-    const cpmTicksRun = [cpmBottom, Math.round((cpmBottom + maxCpmForecast) / 2), Math.round(maxCpmForecast)];
+    const cpmTicksRun = [0, cpmBottom, Math.round((cpmBottom + maxCpmForecast) / 2), Math.round(maxCpmForecast)];
     const leftAxisRun = cpmTicksRun.map(t =>
       `<line x1="${padL}" y1="${yScaleCpm(t).toFixed(1)}" x2="${W - padR}" y2="${yScaleCpm(t).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
        <text x="${padL - 5}" y="${(yScaleCpm(t) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#3b82f6">${t}</text>`
