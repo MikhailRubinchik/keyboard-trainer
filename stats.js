@@ -2479,8 +2479,10 @@ const Stats = (() => {
         });
         const togTrend = document.getElementById('chart-toggle-trend');
         if (togTrend) togTrend.addEventListener('change', () => {
-          const g = document.getElementById('chart-group-trend');
-          if (g) g.style.display = togTrend.checked ? '' : 'none';
+          ['chart-group-trend', 'chart-group-lower-trend'].forEach(id => {
+            const g = document.getElementById(id);
+            if (g) g.style.display = togTrend.checked ? '' : 'none';
+          });
         });
         const togErrTrend = document.getElementById('chart-toggle-err-trend');
         if (togErrTrend) togErrTrend.addEventListener('change', () => {
