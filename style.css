@@ -1071,6 +1071,18 @@ tr.row--chart-selected td {
   margin-bottom: 12px;
 }
 
+.run-sentences-list {
+  margin: 8px 0 0 0;
+  padding: 0 0 0 16px;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.run-sentence-item {
+  margin-bottom: 2px;
+}
+
 .filter-btn {
   font-size: 0.7rem;
   font-family: var(--font-ui);

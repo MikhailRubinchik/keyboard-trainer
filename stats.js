@@ -1649,6 +1649,28 @@ const Stats = (() => {
     </svg>`;
   }
 
+  function buildRunCoverageHtml(run) {
+    if (!run.text || typeof SENTENCES === 'undefined' || !SENTENCES.length) return '';
+    const n = SENTENCES.length;
+    const counts = new Array(n).fill(0);
+    const padded = ' ' + run.text + ' ';
+    for (let i = 0; i < n; i++) {
+      if (padded.includes(' ' + SENTENCES[i] + ' ') || run.text === SENTENCES[i]) counts[i]++;
+    }
+    const found = SENTENCES.filter((_, i) => counts[i] > 0);
+    const hist = new Map();
+    for (const c of counts) hist.set(c, (hist.get(c) || 0) + 1);
+    const entries = [...hist.entries()].sort((a, b) => a[0] - b[0]);
+    const rows = entries.map(([times, cnt]) =>
+      `<tr><td>${times === 0 ? 'Ни разу' : times + (cnt === 1 ? ' раз' : ' раза')}</td><td>${cnt}</td><td>${(cnt / n * 100).toFixed(1)}%</td></tr>`
+    ).join('');
+    const listHtml = found.map(s => `<li class="run-sentence-item">${s}</li>`).join('');
+    return '<div class="freq-divider"></div>'
+      + `<p class="freq-section-title">Предложений в заезде: ${found.length} из ${n} (${(found.length / n * 100).toFixed(1)}%)</p>`
+      + `<table class="stats-table"><thead><tr><th>Встречалось</th><th>Предложений</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`
+      + (found.length ? `<ul class="run-sentences-list">${listHtml}</ul>` : '');
+  }
+
   function showRunDetail(run) {
     const finger = (ch) => (typeof getFinger === 'function' ? getFinger(ch) : '');
     const title  = `${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`;
@@ -1672,14 +1694,15 @@ const Stats = (() => {
     }
 
     const speedChartSvg = buildRunSpeedSvg(run);
+    const coverageHtml  = buildRunCoverageHtml(run);
 
     if (!run.errorsDetail) {
-      showErrorModal(title, textBlock + '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>', speedChartSvg);
+      showErrorModal(title, textBlock + '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>' + coverageHtml, speedChartSvg);
       return;
     }
 
     if (!run.errorsDetail.length) {
-      showErrorModal(title, textBlock + '<p class="error-detail-empty">Ошибок нет!</p>', speedChartSvg);
+      showErrorModal(title, textBlock + '<p class="error-detail-empty">Ошибок нет!</p>' + coverageHtml, speedChartSvg);
       return;
     }
 
@@ -1725,7 +1748,8 @@ const Stats = (() => {
       + iHtml
       + '<div class="freq-divider"></div>'
       + '<p class="freq-section-title">Медленные биграммы (топ-30)</p>'
-      + bigramHtml, speedChartSvg);
+      + bigramHtml
+      + coverageHtml, speedChartSvg);
 
     const filterBtn = document.getElementById('btn-filter-frequent');
     if (filterBtn) {
