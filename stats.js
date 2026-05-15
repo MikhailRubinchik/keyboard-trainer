@@ -1491,9 +1491,10 @@ const Stats = (() => {
       + bigramHtml;
   }
 
-  function showErrorModal(title, html) {
+  function showErrorModal(title, html, speedChartHtml = '') {
     document.getElementById('error-detail-title').textContent = title;
     document.getElementById('error-detail-body').innerHTML = html;
+    document.getElementById('error-detail-speed-chart').innerHTML = speedChartHtml;
     document.getElementById('error-detail-overlay').classList.remove('hidden');
   }
 
@@ -1586,7 +1587,7 @@ const Stats = (() => {
         <text x="${tx.toFixed(1)}" y="${H - 1}" text-anchor="middle" font-size="8" fill="#9ca3af">${sec}с</text>`;
     }).join('');
 
-    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;margin:6px -40px 2px;width:calc(100% + 80px)">
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
       <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#e5e7eb" stroke-width="1"/>
       <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#e5e7eb" stroke-width="1"/>
       <text x="${padL - 2}" y="${(padT + 4).toFixed(1)}" text-anchor="end" font-size="8" fill="#9ca3af">${maxCpm}</text>
@@ -1619,17 +1620,15 @@ const Stats = (() => {
       run.bigramStats    = d.bigramStats;
     }
 
-    const speedChart = buildRunSpeedSvg(run)
-      ? '<p class="freq-section-title">Скорость по ходу заезда</p>' + buildRunSpeedSvg(run) + '<div class="freq-divider"></div>'
-      : '';
+    const speedChartSvg = buildRunSpeedSvg(run);
 
     if (!run.errorsDetail) {
-      showErrorModal(title, speedChart + textBlock + '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>');
+      showErrorModal(title, textBlock + '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>', speedChartSvg);
       return;
     }
 
     if (!run.errorsDetail.length) {
-      showErrorModal(title, speedChart + textBlock + '<p class="error-detail-empty">Ошибок нет!</p>');
+      showErrorModal(title, textBlock + '<p class="error-detail-empty">Ошибок нет!</p>', speedChartSvg);
       return;
     }
 
@@ -1664,7 +1663,7 @@ const Stats = (() => {
     const iHtml      = renderIntervalHtml(mergeIntervalMaps([run]));
     const bigramHtml = renderBigramHtml(run.bigramStats || {});
 
-    showErrorModal(title, speedChart + textBlock
+    showErrorModal(title, textBlock
       + '<p class="freq-section-title">Ошибки по словам <button id="btn-filter-frequent" class="filter-btn">Частые</button></p>'
       + `<div id="per-word-list">${perWord}</div>`
       + '<div class="freq-divider"></div>'
@@ -1675,7 +1674,7 @@ const Stats = (() => {
       + iHtml
       + '<div class="freq-divider"></div>'
       + '<p class="freq-section-title">Медленные биграммы (топ-30)</p>'
-      + bigramHtml);
+      + bigramHtml, speedChartSvg);
 
     const filterBtn = document.getElementById('btn-filter-frequent');
     if (filterBtn) {
