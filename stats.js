@@ -1606,8 +1606,13 @@ const Stats = (() => {
       }
     }
 
+    const maxBucket = Math.max(...Object.keys(buckets).map(Number));
     const pts = Object.entries(buckets)
-      .map(([b, count]) => ({ t: (Number(b) + 0.5) * BUCKET_MS, cpm: count * 6 }))
+      .map(([b, count]) => {
+        const bi = Number(b);
+        const durMs = bi === maxBucket ? timeAcc - bi * BUCKET_MS : BUCKET_MS;
+        return { t: bi * BUCKET_MS + durMs / 2, cpm: Math.round(count / durMs * 60000) };
+      })
       .sort((a, b) => a.t - b.t);
 
     if (pts.length < 2) return '';
