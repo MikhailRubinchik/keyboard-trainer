@@ -1722,20 +1722,33 @@ const Stats = (() => {
   function buildRunCoverageHtml(run) {
     if (!run.text || typeof SENTENCES === 'undefined' || !SENTENCES.length) return '';
     const n = SENTENCES.length;
-    const counts = new Array(n).fill(0);
     const padded = ' ' + run.text + ' ';
+    const foundIndices = [];
     for (let i = 0; i < n; i++) {
-      if (padded.includes(' ' + SENTENCES[i] + ' ') || run.text === SENTENCES[i]) counts[i]++;
+      if (padded.includes(' ' + SENTENCES[i] + ' ') || run.text === SENTENCES[i]) foundIndices.push(i);
     }
-    const found = SENTENCES.filter((_, i) => counts[i] > 0);
+    if (!foundIndices.length) return '';
+
+    // Load cumulative visit counts — find the entry whose array length matches current SENTENCES
+    const allVisits = JSON.parse(localStorage.getItem('klavagonki_sentence_visits') || '{}');
+    let visits = [];
+    for (const v of Object.values(allVisits)) {
+      if (Array.isArray(v) && v.length === n) { visits = v; break; }
+    }
+
     const hist = new Map();
-    for (const c of counts) hist.set(c, (hist.get(c) || 0) + 1);
+    for (const i of foundIndices) {
+      const c = visits[i] || 0;
+      hist.set(c, (hist.get(c) || 0) + 1);
+    }
     const entries = [...hist.entries()].sort((a, b) => a[0] - b[0]);
+    const pct = v => (v / foundIndices.length * 100).toFixed(1) + '%';
+    const razForm = t => t % 10 >= 2 && t % 10 <= 4 && (t % 100 < 10 || t % 100 >= 20) ? 'раза' : 'раз';
     const rows = entries.map(([times, cnt]) =>
-      `<tr><td>${times === 0 ? 'Ни разу' : times + (cnt === 1 ? ' раз' : ' раза')}</td><td>${cnt}</td><td>${(cnt / n * 100).toFixed(1)}%</td></tr>`
+      `<tr><td>${times === 0 ? 'Ни разу' : times + ' ' + razForm(times)}</td><td>${cnt}</td><td>${pct(cnt)}</td></tr>`
     ).join('');
     return '<div class="freq-divider"></div>'
-      + `<p class="freq-section-title">Предложений в заезде: ${found.length} из ${n} (${(found.length / n * 100).toFixed(1)}%)</p>`
+      + `<p class="freq-section-title">Предложений в заезде: ${foundIndices.length} из ${n} (${(foundIndices.length / n * 100).toFixed(1)}%)</p>`
       + `<table class="stats-table"><thead><tr><th>Встречалось</th><th>Предложений</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
