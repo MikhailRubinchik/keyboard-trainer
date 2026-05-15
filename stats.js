@@ -1282,16 +1282,20 @@ const Stats = (() => {
       tableWrap.querySelectorAll('tbody tr').forEach(tr => {
         if (tr.classList.contains('row--in-progress')) {
           if (inProgress) {
+            tr.classList.add('clickable-row');
+            tr.addEventListener('click', () => showRunDetail(inProgress));
             const db2 = tr.querySelector('.btn-run-detail');
-            if (db2) db2.addEventListener('click', e => { e.stopPropagation(); showRunDetail(inProgress); });
+            if (db2) db2.addEventListener('click', e => { e.stopPropagation(); showRunDetail(inProgress, true); });
             const cb = tr.querySelector('.btn-continue-run');
             if (cb) cb.addEventListener('click', e => { e.stopPropagation(); window.startContinueRun?.(inProgress); });
           }
           return;
         }
         const idx = runIdx++;
+        tr.classList.add('clickable-row');
+        tr.addEventListener('click', () => showRunDetail(reversed[idx]));
         const db = tr.querySelector('.btn-run-detail');
-        if (db) db.addEventListener('click', e => { e.stopPropagation(); showRunDetail(reversed[idx]); });
+        if (db) db.addEventListener('click', e => { e.stopPropagation(); showRunDetail(reversed[idx], true); });
         const rb = tr.querySelector('.btn-replay-run');
         if (rb) rb.addEventListener('click', e => { e.stopPropagation(); showReplay(reversed[idx]); });
       });
@@ -1503,15 +1507,16 @@ const Stats = (() => {
       + bigramHtml;
   }
 
-  function showErrorModal(title, html, speedChartHtml = '') {
+  function showErrorModal(title, html, speedChartHtml = '', openChart = false) {
     document.getElementById('error-detail-title').textContent = title;
     document.getElementById('error-detail-body').innerHTML = html;
-    const chartEl  = document.getElementById('error-detail-speed-chart');
+    const chartEl   = document.getElementById('error-detail-speed-chart');
     const toggleBtn = document.getElementById('btn-toggle-speed-chart');
     chartEl.innerHTML = speedChartHtml;
-    chartEl.classList.add('hidden');
+    const chartVisible = openChart && !!speedChartHtml;
+    chartEl.classList.toggle('hidden', !chartVisible);
     if (toggleBtn) {
-      toggleBtn.textContent = 'График скорости';
+      toggleBtn.textContent = chartVisible ? 'Скрыть график' : 'График скорости';
       toggleBtn.style.display = speedChartHtml ? '' : 'none';
       toggleBtn.onclick = () => {
         const hidden = chartEl.classList.toggle('hidden');
@@ -1679,7 +1684,7 @@ const Stats = (() => {
       + `<table class="stats-table"><thead><tr><th>Встречалось</th><th>Предложений</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
-  function showRunDetail(run) {
+  function showRunDetail(run, openChart = false) {
     const finger = (ch) => (typeof getFinger === 'function' ? getFinger(ch) : '');
     const title  = `${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`;
 
@@ -1705,12 +1710,12 @@ const Stats = (() => {
     const coverageHtml  = buildRunCoverageHtml(run);
 
     if (!run.errorsDetail) {
-      showErrorModal(title, textBlock + '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>' + coverageHtml, speedChartSvg);
+      showErrorModal(title, textBlock + '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>' + coverageHtml, speedChartSvg, openChart);
       return;
     }
 
     if (!run.errorsDetail.length) {
-      showErrorModal(title, textBlock + '<p class="error-detail-empty">Ошибок нет!</p>' + coverageHtml, speedChartSvg);
+      showErrorModal(title, textBlock + '<p class="error-detail-empty">Ошибок нет!</p>' + coverageHtml, speedChartSvg, openChart);
       return;
     }
 
@@ -1757,7 +1762,7 @@ const Stats = (() => {
       + '<div class="freq-divider"></div>'
       + '<p class="freq-section-title">Медленные биграммы (топ-30)</p>'
       + bigramHtml
-      + coverageHtml, speedChartSvg);
+      + coverageHtml, speedChartSvg, openChart);
 
     const filterBtn = document.getElementById('btn-filter-frequent');
     if (filterBtn) {
