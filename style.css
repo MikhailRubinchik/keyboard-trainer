@@ -627,6 +627,22 @@ button:active  { transform: scale(0.97); }
   cursor: pointer;
 }
 
+.chart-all-btn {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chart-all-btn:hover {
+  color: var(--text-main);
+  border-color: var(--text-dim);
+}
+
 .chart-legend {
   display: flex;
   gap: 16px;

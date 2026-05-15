@@ -2125,6 +2125,7 @@ const Stats = (() => {
         <input type="date" id="chart-from" value="${fromIso}" class="chart-date-input">
         <span style="color:var(--text-dim)">—</span>
         <input type="date" id="chart-to" value="${toIso}" class="chart-date-input">
+        <button id="btn-chart-all" class="chart-all-btn">весь период</button>
       </div></div>
       <div class="chart-block">
         <div class="chart-block-inner"><div class="chart-legend">
@@ -2293,6 +2294,7 @@ const Stats = (() => {
         <input type="date" id="chart-from" value="${fromIso}" class="chart-date-input">
         <span style="color:var(--text-dim)">—</span>
         <input type="date" id="chart-to" value="${toIso}" class="chart-date-input">
+        <button id="btn-chart-all" class="chart-all-btn">весь период</button>
       </div>
       <div class="chart-legend">
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● скорость, зн/мин</span></label>
@@ -2433,6 +2435,13 @@ const Stats = (() => {
         }
 
         chartsEl.innerHTML = buildCharts(chartRuns, fromIso, toIso);
+
+        const fromInput = document.getElementById('chart-from');
+        const toInput   = document.getElementById('chart-to');
+        if (fromInput) fromInput.addEventListener('change', () => renderCharts(fromInput.value, toInput?.value || maxIso));
+        if (toInput)   toInput.addEventListener('change',   () => renderCharts(fromInput?.value || minIso, toInput.value));
+        const btnAll = document.getElementById('btn-chart-all');
+        if (btnAll) btnAll.addEventListener('click', () => { chartFromIso = ''; chartToIso = ''; renderCharts(minIso, maxIso); });
 
         const togCpm    = document.getElementById('chart-toggle-cpm');
         const togErr    = document.getElementById('chart-toggle-err');
@@ -2614,8 +2623,9 @@ const Stats = (() => {
         });
       }
 
-      renderChartsNow = () => renderCharts(chartFromIso || minIso, chartToIso || maxIso);
-      renderCharts(minIso, maxIso);
+      const defaultFromIso = ruToIso(complete[Math.max(0, complete.length - 50)].date);
+      renderChartsNow = () => renderCharts(chartFromIso || defaultFromIso, chartToIso || maxIso);
+      renderCharts(chartFromIso || defaultFromIso, chartToIso || maxIso);
     }
 
     const last5R  = last10Runs(allRuns);
