@@ -1567,11 +1567,8 @@ const Stats = (() => {
     const plotW = W - padL - padR, plotH = H - padT - padB;
     const minT = pts[0].t, maxT = pts[pts.length - 1].t;
     const maxCpm = Math.max(...pts.map(p => p.cpm));
-    const minCpm = Math.min(...pts.map(p => p.cpm));
-    const rangeC = maxCpm - minCpm || 1;
-
     const xp = t => padL + (t - minT) / (maxT - minT) * plotW;
-    const yp = c => padT + plotH - (c - minCpm) / rangeC * plotH;
+    const yp = c => padT + plotH - c / maxCpm * plotH;
 
     const polyline = pts.map(p => `${xp(p.t).toFixed(1)},${yp(p.cpm).toFixed(1)}`).join(' ');
     const avgCpm = Math.round(pts.reduce((s, p) => s + p.cpm, 0) / pts.length);
@@ -1592,7 +1589,7 @@ const Stats = (() => {
       <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#e5e7eb" stroke-width="1"/>
       <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#e5e7eb" stroke-width="1"/>
       <text x="${padL - 2}" y="${(padT + 4).toFixed(1)}" text-anchor="end" font-size="8" fill="#9ca3af">${maxCpm}</text>
-      <text x="${padL - 2}" y="${(padT + plotH).toFixed(1)}" text-anchor="end" font-size="8" fill="#9ca3af">${minCpm}</text>
+      <text x="${padL - 2}" y="${(padT + plotH).toFixed(1)}" text-anchor="end" font-size="8" fill="#9ca3af">0</text>
       <line x1="${padL}" y1="${yAvg}" x2="${W - padR}" y2="${yAvg}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
       ${xTicks}
       <polyline points="${polyline}" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round" opacity="0.9"/>
