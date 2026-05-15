@@ -1985,6 +1985,8 @@ const Stats = (() => {
       return `<circle cx="${x}" cy="${y}" r="4" fill="#06b6d4" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
     }).join('');
     const trendLine = smoothLine(trendVals, maxCpmForecast, '#06b6d4', 'chart-group-trend', '6,3', trendDots);
+    const lowerTrendVals = trendVals.map(v => v * 0.9);
+    const lowerTrendLine = smoothLine(lowerTrendVals, maxCpmForecast, '#06b6d4', 'chart-group-lower-trend', '3,4', '', false);
 
     // Скользящее среднее (формула Клавогонок)
     const emaVals = [];
@@ -2075,6 +2077,7 @@ const Stats = (() => {
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         ${levelDividers}
+        ${lowerTrendLine}
         ${trendLine}
         ${lineGroup(cpmRolling5, maxCpmForecast, '#a855f7', 'chart-group-rolling5', rolling5Tips, rolling5Records, true)}
         ${lineGroup(emaVals, maxCpmForecast, '#f97316', 'chart-group-ema', emaTips, null, true)}
