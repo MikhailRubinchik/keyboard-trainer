@@ -1494,8 +1494,37 @@ const Stats = (() => {
   function showErrorModal(title, html, speedChartHtml = '') {
     document.getElementById('error-detail-title').textContent = title;
     document.getElementById('error-detail-body').innerHTML = html;
-    document.getElementById('error-detail-speed-chart').innerHTML = speedChartHtml;
+    const chartEl = document.getElementById('error-detail-speed-chart');
+    chartEl.innerHTML = speedChartHtml;
     document.getElementById('error-detail-overlay').classList.remove('hidden');
+
+    const svg = chartEl.querySelector('svg');
+    if (svg) {
+      let tip = document.getElementById('chart-tooltip');
+      if (!tip) {
+        tip = document.createElement('div');
+        tip.id = 'chart-tooltip';
+        tip.className = 'chart-tooltip';
+        document.body.appendChild(tip);
+      }
+      svg.addEventListener('mouseover', e => {
+        const el = e.target.closest('[data-tip]');
+        if (!el) return;
+        tip.textContent = el.dataset.tip;
+        tip.classList.add('visible');
+        el.setAttribute('r', '5');
+      });
+      svg.addEventListener('mouseout', e => {
+        const el = e.target.closest('[data-tip]');
+        if (!el) return;
+        tip.classList.remove('visible');
+        el.setAttribute('r', '3');
+      });
+      svg.addEventListener('mousemove', e => {
+        tip.style.left = (e.clientX + 12) + 'px';
+        tip.style.top  = (e.clientY - 28) + 'px';
+      });
+    }
   }
 
   // ── Run detail ─────────────────────────────────────────────
@@ -1527,8 +1556,9 @@ const Stats = (() => {
     const chars = run.text ? [...run.text] : [];
     let cursor = 0, wordStart = 0, wordSoFar = '', junkBuffer = '';
     let timeAcc = 0;
-    const events = []; // {t, cursor}
-
+    // bucket correct chars into 10s windows
+    const BUCKET_MS = 10000;
+    const buckets = {}; // bucketIndex -> charCount
     for (const [key, deltaMs] of run.keystrokeLog) {
       if (cursor >= chars.length) break;
       timeAcc += deltaMs;
@@ -1546,41 +1576,41 @@ const Stats = (() => {
           else {
             cursor++;
             if (expected === ' ') { wordStart = cursor; wordSoFar = ''; } else { wordSoFar += expected; }
-            events.push({ t: timeAcc, cursor });
+            const b = Math.floor(timeAcc / BUCKET_MS);
+            buckets[b] = (buckets[b] || 0) + 1;
           }
         }
       }
     }
 
-    if (events.length < 5) return '';
-    const WIN = 10;
-    const pts = [];
-    for (let i = WIN - 1; i < events.length; i++) {
-      const dt = events[i].t - events[i - WIN + 1].t;
-      if (dt <= 0) continue;
-      const cpm = Math.round(WIN / dt * 60000);
-      pts.push({ t: events[i].t, cpm });
-    }
+    const pts = Object.entries(buckets)
+      .map(([b, count]) => ({ t: (Number(b) + 0.5) * BUCKET_MS, cpm: count * 6 }))
+      .sort((a, b) => a.t - b.t);
+
     if (pts.length < 2) return '';
 
     const W = 500, H = 100, padL = 28, padR = 4, padT = 4, padB = 14;
     const plotW = W - padL - padR, plotH = H - padT - padB;
-    const minT = pts[0].t, maxT = pts[pts.length - 1].t;
+    const totalMs = timeAcc;
     const maxCpm = Math.max(...pts.map(p => p.cpm));
-    const xp = t => padL + (t - minT) / (maxT - minT) * plotW;
+    const fmtMin = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+
+    const xp = t => padL + t / totalMs * plotW;
     const yp = c => padT + plotH - c / maxCpm * plotH;
 
     const polyline = pts.map(p => `${xp(p.t).toFixed(1)},${yp(p.cpm).toFixed(1)}`).join(' ');
     const avgCpm = Math.round(pts.reduce((s, p) => s + p.cpm, 0) / pts.length);
     const yAvg = yp(avgCpm).toFixed(1);
 
-    const totalSec = maxT / 1000;
-    const fmtMin = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+    const dots = pts.map(p => {
+      const x = xp(p.t).toFixed(1), y = yp(p.cpm).toFixed(1);
+      const tip = `${fmtMin(p.t / 1000)} — ${p.cpm} зн/мин`.replace(/"/g, '&quot;');
+      return `<circle cx="${x}" cy="${y}" r="3" fill="#3b82f6" stroke="#fff" stroke-width="1" data-tip="${tip}" style="cursor:pointer"/>`;
+    }).join('');
 
-    // X grid: every 30s (or fewer if short run)
+    const totalSec = totalMs / 1000;
     const xStepSec = totalSec <= 120 ? 15 : totalSec <= 300 ? 30 : 60;
-    const xTickCount = Math.floor(totalSec / xStepSec) + 1;
-    const xTicks = Array.from({length: xTickCount}, (_, i) => {
+    const xTicks = Array.from({length: Math.floor(totalSec / xStepSec) + 1}, (_, i) => {
       const sec = i * xStepSec;
       if (sec > totalSec + 1) return '';
       const tx = (padL + sec / totalSec * plotW).toFixed(1);
@@ -1589,22 +1619,21 @@ const Stats = (() => {
         <text x="${tx}" y="${H - 1}" text-anchor="middle" font-size="8" fill="#9ca3af">${fmtMin(sec)}</text>`;
     }).join('');
 
-    // Y grid: 4 steps
-    const ySteps = 4;
-    const yTicks = Array.from({length: ySteps + 1}, (_, i) => {
-      const val = Math.round(maxCpm * i / ySteps);
+    const yTicks = Array.from({length: 5}, (_, i) => {
+      const val = Math.round(maxCpm * i / 4);
       const ty = yp(val).toFixed(1);
       return `<line x1="${padL}" y1="${ty}" x2="${W - padR}" y2="${ty}" stroke="#e5e7eb" stroke-width="1"/>
         <text x="${padL - 2}" y="${(parseFloat(ty) + 3).toFixed(1)}" text-anchor="end" font-size="8" fill="#9ca3af">${val}</text>`;
     }).join('');
 
-    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block" id="run-speed-svg">
       ${yTicks}
       ${xTicks}
       <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
       <line x1="${padL}" y1="${yAvg}" x2="${W - padR}" y2="${yAvg}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
       <text x="${(W - padR - 2).toFixed(1)}" y="${(parseFloat(yAvg) - 2).toFixed(1)}" text-anchor="end" font-size="8" fill="#94a3b8">ср. ${avgCpm}</text>
       <polyline points="${polyline}" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round" opacity="0.9"/>
+      ${dots}
     </svg>`;
   }
 
