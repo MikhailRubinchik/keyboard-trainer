@@ -2731,12 +2731,10 @@ const Stats = (() => {
 
   function calcStars(cpm) {
     const complete = runs.filter(r => !r.incomplete);
-    const fromIso = chartFromIso || chartDefaultFrom;
-    const toIso   = chartToIso   || ruToIso(complete[complete.length - 1]?.date || '');
-    const visible = fromIso
-      ? complete.filter(r => { const iso = ruToIso(r.date); return iso >= fromIso && (!toIso || iso <= toIso); })
+    const window = chartDefaultFrom
+      ? complete.filter(r => ruToIso(r.date) >= chartDefaultFrom)
       : complete;
-    const cpms = (visible.length >= 2 ? visible : complete).map(r => r.cpm);
+    const cpms = (window.length >= 2 ? window : complete).map(r => r.cpm);
     const n = cpms.length;
     if (n < 2) return 3;
     const xs = cpms.map((_, i) => i);
