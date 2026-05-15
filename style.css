@@ -839,6 +839,38 @@ tr.row--chart-selected td {
 
 /* ── Error detail overlay ────────────────────────────────── */
 
+.speed-chart-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 210;
+}
+
+.speed-chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 92vw;
+  max-width: 680px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.speed-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.speed-chart-title {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
 .error-detail-overlay {
   position: fixed;
   inset: 0;

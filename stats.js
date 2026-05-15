@@ -633,6 +633,14 @@ const Stats = (() => {
       if (e.target === overlay) overlay.classList.add('hidden');
     });
 
+    const speedOverlay = document.getElementById('speed-chart-overlay');
+    document.getElementById('btn-close-speed-chart').addEventListener('click', () => {
+      speedOverlay.classList.add('hidden');
+    });
+    speedOverlay.addEventListener('click', (e) => {
+      if (e.target === speedOverlay) speedOverlay.classList.add('hidden');
+    });
+
     // Sync panel (opened by keyboard shortcut)
     const syncOverlay = document.getElementById('sync-overlay');
 
@@ -1285,7 +1293,7 @@ const Stats = (() => {
             tr.classList.add('clickable-row');
             tr.addEventListener('click', () => showRunDetail(inProgress));
             const db2 = tr.querySelector('.btn-run-detail');
-            if (db2) db2.addEventListener('click', e => { e.stopPropagation(); showRunDetail(inProgress, true); });
+            if (db2) db2.addEventListener('click', e => { e.stopPropagation(); showSpeedChart(inProgress); });
             const cb = tr.querySelector('.btn-continue-run');
             if (cb) cb.addEventListener('click', e => { e.stopPropagation(); window.startContinueRun?.(inProgress); });
           }
@@ -1295,7 +1303,7 @@ const Stats = (() => {
         tr.classList.add('clickable-row');
         tr.addEventListener('click', () => showRunDetail(reversed[idx]));
         const db = tr.querySelector('.btn-run-detail');
-        if (db) db.addEventListener('click', e => { e.stopPropagation(); showRunDetail(reversed[idx], true); });
+        if (db) db.addEventListener('click', e => { e.stopPropagation(); showSpeedChart(reversed[idx]); });
         const rb = tr.querySelector('.btn-replay-run');
         if (rb) rb.addEventListener('click', e => { e.stopPropagation(); showReplay(reversed[idx]); });
       });
@@ -1507,12 +1515,10 @@ const Stats = (() => {
       + bigramHtml;
   }
 
-  function showErrorModal(title, html, speedChartHtml = '', openChart = false) {
+  function showErrorModal(title, html) {
     document.getElementById('error-detail-title').textContent = title;
     document.getElementById('error-detail-body').innerHTML = html;
-    const chartEl = document.getElementById('error-detail-speed-chart');
-    chartEl.innerHTML = speedChartHtml;
-    chartEl.classList.toggle('hidden', !(openChart && speedChartHtml));
+    document.getElementById('error-detail-speed-chart').innerHTML = '';
     document.getElementById('error-detail-overlay').classList.remove('hidden');
 
     const svg = chartEl.querySelector('svg');
@@ -1654,6 +1660,44 @@ const Stats = (() => {
     </svg>`;
   }
 
+  function showSpeedChart(run) {
+    const svg = buildRunSpeedSvg(run);
+    if (!svg) return;
+    document.getElementById('speed-chart-title').textContent =
+      `${run.date}${run.time ? '  ' + run.time : ''}  —  ${run.cpm} зн/мин`;
+    const body = document.getElementById('speed-chart-body');
+    body.innerHTML = svg;
+    document.getElementById('speed-chart-overlay').classList.remove('hidden');
+
+    let tip = document.getElementById('chart-tooltip');
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'chart-tooltip';
+      tip.className = 'chart-tooltip';
+      document.body.appendChild(tip);
+    }
+    const svgEl = body.querySelector('svg');
+    if (svgEl) {
+      svgEl.addEventListener('mouseover', e => {
+        const el = e.target.closest('[data-tip]');
+        if (!el) return;
+        tip.textContent = el.dataset.tip;
+        tip.classList.add('visible');
+        el.setAttribute('r', '5');
+      });
+      svgEl.addEventListener('mouseout', e => {
+        const el = e.target.closest('[data-tip]');
+        if (!el) return;
+        tip.classList.remove('visible');
+        el.setAttribute('r', '3');
+      });
+      svgEl.addEventListener('mousemove', e => {
+        tip.style.left = (e.clientX + 12) + 'px';
+        tip.style.top  = (e.clientY - 28) + 'px';
+      });
+    }
+  }
+
   function buildRunCoverageHtml(run) {
     if (!run.text || typeof SENTENCES === 'undefined' || !SENTENCES.length) return '';
     const n = SENTENCES.length;
@@ -1674,7 +1718,7 @@ const Stats = (() => {
       + `<table class="stats-table"><thead><tr><th>Встречалось</th><th>Предложений</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
-  function showRunDetail(run, openChart = false) {
+  function showRunDetail(run) {
     const finger = (ch) => (typeof getFinger === 'function' ? getFinger(ch) : '');
     const title  = `${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`;
 
@@ -1696,16 +1740,15 @@ const Stats = (() => {
       run.bigramStats    = d.bigramStats;
     }
 
-    const speedChartSvg = buildRunSpeedSvg(run);
-    const coverageHtml  = buildRunCoverageHtml(run);
+    const coverageHtml = buildRunCoverageHtml(run);
 
     if (!run.errorsDetail) {
-      showErrorModal(title, textBlock + '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>' + coverageHtml, speedChartSvg, openChart);
+      showErrorModal(title, textBlock + '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>' + coverageHtml);
       return;
     }
 
     if (!run.errorsDetail.length) {
-      showErrorModal(title, textBlock + '<p class="error-detail-empty">Ошибок нет!</p>' + coverageHtml, speedChartSvg, openChart);
+      showErrorModal(title, textBlock + '<p class="error-detail-empty">Ошибок нет!</p>' + coverageHtml);
       return;
     }
 
@@ -1752,7 +1795,7 @@ const Stats = (() => {
       + '<div class="freq-divider"></div>'
       + '<p class="freq-section-title">Медленные биграммы (топ-30)</p>'
       + bigramHtml
-      + coverageHtml, speedChartSvg, openChart);
+      + coverageHtml);
 
     const filterBtn = document.getElementById('btn-filter-frequent');
     if (filterBtn) {
