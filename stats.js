@@ -1843,15 +1843,14 @@ const Stats = (() => {
   function buildCharts(allRuns, fromIso, toIso) {
     if (allRuns.length < 2) return '';
 
-    const W = 760, H = 240;
+    const W = 760, H = 320;
     const padL = 46, padR = 46, padT = 16, padB = 26;
     const plotW = W - padL - padR;
     const plotH = H - padT - padB;
     const n = allRuns.length;
 
     function xPos(i) { return padL + (n === 1 ? plotW / 2 : i / (n + 9) * plotW); }
-    const halfH = plotH / 2, halfGap = 5;
-    function yScale(v, maxV) { return maxV ? padT + (1 - v / maxV) * (halfH - halfGap) : padT + halfH - halfGap; }
+    function yScale(v, maxV) { return padT + plotH - (maxV ? v / maxV * plotH : plotH / 2); }
 
     const cpms    = allRuns.map(r => r.cpm);
     const cpmMaxes = allRuns.map(r => r.cpmMax ?? null);
@@ -1881,8 +1880,9 @@ const Stats = (() => {
       ? Math.max(maxErr, ...[n, n+3, n+6, n+9].map(i => errTrendVals[i]))
       : maxErr;
 
-    // Bottom half for errors
-    const yScaleErr = v => padT + halfH + halfGap + (1 - v / maxErrForecast) * (halfH - halfGap);
+    // Errors span full height, peak just slightly below CPM peak
+    const errTopShift = 10;
+    const yScaleErr = v => padT + errTopShift + (1 - v / maxErrForecast) * (plotH - errTopShift);
 
     // Draws a line+dots wrapped in <g>, skipping null values
     // tips: tooltip strings per run; records: 'record'|'' per run
@@ -2319,7 +2319,6 @@ const Stats = (() => {
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
-        <line x1="${padL}" y1="${(padT + halfH).toFixed(1)}" x2="${W - padR}" y2="${(padT + halfH).toFixed(1)}" stroke="#d1d5db" stroke-width="1" stroke-dasharray="4,4"/>
         ${levelDividers}
         ${lowerTrendLine}
         ${trendLine}
