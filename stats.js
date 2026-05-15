@@ -1661,7 +1661,7 @@ const Stats = (() => {
 
     // Draws a line+dots wrapped in <g>, skipping null values
     // tips: tooltip strings per run; records: 'record'|'' per run
-    function lineGroup(values, maxV, color, groupId, tips, records, hidden = false) {
+    function lineGroup(values, maxV, color, groupId, tips, records, hidden = false, dotColors = null) {
       const dots = [];
       const segments = [];
       let seg = [];
@@ -1673,7 +1673,8 @@ const Stats = (() => {
           seg.push(`${x},${y}`);
           const tip = tips ? tips[i].replace(/"/g, '&quot;') : '';
           const isRecord = records && records[i] === 'record';
-          dots.push(`<circle cx="${x}" cy="${y}" r="${isRecord ? 6 : 4}" fill="${color}" data-tip="${tip}" data-idx="${i}" style="cursor:pointer"/>`);
+          const dotColor = dotColors ? dotColors[i] : color;
+          dots.push(`<circle cx="${x}" cy="${y}" r="${isRecord ? 6 : 4}" fill="${dotColor}" data-tip="${tip}" data-idx="${i}" style="cursor:pointer"/>`);
           if (isRecord) dots.push(
             `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#fbbf24" style="pointer-events:none">★</text>`
           );
@@ -2077,7 +2078,7 @@ const Stats = (() => {
         ${trendLine}
         ${lineGroup(cpmRolling5, maxCpmForecast, '#a855f7', 'chart-group-rolling5', rolling5Tips, rolling5Records, true)}
         ${lineGroup(emaVals, maxCpmForecast, '#f97316', 'chart-group-ema', emaTips, null, true)}
-        ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords)}
+        ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords, false, cpms.map((v, i) => v < trendVals[i] ? '#93c5fd' : '#3b82f6'))}
         ${lineGroup(errs, maxErrForecast, '#ef4444', 'chart-group-err', tips, errRecords)}
         ${lineGroup(errEmaVals, maxErrForecast, '#f97316', 'chart-group-err-ema', errEmaTips, null, true)}
         ${lineGroup(errs.map((_, i) => i >= 4 && errs.slice(i-4,i+1).every(v=>v!==null) ? errs.slice(i-4,i+1).reduce((s,v)=>s+v,0)/5 : null), maxErrForecast, '#a855f7', 'chart-group-err-rolling5', tips, null, true)}
