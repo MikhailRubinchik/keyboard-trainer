@@ -1303,7 +1303,7 @@ const Stats = (() => {
         if (tr.classList.contains('row--in-progress')) {
           if (inProgress) {
             tr.classList.add('clickable-row');
-            tr.addEventListener('click', () => showRunDetail(inProgress));
+            tr.addEventListener('click', () => showRunDetail(inProgress, allRuns));
             const db2 = tr.querySelector('.btn-run-detail');
             if (db2) db2.addEventListener('click', e => { e.stopPropagation(); showSpeedChart(inProgress); });
             const cb = tr.querySelector('.btn-continue-run');
@@ -1313,7 +1313,7 @@ const Stats = (() => {
         }
         const idx = runIdx++;
         tr.classList.add('clickable-row');
-        tr.addEventListener('click', () => showRunDetail(reversed[idx]));
+        tr.addEventListener('click', () => showRunDetail(reversed[idx], allRuns));
         const db = tr.querySelector('.btn-run-detail');
         if (db) db.addEventListener('click', e => { e.stopPropagation(); showSpeedChart(reversed[idx]); });
         const rb = tr.querySelector('.btn-replay-run');
@@ -1719,7 +1719,7 @@ const Stats = (() => {
     }
   }
 
-  function buildRunCoverageHtml(run) {
+  function buildRunCoverageHtml(run, allRuns) {
     if (!run.text || typeof SENTENCES === 'undefined' || !SENTENCES.length) return '';
     const n = SENTENCES.length;
     const padded = ' ' + run.text + ' ';
@@ -1729,13 +1729,19 @@ const Stats = (() => {
     }
     if (!foundIndices.length) return '';
 
-    // Load cumulative visit counts for current text set
-    const allVisits = JSON.parse(localStorage.getItem('klavagonki_sentence_visits') || '{}');
-    const visits = allVisits[_currentTextSetId] || [];
+    // Count how many runs contain each sentence (same approach as home page coverage)
+    const counts = new Array(n).fill(0);
+    for (const r of (allRuns || [])) {
+      if (!r.text) continue;
+      const rPadded = ' ' + r.text + ' ';
+      for (const i of foundIndices) {
+        if (rPadded.includes(' ' + SENTENCES[i] + ' ') || r.text === SENTENCES[i]) counts[i]++;
+      }
+    }
 
     const hist = new Map();
     for (const i of foundIndices) {
-      const c = visits[i] || 0;
+      const c = counts[i];
       hist.set(c, (hist.get(c) || 0) + 1);
     }
     const entries = [...hist.entries()].sort((a, b) => a[0] - b[0]);
@@ -1749,7 +1755,7 @@ const Stats = (() => {
       + `<table class="stats-table"><thead><tr><th>Встречалось</th><th>Предложений</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
-  function showRunDetail(run) {
+  function showRunDetail(run, allRuns) {
     const finger = (ch) => (typeof getFinger === 'function' ? getFinger(ch) : '');
     const title  = `${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`;
 
@@ -1771,7 +1777,7 @@ const Stats = (() => {
       run.bigramStats    = d.bigramStats;
     }
 
-    const coverageHtml = buildRunCoverageHtml(run);
+    const coverageHtml = buildRunCoverageHtml(run, allRuns);
 
     if (!run.errorsDetail) {
       showErrorModal(title, textBlock + '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>' + coverageHtml);
