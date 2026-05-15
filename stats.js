@@ -2779,8 +2779,28 @@ const Stats = (() => {
     return 1;
   }
 
+  function getHighlightLevel() {
+    const complete = runs.filter(r => !r.incomplete);
+    let level = 2;
+    while (level < 8) {
+      const modeRuns = complete.filter(r => r.mode === level);
+      let consec = 0;
+      let advanced = false;
+      for (const r of modeRuns) {
+        if (r.cpm >= 100) {
+          if (++consec >= 10) { advanced = true; break; }
+        } else {
+          consec = 0;
+        }
+      }
+      if (!advanced) break;
+      level++;
+    }
+    return level;
+  }
+
   let _currentTextSetId = 'neznaika';
   function setTextSetId(id) { _currentTextSetId = id; }
 
-  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount, calcStars, setTextSetId };
+  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount, calcStars, setTextSetId, getHighlightLevel };
 })();

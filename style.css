@@ -689,6 +689,11 @@ tr.row--chart-selected td {
   margin: 4px 0 2px;
   color: var(--text);
 }
+.highlight-level-label {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text-dim);
+}
 
 .level-progress-hint {
   font-size: 0.85rem;

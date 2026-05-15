@@ -1189,7 +1189,12 @@ function updateLevelProgressHint() {
   const playerLevel = getRecommendedLevel(recentAvg);
 
   if (displayEl) {
-    displayEl.textContent = recentAvg > 0 ? `Уровень ${playerLevel}` : '';
+    if (recentAvg > 0) {
+      const hlLevel = Stats.getHighlightLevel();
+      displayEl.innerHTML = `Уровень ${playerLevel}<br><span class="highlight-level-label">Подсветка: режим ${hlLevel}</span>`;
+    } else {
+      displayEl.innerHTML = '';
+    }
   }
 
   if (!hintEl) return;
