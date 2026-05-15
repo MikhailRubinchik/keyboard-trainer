@@ -1181,7 +1181,7 @@ const Stats = (() => {
         <td>${r.chars}</td>
         <td style="white-space:nowrap">${fmtErr(r.errors, r.chars)}${errBadge}</td>
         <td${timeTip}>${formatTime(netSecs)}${lazyBadge}</td>
-        <td style="white-space:nowrap">${r.cpm} зн/мин${cpmBadge} <button class="btn-run-detail" title="Детали заезда"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" style="display:inline;vertical-align:middle"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4.5" y="3" width="3" height="7" fill="currentColor"/><rect x="9" y="0" width="3" height="10" fill="currentColor"/></svg></button></td>
+        <td style="white-space:nowrap">${r.cpm} зн/мин <button class="btn-run-detail" title="Детали заезда"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" style="display:inline;vertical-align:middle"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4.5" y="3" width="3" height="7" fill="currentColor"/><rect x="9" y="0" width="3" height="10" fill="currentColor"/></svg></button>${cpmBadge}</td>
         <td style="white-space:nowrap">${r.stars != null ? '<span style="color:#f59e0b">★</span>'.repeat(r.stars) + '<span style="color:#d1d5db">★</span>'.repeat(3 - r.stars) : ''}</td>
       </tr>`;
     }).join('');
