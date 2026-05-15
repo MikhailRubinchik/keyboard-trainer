@@ -1521,6 +1521,82 @@ const Stats = (() => {
     return '<div class="run-text-wrap">' + parts.join('') + '</div>';
   }
 
+  function buildRunSpeedSvg(run) {
+    if (!run.keystrokeLog?.length) return '';
+    const chars = run.text ? [...run.text] : [];
+    let cursor = 0, wordStart = 0, wordSoFar = '', junkBuffer = '';
+    let timeAcc = 0;
+    const events = []; // {t, cursor}
+
+    for (const [key, deltaMs] of run.keystrokeLog) {
+      if (cursor >= chars.length) break;
+      timeAcc += deltaMs;
+      if (key === '⌫⌫') {
+        if (junkBuffer.length > 0) { const sp = junkBuffer.lastIndexOf(' '); junkBuffer = sp >= 0 ? junkBuffer.slice(0, sp) : ''; }
+        else { cursor -= wordSoFar.length; wordSoFar = ''; }
+      } else if (key === '⌫') {
+        if (junkBuffer.length > 0) junkBuffer = junkBuffer.slice(0, -1);
+        else if (cursor > wordStart) { cursor--; wordSoFar = wordSoFar.slice(0, -1); }
+      } else {
+        if (junkBuffer.length > 0) { junkBuffer += key; }
+        else {
+          const expected = chars[cursor];
+          if (key !== expected) { junkBuffer += key; }
+          else {
+            cursor++;
+            if (expected === ' ') { wordStart = cursor; wordSoFar = ''; } else { wordSoFar += expected; }
+            events.push({ t: timeAcc, cursor });
+          }
+        }
+      }
+    }
+
+    if (events.length < 5) return '';
+    const WIN = 10;
+    const pts = [];
+    for (let i = WIN - 1; i < events.length; i++) {
+      const dt = events[i].t - events[i - WIN + 1].t;
+      if (dt <= 0) continue;
+      const cpm = Math.round(WIN / dt * 60000);
+      pts.push({ t: events[i].t, cpm });
+    }
+    if (pts.length < 2) return '';
+
+    const W = 340, H = 60, padL = 28, padR = 4, padT = 4, padB = 14;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const minT = pts[0].t, maxT = pts[pts.length - 1].t;
+    const maxCpm = Math.max(...pts.map(p => p.cpm));
+    const minCpm = Math.min(...pts.map(p => p.cpm));
+    const rangeC = maxCpm - minCpm || 1;
+
+    const xp = t => padL + (t - minT) / (maxT - minT) * plotW;
+    const yp = c => padT + plotH - (c - minCpm) / rangeC * plotH;
+
+    const polyline = pts.map(p => `${xp(p.t).toFixed(1)},${yp(p.cpm).toFixed(1)}`).join(' ');
+    const avgCpm = Math.round(pts.reduce((s, p) => s + p.cpm, 0) / pts.length);
+    const yAvg = yp(avgCpm).toFixed(1);
+
+    const totalSec = maxT / 1000;
+    const tickCount = Math.min(5, Math.floor(totalSec / 10) + 1);
+    const tickStep  = totalSec / (tickCount - 1 || 1);
+    const xTicks = Array.from({length: tickCount}, (_, i) => {
+      const sec = Math.round(i * tickStep);
+      const tx = padL + i / (tickCount - 1 || 1) * plotW;
+      return `<line x1="${tx.toFixed(1)}" y1="${padT + plotH}" x2="${tx.toFixed(1)}" y2="${padT + plotH + 3}" stroke="#9ca3af" stroke-width="1"/>
+        <text x="${tx.toFixed(1)}" y="${H - 1}" text-anchor="middle" font-size="8" fill="#9ca3af">${sec}с</text>`;
+    }).join('');
+
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;margin:6px 0 2px">
+      <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#e5e7eb" stroke-width="1"/>
+      <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="${padL - 2}" y="${(padT + 4).toFixed(1)}" text-anchor="end" font-size="8" fill="#9ca3af">${maxCpm}</text>
+      <text x="${padL - 2}" y="${(padT + plotH).toFixed(1)}" text-anchor="end" font-size="8" fill="#9ca3af">${minCpm}</text>
+      <line x1="${padL}" y1="${yAvg}" x2="${W - padR}" y2="${yAvg}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
+      ${xTicks}
+      <polyline points="${polyline}" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round" opacity="0.9"/>
+    </svg>`;
+  }
+
   function showRunDetail(run) {
     const finger = (ch) => (typeof getFinger === 'function' ? getFinger(ch) : '');
     const title  = `${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`;
@@ -1543,13 +1619,17 @@ const Stats = (() => {
       run.bigramStats    = d.bigramStats;
     }
 
+    const speedChart = buildRunSpeedSvg(run)
+      ? '<p class="freq-section-title">Скорость по ходу заезда</p>' + buildRunSpeedSvg(run) + '<div class="freq-divider"></div>'
+      : '';
+
     if (!run.errorsDetail) {
-      showErrorModal(title, textBlock + '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>');
+      showErrorModal(title, speedChart + textBlock + '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>');
       return;
     }
 
     if (!run.errorsDetail.length) {
-      showErrorModal(title, textBlock + '<p class="error-detail-empty">Ошибок нет!</p>');
+      showErrorModal(title, speedChart + textBlock + '<p class="error-detail-empty">Ошибок нет!</p>');
       return;
     }
 
@@ -1584,7 +1664,7 @@ const Stats = (() => {
     const iHtml      = renderIntervalHtml(mergeIntervalMaps([run]));
     const bigramHtml = renderBigramHtml(run.bigramStats || {});
 
-    showErrorModal(title, textBlock
+    showErrorModal(title, speedChart + textBlock
       + '<p class="freq-section-title">Ошибки по словам <button id="btn-filter-frequent" class="filter-btn">Частые</button></p>'
       + `<div id="per-word-list">${perWord}</div>`
       + '<div class="freq-divider"></div>'
