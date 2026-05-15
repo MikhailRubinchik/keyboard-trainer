@@ -120,8 +120,8 @@ const Stats = (() => {
   function ruToIso(ru) { const [d, m, y] = ru.split('.'); return `${y}-${m}-${d}`; }
   function isoToRu(iso) { const [y, m, d] = iso.split('-'); return `${d}.${m}.${y}`; }
 
-  function last5Runs(allRuns) {
-    return allRuns.slice(-5);
+  function last10Runs(allRuns) {
+    return allRuns.slice(-10);
   }
 
   function calcEma(runsArr) {
@@ -2603,7 +2603,7 @@ const Stats = (() => {
       renderCharts(minIso, maxIso);
     }
 
-    const last5R  = last5Runs(allRuns);
+    const last5R  = last10Runs(allRuns);
     const allCpm  = allRuns.map(r => r.cpm);
     const last5Cpm = last5R.map(r => r.cpm);
     const emaValue = calcEma(allRuns);
@@ -2627,7 +2627,7 @@ const Stats = (() => {
         </div>
       </div>
       ${last5R.length > 1 ? `
-      <div class="summary-group clickable-card" data-period="last5">
+      <div class="summary-group clickable-card" data-period="last10">
         <div class="summary-group-title">Последние ${last5R.length}</div>
         <div class="summary-row">
           <div class="summary-item">
@@ -2662,7 +2662,7 @@ const Stats = (() => {
         const period = card.dataset.period;
         let subset, label;
         if (period === 'all')     { subset = allRuns;      label = 'За всё время'; }
-        if (period === 'last5')  { subset = last5R;      label = `Последние ${last5R.length}`; }
+        if (period === 'last10')  { subset = last5R;      label = `Последние ${last5R.length}`; }
         if (period === 'lastday') { subset = lastDayRuns;  label = lastDayLabel; }
         showErrorModal(label, buildDetailHtml(subset));
       });
@@ -2697,7 +2697,7 @@ const Stats = (() => {
   }
 
   function getRecentAvgCpm() {
-    const recent = last5Runs(runs.filter(r => !r.incomplete));
+    const recent = last10Runs(runs.filter(r => !r.incomplete));
     if (!recent.length) return 0;
     return Math.round(recent.reduce((s, r) => s + r.cpm, 0) / recent.length);
   }
