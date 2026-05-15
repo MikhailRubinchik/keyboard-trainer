@@ -1850,10 +1850,7 @@ const Stats = (() => {
     const n = allRuns.length;
 
     function xPos(i) { return padL + (n === 1 ? plotW / 2 : i / (n + 9) * plotW); }
-    // CPM scale: top half of chart (v=maxV → padT, v=0 → midpoint)
-    function yScale(v, maxV) { return padT + (1 - (maxV ? v / maxV : 0.5)) * (plotH / 2); }
-    // Full-height scale for duration chart
-    function yScaleFull(v, maxV) { return padT + plotH - (maxV ? v / maxV * plotH : plotH / 2); }
+    function yScale(v, maxV) { return padT + plotH - (maxV ? v / maxV * plotH : plotH / 2); }
 
     const cpms    = allRuns.map(r => r.cpm);
     const cpmMaxes = allRuns.map(r => r.cpmMax ?? null);
@@ -2195,10 +2192,13 @@ const Stats = (() => {
     const trendVals = Array.from({length: n + 10}, (_, i) => trendA + trendB * i);
 
     const maxCpmForecast = Math.max(maxCpm, ...[n, n+3, n+6, n+9].map(i => trendVals[i]));
-    const cpmTicksRun = [0, Math.round(maxCpmForecast / 2), Math.round(maxCpmForecast)];
+    // CPM scale: maps actual data range to top half (minCpm→midpoint, maxCpm→top)
+    const cpmBottom = Math.max(0, Math.floor(Math.min(...cpms) * 0.95));
+    const yScaleCpm = v => padT + (1 - (v - cpmBottom) / (maxCpmForecast - cpmBottom)) * (plotH / 2);
+    const cpmTicksRun = [cpmBottom, Math.round((cpmBottom + maxCpmForecast) / 2), Math.round(maxCpmForecast)];
     const leftAxisRun = cpmTicksRun.map(t =>
-      `<line x1="${padL}" y1="${yScale(t, maxCpmForecast).toFixed(1)}" x2="${W - padR}" y2="${yScale(t, maxCpmForecast).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
-       <text x="${padL - 5}" y="${(yScale(t, maxCpmForecast) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#3b82f6">${t}</text>`
+      `<line x1="${padL}" y1="${yScaleCpm(t).toFixed(1)}" x2="${W - padR}" y2="${yScaleCpm(t).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+       <text x="${padL - 5}" y="${(yScaleCpm(t) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#3b82f6">${t}</text>`
     ).join('');
 
     function smoothLine(vals, maxV, color, groupId, dash, extra = '', hidden = false, yFn = null) {
@@ -2209,25 +2209,25 @@ const Stats = (() => {
     }
     const trendDots = [n, n+3, n+6, n+9].map(i => {
       const v = trendVals[i];
-      const x = xPos(i).toFixed(1), y = yScale(v, maxCpmForecast).toFixed(1);
+      const x = xPos(i).toFixed(1), y = yScaleCpm(v).toFixed(1);
       const tip = `Прогноз #${i + 1}: ${Math.round(v)} зн/мин`.replace(/"/g, '&quot;');
       return `<circle cx="${x}" cy="${y}" r="4" fill="#06b6d4" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
     }).join('');
     const trendNowDot = (() => {
       const v = trendVals[n - 1];
-      const x = xPos(n - 1).toFixed(1), y = yScale(v, maxCpmForecast).toFixed(1);
+      const x = xPos(n - 1).toFixed(1), y = yScaleCpm(v).toFixed(1);
       const tip = `Тренд сейчас: ${Math.round(v)} зн/мин`.replace(/"/g, '&quot;');
       return `<circle cx="${x}" cy="${y}" r="4" fill="#06b6d4" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
     })();
-    const trendLine = smoothLine(trendVals, maxCpmForecast, '#06b6d4', 'chart-group-trend', '6,3', trendDots + trendNowDot);
+    const trendLine = smoothLine(trendVals, maxCpmForecast, '#06b6d4', 'chart-group-trend', '6,3', trendDots + trendNowDot, false, yScaleCpm);
     const lowerTrendVals = trendVals.map(v => v * 0.9);
     const lowerNowDot = (() => {
       const v = lowerTrendVals[n - 1];
-      const x = xPos(n - 1).toFixed(1), y = yScale(v, maxCpmForecast).toFixed(1);
+      const x = xPos(n - 1).toFixed(1), y = yScaleCpm(v).toFixed(1);
       const tip = `Нижний тренд сейчас: ${Math.round(v)} зн/мин`.replace(/"/g, '&quot;');
       return `<circle cx="${x}" cy="${y}" r="4" fill="#06b6d4" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
     })();
-    const lowerTrendLine = smoothLine(lowerTrendVals, maxCpmForecast, '#06b6d4', 'chart-group-lower-trend', '3,4', lowerNowDot, false);
+    const lowerTrendLine = smoothLine(lowerTrendVals, maxCpmForecast, '#06b6d4', 'chart-group-lower-trend', '3,4', lowerNowDot, false, yScaleCpm);
 
     // Скользящее среднее (формула Клавогонок)
     const emaVals = [];
@@ -2280,8 +2280,8 @@ const Stats = (() => {
     const maxDuration = Math.max(...durations.filter(v => v !== null)) || 1;
     const durTicks = [0, Math.round(maxDuration / 2), Math.round(maxDuration)];
     const leftAxisDur = durTicks.map(t =>
-      `<line x1="${padL}" y1="${yScaleFull(t, maxDuration).toFixed(1)}" x2="${W - padR}" y2="${yScaleFull(t, maxDuration).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
-       <text x="${padL - 5}" y="${(yScaleFull(t, maxDuration) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#f97316">${t}</text>`
+      `<line x1="${padL}" y1="${yScale(t, maxDuration).toFixed(1)}" x2="${W - padR}" y2="${yScale(t, maxDuration).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+       <text x="${padL - 5}" y="${(yScale(t, maxDuration) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#f97316">${t}</text>`
     ).join('');
     const durTips = allRuns.map((r, i) =>
       `#${i + 1} · ${r.date} ${r.time ?? ''}\n${r.chars} букв`
@@ -2290,7 +2290,7 @@ const Stats = (() => {
     const maxDurSec = Math.max(...durSec.filter(v => v !== null)) || 1;
     const secTicks = [0, Math.round(maxDurSec / 2), Math.round(maxDurSec)];
     const rightAxisDur = secTicks.map(t =>
-      `<text x="${W - padR + 5}" y="${(yScaleFull(t, maxDurSec) + 4).toFixed(1)}" text-anchor="start" font-size="10" fill="#6366f1">${formatTime(t)}</text>`
+      `<text x="${W - padR + 5}" y="${(yScale(t, maxDurSec) + 4).toFixed(1)}" text-anchor="start" font-size="10" fill="#6366f1">${formatTime(t)}</text>`
     ).join('');
     const secTips = allRuns.map((r, i) =>
       `#${i + 1} · ${r.date} ${r.time ?? ''}\n${formatTime(r.seconds)}`
@@ -2325,9 +2325,9 @@ const Stats = (() => {
         ${levelDividers}
         ${lowerTrendLine}
         ${trendLine}
-        ${lineGroup(cpmRolling10, maxCpmForecast, '#a855f7', 'chart-group-rolling5', rolling10Tips, rolling10Records, true)}
-        ${lineGroup(emaVals, maxCpmForecast, '#f97316', 'chart-group-ema', emaTips, null, true)}
-        ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords, false, cpms.map((v, i) => v < trendVals[i] ? '#93c5fd' : '#3b82f6'))}
+        ${lineGroup(cpmRolling10, maxCpmForecast, '#a855f7', 'chart-group-rolling5', rolling10Tips, rolling10Records, true, null, yScaleCpm)}
+        ${lineGroup(emaVals, maxCpmForecast, '#f97316', 'chart-group-ema', emaTips, null, true, null, yScaleCpm)}
+        ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords, false, cpms.map((v, i) => v < trendVals[i] ? '#93c5fd' : '#3b82f6'), yScaleCpm)}
         ${lineGroup(errs, maxErrForecast, '#ef4444', 'chart-group-err', tips, errRecords, false, null, yScaleErr)}
         ${lineGroup(errEmaVals, maxErrForecast, '#f97316', 'chart-group-err-ema', errEmaTips, null, true, null, yScaleErr)}
         ${lineGroup(errs.map((_, i) => i >= 9 && errs.slice(i-9,i+1).every(v=>v!==null) ? errs.slice(i-9,i+1).reduce((s,v)=>s+v,0)/10 : null), maxErrForecast, '#a855f7', 'chart-group-err-rolling5', tips, null, true, null, yScaleErr)}
@@ -2348,8 +2348,8 @@ const Stats = (() => {
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
-        ${lineGroup(durations, maxDuration, '#f97316', 'chart-group-dur', durTips, null, true, null, v => yScaleFull(v, maxDuration))}
-        ${lineGroup(durSec, maxDurSec, '#6366f1', 'chart-group-dur-sec', secTips, null, true, null, v => yScaleFull(v, maxDurSec))}
+        ${lineGroup(durations, maxDuration, '#f97316', 'chart-group-dur', durTips, null, true)}
+        ${lineGroup(durSec, maxDurSec, '#6366f1', 'chart-group-dur-sec', secTips, null, true)}
         ${rightAxisDur}
         ${xLabels}
       </svg>
