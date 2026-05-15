@@ -1172,6 +1172,7 @@ const Stats = (() => {
         <td>${fmtErr(r.errors, r.chars)}${errBadge}</td>
         <td${timeTip}>${formatTime(netSecs)}${lazyBadge}</td>
         <td>${r.cpm} зн/мин${cpmBadge}</td>
+        <td>${r.stars != null ? '<span style="color:#f59e0b">★</span>'.repeat(r.stars) + '<span style="color:#d1d5db">★</span>'.repeat(3 - r.stars) : ''}</td>
       </tr>`;
     }).join('');
 

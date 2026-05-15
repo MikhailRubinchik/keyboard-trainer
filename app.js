@@ -1085,6 +1085,7 @@ async function finishRun() {
     lazy,
     noFinger: highlightMode !== 'finger',
     keystrokeLog,
+    stars:          lazy ? undefined : Stats.calcStars(cpm),
   });
 
   const todayCount = Stats.getTodayRunCount();
