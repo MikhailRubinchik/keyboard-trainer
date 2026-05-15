@@ -1850,7 +1850,8 @@ const Stats = (() => {
     const n = allRuns.length;
 
     function xPos(i) { return padL + (n === 1 ? plotW / 2 : i / (n + 9) * plotW); }
-    function yScale(v, maxV) { return padT + plotH - (maxV ? v / maxV * plotH : plotH / 2); }
+    const halfH = plotH / 2, halfGap = 5;
+    function yScale(v, maxV) { return maxV ? padT + (1 - v / maxV) * (halfH - halfGap) : padT + halfH - halfGap; }
 
     const cpms    = allRuns.map(r => r.cpm);
     const cpmMaxes = allRuns.map(r => r.cpmMax ?? null);
@@ -1880,12 +1881,8 @@ const Stats = (() => {
       ? Math.max(maxErr, ...[n, n+3, n+6, n+9].map(i => errTrendVals[i]))
       : maxErr;
 
-    // Shift errors below the lowest CPM point
-    const minCpm    = Math.min(...cpms.filter(v => v != null));
-    const minCpmY   = yScale(minCpm, maxCpmScale);
-    const errTop    = minCpmY + 10;
-    const errRange  = padT + plotH - errTop;
-    const yScaleErr = v => errTop + (1 - v / maxErrForecast) * errRange;
+    // Bottom half for errors
+    const yScaleErr = v => padT + halfH + halfGap + (1 - v / maxErrForecast) * (halfH - halfGap);
 
     // Draws a line+dots wrapped in <g>, skipping null values
     // tips: tooltip strings per run; records: 'record'|'' per run
@@ -2322,6 +2319,7 @@ const Stats = (() => {
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
+        <line x1="${padL}" y1="${(padT + halfH).toFixed(1)}" x2="${W - padR}" y2="${(padT + halfH).toFixed(1)}" stroke="#d1d5db" stroke-width="1" stroke-dasharray="4,4"/>
         ${levelDividers}
         ${lowerTrendLine}
         ${trendLine}
