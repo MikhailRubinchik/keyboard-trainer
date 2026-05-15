@@ -1170,7 +1170,7 @@ const Stats = (() => {
         <td title="${r.date}${r.time ? ' · ' + fmtAmPm(r.time) : ''}">${r.date}${noFingerBadge}</td>
         <td>${r.level ?? r.exercise ?? '—'}${lvlBadge}</td>
         <td>${r.chars}</td>
-        <td>${fmtErr(r.errors, r.chars)}${errBadge}</td>
+        <td style="white-space:nowrap">${fmtErr(r.errors, r.chars)}${errBadge}</td>
         <td${timeTip}>${formatTime(netSecs)}${lazyBadge}</td>
         <td style="white-space:nowrap">${r.cpm} зн/мин${cpmBadge}</td>
         <td style="white-space:nowrap">${r.stars != null ? '<span style="color:#f59e0b">★</span>'.repeat(r.stars) + '<span style="color:#d1d5db">★</span>'.repeat(3 - r.stars) : ''}</td>
