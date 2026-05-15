@@ -2582,6 +2582,14 @@ const Stats = (() => {
           shadeRect.setAttribute('opacity', '0');
           svg.prepend(shadeRect);
 
+          const vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          vLine.setAttribute('stroke', '#9ca3af');
+          vLine.setAttribute('stroke-width', '1');
+          vLine.setAttribute('stroke-dasharray', '4,3');
+          vLine.setAttribute('pointer-events', 'none');
+          vLine.setAttribute('opacity', '0');
+          svg.appendChild(vLine);
+
           svg.querySelectorAll('circle').forEach(c => { c.dataset.r = c.getAttribute('r'); });
 
           svg.addEventListener('mouseover', e => {
@@ -2594,6 +2602,7 @@ const Stats = (() => {
             });
             tip.classList.add('visible');
 
+            const cx = parseFloat(el.getAttribute('cx'));
             const cy = parseFloat(el.getAttribute('cy'));
             if (!isNaN(cy)) {
               const totalH = parseFloat(svg.getAttribute('viewBox').split(' ')[3]);
@@ -2605,6 +2614,14 @@ const Stats = (() => {
               shadeRect.setAttribute('width', (plotR - 46).toFixed(1));
               shadeRect.setAttribute('height', Math.max(0, bottom - shadeY).toFixed(1));
               shadeRect.setAttribute('opacity', '1');
+
+              if (!isNaN(cx)) {
+                vLine.setAttribute('x1', cx.toFixed(1));
+                vLine.setAttribute('x2', cx.toFixed(1));
+                vLine.setAttribute('y1', '16');
+                vLine.setAttribute('y2', bottom.toFixed(1));
+                vLine.setAttribute('opacity', '1');
+              }
 
               const hoveredGroup = el.closest('g');
               svg.querySelectorAll('circle').forEach(c => {
@@ -2631,6 +2648,7 @@ const Stats = (() => {
             if (!e.target.closest('[data-tip]')) return;
             tip.classList.remove('visible');
             shadeRect.setAttribute('opacity', '0');
+            vLine.setAttribute('opacity', '0');
             chartsEl.querySelectorAll('circle').forEach(c => c.setAttribute('r', c.dataset.r));
           });
           svg.addEventListener('click', e => {
