@@ -2064,9 +2064,21 @@ const Stats = (() => {
       const tip = `Прогноз #${i + 1}: ${Math.round(v)} зн/мин`.replace(/"/g, '&quot;');
       return `<circle cx="${x}" cy="${y}" r="4" fill="#06b6d4" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
     }).join('');
-    const trendLine = smoothLine(trendVals, maxCpmForecast, '#06b6d4', 'chart-group-trend', '6,3', trendDots);
+    const trendNowDot = (() => {
+      const v = trendVals[n - 1];
+      const x = xPos(n - 1).toFixed(1), y = yScale(v, maxCpmForecast).toFixed(1);
+      const tip = `Тренд сейчас: ${Math.round(v)} зн/мин`.replace(/"/g, '&quot;');
+      return `<circle cx="${x}" cy="${y}" r="4" fill="#06b6d4" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
+    })();
+    const trendLine = smoothLine(trendVals, maxCpmForecast, '#06b6d4', 'chart-group-trend', '6,3', trendDots + trendNowDot);
     const lowerTrendVals = trendVals.map(v => v * 0.9);
-    const lowerTrendLine = smoothLine(lowerTrendVals, maxCpmForecast, '#06b6d4', 'chart-group-lower-trend', '3,4', '', false);
+    const lowerNowDot = (() => {
+      const v = lowerTrendVals[n - 1];
+      const x = xPos(n - 1).toFixed(1), y = yScale(v, maxCpmForecast).toFixed(1);
+      const tip = `Нижний тренд сейчас: ${Math.round(v)} зн/мин`.replace(/"/g, '&quot;');
+      return `<circle cx="${x}" cy="${y}" r="4" fill="#06b6d4" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
+    })();
+    const lowerTrendLine = smoothLine(lowerTrendVals, maxCpmForecast, '#06b6d4', 'chart-group-lower-trend', '3,4', lowerNowDot, false);
 
     // Скользящее среднее (формула Клавогонок)
     const emaVals = [];
