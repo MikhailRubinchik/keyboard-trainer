@@ -1166,7 +1166,7 @@ const Stats = (() => {
         ? ' <button class="btn-replay-run" title="Виртуальный заезд">▶</button>' : '';
       return `
       <tr${r.lazy ? ' class="row--lazy"' : ''} data-run-key="${r.date}~${r.time ?? ''}">
-        <td class="run-num">${i + 1}${replayBtn}</td>
+        <td class="run-num" style="white-space:nowrap">${i + 1}${replayBtn}</td>
         <td title="${r.date}${r.time ? ' · ' + fmtAmPm(r.time) : ''}">${r.date}${noFingerBadge}</td>
         <td>${r.level ?? r.exercise ?? '—'}${lvlBadge}</td>
         <td>${r.chars}</td>
