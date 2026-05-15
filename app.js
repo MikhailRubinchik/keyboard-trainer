@@ -402,12 +402,10 @@ function updateDisplay() {
       } else {
         span.classList.add('char--pending');
       }
-    } else if (highlightMode === 'blind') {
-      span.classList.add('char--pending');
     } else if (i === cursor && (highlightMode === 'full' || highlightMode === 'finger')) {
       span.classList.add(inError ? 'char--current-error' : 'char--current-ok');
     } else if (i < cursor) {
-      if (highlightMode === 'none' && i >= wordStart) {
+      if ((highlightMode === 'none' || highlightMode === 'blind') && i >= wordStart) {
         span.classList.add('char--pending');
       } else {
         span.classList.add('char--correct');
