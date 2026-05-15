@@ -608,6 +608,17 @@ const Stats = (() => {
     const btnExport = document.getElementById('btn-export-stats');
     btnExport.addEventListener('click', exportTxt);
 
+    const chartsEl2 = document.getElementById('stats-charts');
+    const btnWide = document.getElementById('btn-chart-wide');
+    let chartsWide = localStorage.getItem('klavagonki_charts_wide') === '1';
+    if (chartsWide) { chartsEl2.classList.add('charts-wide'); btnWide.classList.add('active'); }
+    btnWide.addEventListener('click', () => {
+      chartsWide = !chartsWide;
+      chartsEl2.classList.toggle('charts-wide', chartsWide);
+      btnWide.classList.toggle('active', chartsWide);
+      localStorage.setItem('klavagonki_charts_wide', chartsWide ? '1' : '0');
+    });
+
     const btnRuns = document.getElementById('btn-view-runs');
     const btnDays = document.getElementById('btn-view-days');
     btnRuns.addEventListener('click', () => {
