@@ -809,7 +809,7 @@ const Stats = (() => {
       lazy:           record.lazy           || false,
       incomplete:     record.incomplete     || false,
       totalChars:     record.totalChars     || null,
-      noFinger:       record.noFinger       || false,
+      mode:           record.mode           ?? null,
       keystrokeLog:   record.keystrokeLog   || [],
       stars:          record.stars          ?? null,
     };
@@ -1169,13 +1169,14 @@ const Stats = (() => {
 
 
       const lvlBadge      = lc != null ? ` <span class="run-badge run-badge--level">→${lc}</span>` : '';
-      const noFingerBadge = r.noFinger ? '' : ' <span class="run-badge run-badge--finger" title="С подсказкой пальца">👆</span>';
+      const runMode = r.mode != null ? r.mode : (r.noFinger ? 2 : 1);
+      const modeBadge = ` <span class="run-badge run-badge--mode" title="Режим ${runMode}">${runMode}</span>`;
       const replayBtn = (r.keystrokeLog?.length && r.text)
         ? ' <button class="btn-replay-run" title="Виртуальный заезд">▶</button>' : '';
       return `
       <tr${r.lazy ? ' class="row--lazy"' : ''} data-run-key="${r.date}~${r.time ?? ''}">
         <td class="run-num" style="white-space:nowrap">${i + 1}${replayBtn}</td>
-        <td title="${r.date}${r.time ? ' · ' + fmtAmPm(r.time) : ''}">${r.date}${noFingerBadge}</td>
+        <td title="${r.date}${r.time ? ' · ' + fmtAmPm(r.time) : ''}">${r.date}${modeBadge}</td>
         <td>${r.level ?? r.exercise ?? '—'}${lvlBadge}</td>
         <td>${r.chars}</td>
         <td style="white-space:nowrap">${fmtErr(r.errors, r.chars)}${errBadge}</td>
