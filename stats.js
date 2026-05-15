@@ -1914,16 +1914,16 @@ const Stats = (() => {
     const lvlChanges = computeLevelChanges(allRuns);
 
     // Rolling 5-run average
-    const cpmRolling5 = cpms.map((_, i) =>
-      i >= 4 ? Math.round((cpms[i] + cpms[i-1] + cpms[i-2] + cpms[i-3] + cpms[i-4]) / 5) : null
+    const cpmRolling10 = cpms.map((_, i) =>
+      i >= 9 ? Math.round(cpms.slice(i-9, i+1).reduce((s,v) => s+v, 0) / 10) : null
     );
-    const rolling5Records = (() => {
+    const rolling10Records = (() => {
       const out = new Array(n).fill('');
       let maxV = -1;
       for (let i = 0; i < n; i++) {
-        if (cpmRolling5[i] === null) continue;
-        if (cpmRolling5[i] > maxV) { out[i] = 'record'; maxV = cpmRolling5[i]; }
-        else if (cpmRolling5[i] === maxV) out[i] = 'repeat';
+        if (cpmRolling10[i] === null) continue;
+        if (cpmRolling10[i] > maxV) { out[i] = 'record'; maxV = cpmRolling10[i]; }
+        else if (cpmRolling10[i] === maxV) out[i] = 'repeat';
       }
       return out;
     })();
@@ -1935,9 +1935,9 @@ const Stats = (() => {
       if (y1 === y2)         return `${d1}.${m1}–${d2}.${m2}.${y2}`;
       return `${a}–${b}`;
     }
-    const rolling5Tips = allRuns.map((_, i) =>
-      cpmRolling5[i] !== null
-        ? `Среднее 5 заездов (${i - 3}–${i + 1}, ${fmtDateRange(allRuns[i - 4].date, allRuns[i].date)}): ${cpmRolling5[i]} зн/мин`
+    const rolling10Tips = allRuns.map((_, i) =>
+      cpmRolling10[i] !== null
+        ? `Среднее 10 заездов (${i - 8}–${i + 1}, ${fmtDateRange(allRuns[i - 9].date, allRuns[i].date)}): ${cpmRolling10[i]} зн/мин`
         : ''
     );
 
@@ -2286,11 +2286,11 @@ const Stats = (() => {
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● скорость, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-trend" checked> <span style="color:#06b6d4">● тренд</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-ema"> <span style="color:#f97316">● скользящее</span></label>
-        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-rolling5"> <span style="color:#a855f7">● ср-5, зн/мин</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-rolling5"> <span style="color:#a855f7">● ср-10, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#ef4444">● ошибки, %</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-trend"> <span style="color:#b91c1c">╌ тренд ошибок</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-ema"> <span style="color:#f97316">● скользящее ошибок</span></label>
-        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-rolling5"> <span style="color:#a855f7">● ср-5 ошибок</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-rolling5"> <span style="color:#a855f7">● ср-10 ошибок</span></label>
       </div>
       <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block" data-plot-r="${W - padR}">
         ${leftAxisRun}
@@ -2300,12 +2300,12 @@ const Stats = (() => {
         ${levelDividers}
         ${lowerTrendLine}
         ${trendLine}
-        ${lineGroup(cpmRolling5, maxCpmForecast, '#a855f7', 'chart-group-rolling5', rolling5Tips, rolling5Records, true)}
+        ${lineGroup(cpmRolling10, maxCpmForecast, '#a855f7', 'chart-group-rolling5', rolling10Tips, rolling10Records, true)}
         ${lineGroup(emaVals, maxCpmForecast, '#f97316', 'chart-group-ema', emaTips, null, true)}
         ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords, false, cpms.map((v, i) => v < trendVals[i] ? '#93c5fd' : '#3b82f6'))}
         ${lineGroup(errs, maxErrForecast, '#ef4444', 'chart-group-err', tips, errRecords)}
         ${lineGroup(errEmaVals, maxErrForecast, '#f97316', 'chart-group-err-ema', errEmaTips, null, true)}
-        ${lineGroup(errs.map((_, i) => i >= 4 && errs.slice(i-4,i+1).every(v=>v!==null) ? errs.slice(i-4,i+1).reduce((s,v)=>s+v,0)/5 : null), maxErrForecast, '#a855f7', 'chart-group-err-rolling5', tips, null, true)}
+        ${lineGroup(errs.map((_, i) => i >= 9 && errs.slice(i-9,i+1).every(v=>v!==null) ? errs.slice(i-9,i+1).reduce((s,v)=>s+v,0)/10 : null), maxErrForecast, '#a855f7', 'chart-group-err-rolling5', tips, null, true)}
         ${errTrendVals ? smoothLine(errTrendVals, maxErrForecast, '#b91c1c', 'chart-group-err-trend', '6,3', errTrendDots, true) : ''}
         ${rightAxis}
         ${xLabels}
