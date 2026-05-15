@@ -2126,6 +2126,7 @@ const Stats = (() => {
         <input type="date" id="chart-from" value="${fromIso}" class="chart-date-input">
         <span style="color:var(--text-dim)">—</span>
         <input type="date" id="chart-to" value="${toIso}" class="chart-date-input">
+        <button id="btn-chart-last50" class="chart-all-btn">последние 50</button>
         <button id="btn-chart-all" class="chart-all-btn">весь период</button>
       </div></div>
       <div class="chart-block">
@@ -2295,6 +2296,7 @@ const Stats = (() => {
         <input type="date" id="chart-from" value="${fromIso}" class="chart-date-input">
         <span style="color:var(--text-dim)">—</span>
         <input type="date" id="chart-to" value="${toIso}" class="chart-date-input">
+        <button id="btn-chart-last50" class="chart-all-btn">последние 50</button>
         <button id="btn-chart-all" class="chart-all-btn">весь период</button>
       </div>
       <div class="chart-legend">
@@ -2441,6 +2443,8 @@ const Stats = (() => {
         const toInput   = document.getElementById('chart-to');
         if (fromInput) fromInput.addEventListener('change', () => renderCharts(fromInput.value, toInput?.value || maxIso));
         if (toInput)   toInput.addEventListener('change',   () => renderCharts(fromInput?.value || minIso, toInput.value));
+        const btnLast50 = document.getElementById('btn-chart-last50');
+        if (btnLast50) btnLast50.addEventListener('click', () => { chartFromIso = ''; chartToIso = ''; renderCharts(defaultFromIso, maxIso); });
         const btnAll = document.getElementById('btn-chart-all');
         if (btnAll) btnAll.addEventListener('click', () => { chartFromIso = ''; chartToIso = ''; renderCharts(minIso, maxIso); });
 
