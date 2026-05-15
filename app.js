@@ -481,12 +481,12 @@ function updateWordDisplay() {
 
   for (const ch of junkBuffer) {
     const span = document.createElement('span');
-    if (highlightMode !== 'word-error-blind' && highlightMode !== 'none') span.className = 'wchar--wrong';
+    if (highlightMode !== 'word-error-blind' && highlightMode !== 'none' && highlightMode !== 'blind') span.className = 'wchar--wrong';
     span.textContent = ch === ' ' ? '\u00A0' : ch;
     wordDisplay.appendChild(span);
   }
 
-  wordDisplay.classList.toggle('has-error', junkBuffer.length > 0);
+  wordDisplay.classList.toggle('has-error', junkBuffer.length > 0 && highlightMode !== 'blind');
 }
 
 wordInput.addEventListener('focus', () => wordDisplay.classList.add('focused'));
