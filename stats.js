@@ -1575,24 +1575,35 @@ const Stats = (() => {
     const yAvg = yp(avgCpm).toFixed(1);
 
     const totalSec = maxT / 1000;
-    const tickCount = Math.min(5, Math.floor(totalSec / 10) + 1);
-    const tickStep  = totalSec / (tickCount - 1 || 1);
     const fmtMin = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
-    const xTicks = Array.from({length: tickCount}, (_, i) => {
-      const sec = i * tickStep;
-      const tx = padL + i / (tickCount - 1 || 1) * plotW;
-      return `<line x1="${tx.toFixed(1)}" y1="${padT + plotH}" x2="${tx.toFixed(1)}" y2="${padT + plotH + 3}" stroke="#9ca3af" stroke-width="1"/>
-        <text x="${tx.toFixed(1)}" y="${H - 1}" text-anchor="middle" font-size="8" fill="#9ca3af">${fmtMin(sec)}</text>`;
+
+    // X grid: every 30s (or fewer if short run)
+    const xStepSec = totalSec <= 120 ? 15 : totalSec <= 300 ? 30 : 60;
+    const xTickCount = Math.floor(totalSec / xStepSec) + 1;
+    const xTicks = Array.from({length: xTickCount}, (_, i) => {
+      const sec = i * xStepSec;
+      if (sec > totalSec + 1) return '';
+      const tx = (padL + sec / totalSec * plotW).toFixed(1);
+      return `<line x1="${tx}" y1="${padT}" x2="${tx}" y2="${padT + plotH}" stroke="#e5e7eb" stroke-width="1"/>
+        <line x1="${tx}" y1="${padT + plotH}" x2="${tx}" y2="${padT + plotH + 3}" stroke="#9ca3af" stroke-width="1"/>
+        <text x="${tx}" y="${H - 1}" text-anchor="middle" font-size="8" fill="#9ca3af">${fmtMin(sec)}</text>`;
+    }).join('');
+
+    // Y grid: 4 steps
+    const ySteps = 4;
+    const yTicks = Array.from({length: ySteps + 1}, (_, i) => {
+      const val = Math.round(maxCpm * i / ySteps);
+      const ty = yp(val).toFixed(1);
+      return `<line x1="${padL}" y1="${ty}" x2="${W - padR}" y2="${ty}" stroke="#e5e7eb" stroke-width="1"/>
+        <text x="${padL - 2}" y="${(parseFloat(ty) + 3).toFixed(1)}" text-anchor="end" font-size="8" fill="#9ca3af">${val}</text>`;
     }).join('');
 
     return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
-      <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#e5e7eb" stroke-width="1"/>
-      <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#e5e7eb" stroke-width="1"/>
-      <text x="${padL - 2}" y="${(padT + 4).toFixed(1)}" text-anchor="end" font-size="8" fill="#9ca3af">${maxCpm}</text>
-      <text x="${padL - 2}" y="${(padT + plotH).toFixed(1)}" text-anchor="end" font-size="8" fill="#9ca3af">0</text>
+      ${yTicks}
+      ${xTicks}
+      <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
       <line x1="${padL}" y1="${yAvg}" x2="${W - padR}" y2="${yAvg}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
       <text x="${(W - padR - 2).toFixed(1)}" y="${(parseFloat(yAvg) - 2).toFixed(1)}" text-anchor="end" font-size="8" fill="#94a3b8">ср. ${avgCpm}</text>
-      ${xTicks}
       <polyline points="${polyline}" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round" opacity="0.9"/>
     </svg>`;
   }
