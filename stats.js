@@ -803,6 +803,7 @@ const Stats = (() => {
       totalChars:     record.totalChars     || null,
       noFinger:       record.noFinger       || false,
       keystrokeLog:   record.keystrokeLog   || [],
+      stars:          record.stars          ?? null,
     };
 
     // Replace matching incomplete entry (last checkpoint or continued run matched by date+time)
