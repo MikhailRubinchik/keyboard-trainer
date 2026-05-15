@@ -690,8 +690,8 @@ tr.row--chart-selected td {
   color: var(--text);
 }
 .highlight-level-label {
-  font-size: 1rem;
-  font-weight: 400;
+  font-size: 2rem;
+  font-weight: 700;
   color: var(--text-dim);
 }
 

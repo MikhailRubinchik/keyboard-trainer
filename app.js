@@ -1191,7 +1191,7 @@ function updateLevelProgressHint() {
   if (displayEl) {
     if (recentAvg > 0) {
       const hlLevel = Stats.getHighlightLevel();
-      displayEl.innerHTML = `Уровень ${playerLevel}<br><span class="highlight-level-label">Подсветка: режим ${hlLevel}</span>`;
+      displayEl.innerHTML = `Уровень ${playerLevel}<br><span class="highlight-level-label">Подсветка: уровень ${hlLevel}</span>`;
     } else {
       displayEl.innerHTML = '';
     }
