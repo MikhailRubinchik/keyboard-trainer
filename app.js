@@ -48,19 +48,39 @@ const LS_SHOW_FINGER      = 'klavagonki_show_finger';
 const LS_HIGHLIGHT_MODE   = 'klavagonki_highlight_mode';
 const LS_TEXT_SET         = 'klavagonki_text_set';
 const LS_CAR_COLOR        = 'klavagonki_car_color';
+const LS_SENTENCE_VISITS  = 'klavagonki_sentence_visits';
 const HIGHLIGHT_MODE_NUM  = { finger: 1, full: 2, prefix: 3, 'word-error': 4, 'word-error-blind': 5, none: 6, blind: 7, 'full-blind': 8 };
 
 let showFinger      = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
 let highlightMode   = localStorage.getItem(LS_HIGHLIGHT_MODE) || 'full'; // 'full' | 'prefix' | 'none'
 
+let currentTextSetId = 'neznaika';
+let sentenceVisits   = [];
+
+function _loadSentenceVisits(id) {
+  try { return JSON.parse(localStorage.getItem(LS_SENTENCE_VISITS) || '{}')[id] || []; }
+  catch { return []; }
+}
+function _saveSentenceVisits(id, visits) {
+  try {
+    const all = JSON.parse(localStorage.getItem(LS_SENTENCE_VISITS) || '{}');
+    all[id] = visits;
+    localStorage.setItem(LS_SENTENCE_VISITS, JSON.stringify(all));
+  } catch {}
+}
+
 // Initialise active text set from localStorage
 (function () {
   const saved = localStorage.getItem(LS_TEXT_SET) || 'neznaika';
+  currentTextSetId = saved;
+  sentenceVisits   = _loadSentenceVisits(saved);
   setTextSet(saved);
   const sel = document.getElementById('text-set-select');
   if (sel) {
     sel.value = saved;
     sel.addEventListener('change', () => {
+      currentTextSetId = sel.value;
+      sentenceVisits   = _loadSentenceVisits(sel.value);
       setTextSet(sel.value);
       localStorage.setItem(LS_TEXT_SET, sel.value);
     });
@@ -240,8 +260,10 @@ function restoreFingerSetting() {
 function startExercise(level) {
   noFinger = highlightMode !== 'finger';
   applyFingerSetting();
-  const result = getRandomExercise(LEVEL_SIZES[level - 1], lastStartIndex);
+  const result = getRandomExercise(LEVEL_SIZES[level - 1], lastStartIndex, sentenceVisits);
   lastStartIndex = result.startIndex;
+  for (const idx of result.usedIndices) sentenceVisits[idx] = (sentenceVisits[idx] || 0) + 1;
+  _saveSentenceVisits(currentTextSetId, sentenceVisits);
 
   chars      = [...result.text.replace(/[«»]/g, '"')];
   charStates = new Array(chars.length).fill('pending');

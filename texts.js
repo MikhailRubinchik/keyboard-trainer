@@ -493,7 +493,7 @@ function setTextSet(id) {
  * excludeStart — previous start index to exclude for variety.
  * Returns { text: string, startIndex: number }
  */
-function getRandomExercise(targetChars, excludeStart = -1) {
+function getRandomExercise(targetChars, excludeStart = -1, sentenceVisits = null) {
   // Expand pool by repeating if the active set is too short
   let pool = SENTENCES;
   while (pool.reduce((s, t) => s + t.length + 1, 0) < targetChars + 1) {
@@ -503,18 +503,52 @@ function getRandomExercise(targetChars, excludeStart = -1) {
   const valid = _findValidStarts(pool, targetChars, excludeStart);
   const starts = valid.length > 0 ? valid : _findValidStarts(pool, targetChars, -1);
 
-  const startIndex = starts[Math.floor(Math.random() * starts.length)];
+  const startIndex = sentenceVisits
+    ? _pickStartByVisits(pool, starts, targetChars, sentenceVisits)
+    : starts[Math.floor(Math.random() * starts.length)];
 
   const parts = [];
+  const usedIndices = [];
   let accumulated = 0;
   for (let i = startIndex; i < pool.length; i++) {
     if (parts.length > 0) accumulated += 1;
     accumulated += pool[i].length;
     parts.push(pool[i]);
+    usedIndices.push(i % SENTENCES.length);
     if (accumulated >= targetChars) break;
   }
 
-  return { text: parts.join(' '), startIndex };
+  return { text: parts.join(' '), startIndex, usedIndices };
+}
+
+function _pickStartByVisits(pool, starts, target, visits) {
+  for (let threshold = 0; threshold <= 1000; threshold++) {
+    let maxCount = 0;
+    for (const s of starts) {
+      const count = _getExerciseSentenceIndices(pool, s, target)
+        .filter(i => (visits[i % SENTENCES.length] || 0) === threshold).length;
+      if (count > maxCount) maxCount = count;
+    }
+    if (maxCount === 0) continue;
+    const candidates = starts.filter(s =>
+      _getExerciseSentenceIndices(pool, s, target)
+        .filter(i => (visits[i % SENTENCES.length] || 0) === threshold).length === maxCount
+    );
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+  return starts[Math.floor(Math.random() * starts.length)];
+}
+
+function _getExerciseSentenceIndices(pool, startIndex, target) {
+  const indices = [];
+  let accumulated = 0;
+  for (let i = startIndex; i < pool.length; i++) {
+    if (indices.length > 0) accumulated += 1;
+    accumulated += pool[i].length;
+    indices.push(i);
+    if (accumulated >= target) break;
+  }
+  return indices;
 }
 
 function _findValidStarts(pool, target, exclude) {
