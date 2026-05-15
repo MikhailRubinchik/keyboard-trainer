@@ -844,31 +844,33 @@ tr.row--chart-selected td {
   inset: 0;
   background: rgba(0,0,0,0.6);
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   justify-content: center;
   z-index: 210;
-}
-
-.speed-chart-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  width: 92vw;
-  max-width: 680px;
-  padding: 16px;
-  box-sizing: border-box;
 }
 
 .speed-chart-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .speed-chart-title {
   font-size: 0.85rem;
   color: var(--text-dim);
+}
+
+.speed-chart-body {
+  width: 100%;
+  background: var(--bg-card);
+  padding: 8px 16px 12px;
+  box-sizing: border-box;
 }
 
 .error-detail-overlay {
