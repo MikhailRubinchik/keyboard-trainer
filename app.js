@@ -402,6 +402,8 @@ function updateDisplay() {
       } else {
         span.classList.add('char--pending');
       }
+    } else if (highlightMode === 'full-blind') {
+      span.classList.add('char--pending');
     } else if (i === cursor && (highlightMode === 'full' || highlightMode === 'finger')) {
       span.classList.add(inError ? 'char--current-error' : 'char--current-ok');
     } else if (i < cursor) {
@@ -479,12 +481,12 @@ function updateWordDisplay() {
 
   for (const ch of junkBuffer) {
     const span = document.createElement('span');
-    if (highlightMode !== 'word-error-blind' && highlightMode !== 'none' && highlightMode !== 'blind') span.className = 'wchar--wrong';
+    if (highlightMode !== 'word-error-blind' && highlightMode !== 'none' && highlightMode !== 'blind' && highlightMode !== 'full-blind') span.className = 'wchar--wrong';
     span.textContent = ch === ' ' ? '\u00A0' : ch;
     wordDisplay.appendChild(span);
   }
 
-  wordDisplay.classList.toggle('has-error', junkBuffer.length > 0 && highlightMode !== 'blind');
+  wordDisplay.classList.toggle('has-error', junkBuffer.length > 0 && highlightMode !== 'blind' && highlightMode !== 'full-blind');
 }
 
 wordInput.addEventListener('focus', () => wordDisplay.classList.add('focused'));
