@@ -1172,8 +1172,8 @@ const Stats = (() => {
         <td>${r.chars}</td>
         <td>${fmtErr(r.errors, r.chars)}${errBadge}</td>
         <td${timeTip}>${formatTime(netSecs)}${lazyBadge}</td>
-        <td>${r.cpm} зн/мин${cpmBadge}</td>
-        <td>${r.stars != null ? '<span style="color:#f59e0b">★</span>'.repeat(r.stars) + '<span style="color:#d1d5db">★</span>'.repeat(3 - r.stars) : ''}</td>
+        <td style="white-space:nowrap">${r.cpm} зн/мин${cpmBadge}</td>
+        <td style="white-space:nowrap">${r.stars != null ? '<span style="color:#f59e0b">★</span>'.repeat(r.stars) + '<span style="color:#d1d5db">★</span>'.repeat(3 - r.stars) : ''}</td>
       </tr>`;
     }).join('');
 
@@ -1207,6 +1207,7 @@ const Stats = (() => {
             <th>Ошибок</th>
             <th>Длительность</th>
             <th>Скорость</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>${inProgressRow}${rows}</tbody>
