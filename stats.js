@@ -1580,11 +1580,12 @@ const Stats = (() => {
     const totalSec = maxT / 1000;
     const tickCount = Math.min(5, Math.floor(totalSec / 10) + 1);
     const tickStep  = totalSec / (tickCount - 1 || 1);
+    const fmtMin = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
     const xTicks = Array.from({length: tickCount}, (_, i) => {
-      const sec = Math.round(i * tickStep);
+      const sec = i * tickStep;
       const tx = padL + i / (tickCount - 1 || 1) * plotW;
       return `<line x1="${tx.toFixed(1)}" y1="${padT + plotH}" x2="${tx.toFixed(1)}" y2="${padT + plotH + 3}" stroke="#9ca3af" stroke-width="1"/>
-        <text x="${tx.toFixed(1)}" y="${H - 1}" text-anchor="middle" font-size="8" fill="#9ca3af">${sec}с</text>`;
+        <text x="${tx.toFixed(1)}" y="${H - 1}" text-anchor="middle" font-size="8" fill="#9ca3af">${fmtMin(sec)}</text>`;
     }).join('');
 
     return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
