@@ -1674,11 +1674,9 @@ const Stats = (() => {
     const rows = entries.map(([times, cnt]) =>
       `<tr><td>${times === 0 ? 'Ни разу' : times + (cnt === 1 ? ' раз' : ' раза')}</td><td>${cnt}</td><td>${(cnt / n * 100).toFixed(1)}%</td></tr>`
     ).join('');
-    const listHtml = found.map(s => `<li class="run-sentence-item">${s}</li>`).join('');
     return '<div class="freq-divider"></div>'
       + `<p class="freq-section-title">Предложений в заезде: ${found.length} из ${n} (${(found.length / n * 100).toFixed(1)}%)</p>`
-      + `<table class="stats-table"><thead><tr><th>Встречалось</th><th>Предложений</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`
-      + (found.length ? `<ul class="run-sentences-list">${listHtml}</ul>` : '');
+      + `<table class="stats-table"><thead><tr><th>Встречалось</th><th>Предложений</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   function showRunDetail(run) {
