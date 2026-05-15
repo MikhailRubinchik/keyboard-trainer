@@ -1843,14 +1843,17 @@ const Stats = (() => {
   function buildCharts(allRuns, fromIso, toIso) {
     if (allRuns.length < 2) return '';
 
-    const W = 760, H = 320;
+    const W = 760, H = 400;
     const padL = 46, padR = 46, padT = 16, padB = 26;
     const plotW = W - padL - padR;
     const plotH = H - padT - padB;
     const n = allRuns.length;
 
     function xPos(i) { return padL + (n === 1 ? plotW / 2 : i / (n + 9) * plotW); }
-    function yScale(v, maxV) { return padT + plotH - (maxV ? v / maxV * plotH : plotH / 2); }
+    // CPM scale: top half of chart (v=maxV → padT, v=0 → midpoint)
+    function yScale(v, maxV) { return padT + (1 - (maxV ? v / maxV : 0.5)) * (plotH / 2); }
+    // Full-height scale for duration chart
+    function yScaleFull(v, maxV) { return padT + plotH - (maxV ? v / maxV * plotH : plotH / 2); }
 
     const cpms    = allRuns.map(r => r.cpm);
     const cpmMaxes = allRuns.map(r => r.cpmMax ?? null);
@@ -1880,9 +1883,8 @@ const Stats = (() => {
       ? Math.max(maxErr, ...[n, n+3, n+6, n+9].map(i => errTrendVals[i]))
       : maxErr;
 
-    // Errors span full height, peak just slightly below CPM peak
-    const errTopShift = 10;
-    const yScaleErr = v => padT + errTopShift + (1 - v / maxErrForecast) * (plotH - errTopShift);
+    // Error scale: bottom half of chart (v=maxErrForecast → midpoint, v=0 → near bottom)
+    const yScaleErr = v => padT + plotH / 2 + (1 - v / maxErrForecast) * (plotH / 2 - 4);
 
     // Draws a line+dots wrapped in <g>, skipping null values
     // tips: tooltip strings per run; records: 'record'|'' per run
@@ -2278,8 +2280,8 @@ const Stats = (() => {
     const maxDuration = Math.max(...durations.filter(v => v !== null)) || 1;
     const durTicks = [0, Math.round(maxDuration / 2), Math.round(maxDuration)];
     const leftAxisDur = durTicks.map(t =>
-      `<line x1="${padL}" y1="${yScale(t, maxDuration).toFixed(1)}" x2="${W - padR}" y2="${yScale(t, maxDuration).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
-       <text x="${padL - 5}" y="${(yScale(t, maxDuration) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#f97316">${t}</text>`
+      `<line x1="${padL}" y1="${yScaleFull(t, maxDuration).toFixed(1)}" x2="${W - padR}" y2="${yScaleFull(t, maxDuration).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+       <text x="${padL - 5}" y="${(yScaleFull(t, maxDuration) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#f97316">${t}</text>`
     ).join('');
     const durTips = allRuns.map((r, i) =>
       `#${i + 1} · ${r.date} ${r.time ?? ''}\n${r.chars} букв`
@@ -2288,7 +2290,7 @@ const Stats = (() => {
     const maxDurSec = Math.max(...durSec.filter(v => v !== null)) || 1;
     const secTicks = [0, Math.round(maxDurSec / 2), Math.round(maxDurSec)];
     const rightAxisDur = secTicks.map(t =>
-      `<text x="${W - padR + 5}" y="${(yScale(t, maxDurSec) + 4).toFixed(1)}" text-anchor="start" font-size="10" fill="#6366f1">${formatTime(t)}</text>`
+      `<text x="${W - padR + 5}" y="${(yScaleFull(t, maxDurSec) + 4).toFixed(1)}" text-anchor="start" font-size="10" fill="#6366f1">${formatTime(t)}</text>`
     ).join('');
     const secTips = allRuns.map((r, i) =>
       `#${i + 1} · ${r.date} ${r.time ?? ''}\n${formatTime(r.seconds)}`
@@ -2319,6 +2321,7 @@ const Stats = (() => {
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
+        <line x1="${padL}" y1="${(padT + plotH / 2).toFixed(1)}" x2="${W - padR}" y2="${(padT + plotH / 2).toFixed(1)}" stroke="#d1d5db" stroke-width="1" stroke-dasharray="4,3"/>
         ${levelDividers}
         ${lowerTrendLine}
         ${trendLine}
@@ -2345,8 +2348,8 @@ const Stats = (() => {
         <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${W - padR}" y1="${padT}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
         <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
-        ${lineGroup(durations, maxDuration, '#f97316', 'chart-group-dur', durTips, null, true)}
-        ${lineGroup(durSec, maxDurSec, '#6366f1', 'chart-group-dur-sec', secTips, null, true)}
+        ${lineGroup(durations, maxDuration, '#f97316', 'chart-group-dur', durTips, null, true, null, v => yScaleFull(v, maxDuration))}
+        ${lineGroup(durSec, maxDurSec, '#6366f1', 'chart-group-dur-sec', secTips, null, true, null, v => yScaleFull(v, maxDurSec))}
         ${rightAxisDur}
         ${xLabels}
       </svg>
