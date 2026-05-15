@@ -1181,7 +1181,7 @@ const Stats = (() => {
         <td>${r.chars}</td>
         <td style="white-space:nowrap">${fmtErr(r.errors, r.chars)}${errBadge}</td>
         <td${timeTip}>${formatTime(netSecs)}${lazyBadge}</td>
-        <td style="white-space:nowrap">${r.cpm} зн/мин${cpmBadge}</td>
+        <td style="white-space:nowrap">${r.cpm} зн/мин${cpmBadge} <button class="btn-run-detail" title="Детали заезда"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" style="display:inline;vertical-align:middle"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4.5" y="3" width="3" height="7" fill="currentColor"/><rect x="9" y="0" width="3" height="10" fill="currentColor"/></svg></button></td>
         <td style="white-space:nowrap">${r.stars != null ? '<span style="color:#f59e0b">★</span>'.repeat(r.stars) + '<span style="color:#d1d5db">★</span>'.repeat(3 - r.stars) : ''}</td>
       </tr>`;
     }).join('');
@@ -1201,7 +1201,7 @@ const Stats = (() => {
         <td>${totalChars ?? inProgress.chars} (${pct})</td>
         <td>${fmtErr(inProgress.errors, inProgress.chars)}</td>
         <td>${formatTime(inProgress.seconds)}</td>
-        <td>${inProgress.cpm} зн/мин</td>
+        <td>${inProgress.cpm} зн/мин <button class="btn-run-detail" title="Детали заезда"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" style="display:inline;vertical-align:middle"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4.5" y="3" width="3" height="7" fill="currentColor"/><rect x="9" y="0" width="3" height="10" fill="currentColor"/></svg></button></td>
       </tr>`;
     })() : '';
 
@@ -1282,16 +1282,16 @@ const Stats = (() => {
       tableWrap.querySelectorAll('tbody tr').forEach(tr => {
         if (tr.classList.contains('row--in-progress')) {
           if (inProgress) {
-            tr.classList.add('clickable-row');
-            tr.addEventListener('click', () => showRunDetail(inProgress));
+            const db2 = tr.querySelector('.btn-run-detail');
+            if (db2) db2.addEventListener('click', e => { e.stopPropagation(); showRunDetail(inProgress); });
             const cb = tr.querySelector('.btn-continue-run');
             if (cb) cb.addEventListener('click', e => { e.stopPropagation(); window.startContinueRun?.(inProgress); });
           }
           return;
         }
         const idx = runIdx++;
-        tr.classList.add('clickable-row');
-        tr.addEventListener('click', () => showRunDetail(reversed[idx]));
+        const db = tr.querySelector('.btn-run-detail');
+        if (db) db.addEventListener('click', e => { e.stopPropagation(); showRunDetail(reversed[idx]); });
         const rb = tr.querySelector('.btn-replay-run');
         if (rb) rb.addEventListener('click', e => { e.stopPropagation(); showReplay(reversed[idx]); });
       });
