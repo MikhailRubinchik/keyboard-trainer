@@ -50,6 +50,7 @@ const LS_TEXT_SET         = 'klavagonki_text_set';
 const LS_CAR_COLOR        = 'klavagonki_car_color';
 const LS_SENTENCE_VISITS  = 'klavagonki_sentence_visits';
 const HIGHLIGHT_MODE_NUM  = { finger: 1, full: 2, prefix: 3, 'word-error': 4, 'word-error-blind': 5, none: 6, blind: 7, 'full-blind': 8 };
+const TEXT_SET_NUM        = { neznaika: 1, winnie: 2, punct: 3, wizard: 4, godzilla: 5 };
 
 let showFinger      = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
 let highlightMode   = localStorage.getItem(LS_HIGHLIGHT_MODE) || 'full'; // 'full' | 'prefix' | 'none'
@@ -939,6 +940,7 @@ function handleChar(key) {
       text:           chars.join(''),
       errorPositions: cpErrorPositions,
       mode:           HIGHLIGHT_MODE_NUM[highlightMode] ?? 1,
+      textSet:        TEXT_SET_NUM[currentTextSetId] ?? 1,
       keystrokeLog:   keystrokeLog.slice(),
       incomplete:     true,
     });
@@ -1109,6 +1111,7 @@ async function finishRun() {
     idleSeconds,
     lazy,
     mode:     HIGHLIGHT_MODE_NUM[highlightMode] ?? 1,
+    textSet:  TEXT_SET_NUM[currentTextSetId] ?? 1,
     keystrokeLog,
     stars:          lazy ? undefined : Stats.calcStars(cpm),
   });
