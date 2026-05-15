@@ -1586,7 +1586,7 @@ const Stats = (() => {
         <text x="${tx.toFixed(1)}" y="${H - 1}" text-anchor="middle" font-size="8" fill="#9ca3af">${sec}с</text>`;
     }).join('');
 
-    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;margin:6px -40px 2px;width:calc(100% + 80px)">`;
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;margin:6px -40px 2px;width:calc(100% + 80px)">
       <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#e5e7eb" stroke-width="1"/>
       <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#e5e7eb" stroke-width="1"/>
       <text x="${padL - 2}" y="${(padT + 4).toFixed(1)}" text-anchor="end" font-size="8" fill="#9ca3af">${maxCpm}</text>
