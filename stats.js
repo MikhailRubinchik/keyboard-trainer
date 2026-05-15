@@ -1880,9 +1880,16 @@ const Stats = (() => {
       ? Math.max(maxErr, ...[n, n+3, n+6, n+9].map(i => errTrendVals[i]))
       : maxErr;
 
+    // Shift errors below the lowest CPM point
+    const minCpm    = Math.min(...cpms.filter(v => v != null));
+    const minCpmY   = yScale(minCpm, maxCpmScale);
+    const errTop    = minCpmY + 10;
+    const errRange  = padT + plotH - errTop;
+    const yScaleErr = v => errTop + (1 - v / maxErrForecast) * errRange;
+
     // Draws a line+dots wrapped in <g>, skipping null values
     // tips: tooltip strings per run; records: 'record'|'' per run
-    function lineGroup(values, maxV, color, groupId, tips, records, hidden = false, dotColors = null) {
+    function lineGroup(values, maxV, color, groupId, tips, records, hidden = false, dotColors = null, yFn = null) {
       const dots = [];
       const segments = [];
       let seg = [];
@@ -1890,7 +1897,7 @@ const Stats = (() => {
         if (values[i] === null) {
           if (seg.length) { segments.push(seg); seg = []; }
         } else {
-          const x = xPos(i).toFixed(1), y = yScale(values[i], maxV).toFixed(1);
+          const x = xPos(i).toFixed(1), y = (yFn ? yFn(values[i]) : yScale(values[i], maxV)).toFixed(1);
           seg.push(`${x},${y}`);
           const tip = tips ? tips[i].replace(/"/g, '&quot;') : '';
           const isRecord = records && records[i] === 'record';
@@ -1971,7 +1978,7 @@ const Stats = (() => {
     // Right Y axis (error %) ticks
     const errTicks = [0, parseFloat((maxErrForecast / 2).toFixed(1)), parseFloat(maxErrForecast.toFixed(1))];
     const rightAxis = errTicks.map(t =>
-      `<text x="${W - padR + 5}" y="${(yScale(t, maxErrForecast) + 4).toFixed(1)}" text-anchor="start" font-size="10" fill="#ef4444">${t.toFixed(1)}%</text>`
+      `<text x="${W - padR + 5}" y="${(yScaleErr(t) + 4).toFixed(1)}" text-anchor="start" font-size="10" fill="#ef4444">${t.toFixed(1)}%</text>`
     ).join('');
 
     // X axis labels
@@ -2195,8 +2202,8 @@ const Stats = (() => {
        <text x="${padL - 5}" y="${(yScale(t, maxCpmForecast) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#3b82f6">${t}</text>`
     ).join('');
 
-    function smoothLine(vals, maxV, color, groupId, dash, extra = '', hidden = false) {
-      const pts = vals.map((v, i) => `${xPos(i).toFixed(1)},${yScale(v, maxV).toFixed(1)}`);
+    function smoothLine(vals, maxV, color, groupId, dash, extra = '', hidden = false, yFn = null) {
+      const pts = vals.map((v, i) => `${xPos(i).toFixed(1)},${(yFn ? yFn(v) : yScale(v, maxV)).toFixed(1)}`);
       const da = dash ? ` stroke-dasharray="${dash}"` : '';
       const disp = hidden ? ' style="display:none"' : '';
       return `<g id="${groupId}"${disp}><polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" opacity="0.8"${da}/>${extra}</g>`;
@@ -2244,7 +2251,7 @@ const Stats = (() => {
     // Error trend forecast dots (errTrendVals/maxErrForecast computed earlier)
     const errTrendDots = errTrendVals ? [n, n+3, n+6, n+9].map(i => {
       const v = errTrendVals[i];
-      const x = xPos(i).toFixed(1), y = yScale(v, maxErrForecast).toFixed(1);
+      const x = xPos(i).toFixed(1), y = yScaleErr(v).toFixed(1);
       const tip = `Прогноз #${i + 1}: ${v.toFixed(1)}%`.replace(/"/g, '&quot;');
       return `<circle cx="${x}" cy="${y}" r="4" fill="#b91c1c" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
     }).join('') : '';
@@ -2321,10 +2328,10 @@ const Stats = (() => {
         ${lineGroup(cpmRolling10, maxCpmForecast, '#a855f7', 'chart-group-rolling5', rolling10Tips, rolling10Records, true)}
         ${lineGroup(emaVals, maxCpmForecast, '#f97316', 'chart-group-ema', emaTips, null, true)}
         ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords, false, cpms.map((v, i) => v < trendVals[i] ? '#93c5fd' : '#3b82f6'))}
-        ${lineGroup(errs, maxErrForecast, '#ef4444', 'chart-group-err', tips, errRecords)}
-        ${lineGroup(errEmaVals, maxErrForecast, '#f97316', 'chart-group-err-ema', errEmaTips, null, true)}
-        ${lineGroup(errs.map((_, i) => i >= 9 && errs.slice(i-9,i+1).every(v=>v!==null) ? errs.slice(i-9,i+1).reduce((s,v)=>s+v,0)/10 : null), maxErrForecast, '#a855f7', 'chart-group-err-rolling5', tips, null, true)}
-        ${errTrendVals ? smoothLine(errTrendVals, maxErrForecast, '#b91c1c', 'chart-group-err-trend', '6,3', errTrendDots, true) : ''}
+        ${lineGroup(errs, maxErrForecast, '#ef4444', 'chart-group-err', tips, errRecords, false, null, yScaleErr)}
+        ${lineGroup(errEmaVals, maxErrForecast, '#f97316', 'chart-group-err-ema', errEmaTips, null, true, null, yScaleErr)}
+        ${lineGroup(errs.map((_, i) => i >= 9 && errs.slice(i-9,i+1).every(v=>v!==null) ? errs.slice(i-9,i+1).reduce((s,v)=>s+v,0)/10 : null), maxErrForecast, '#a855f7', 'chart-group-err-rolling5', tips, null, true, null, yScaleErr)}
+        ${errTrendVals ? smoothLine(errTrendVals, maxErrForecast, '#b91c1c', 'chart-group-err-trend', '6,3', errTrendDots, true, yScaleErr) : ''}
         ${rightAxis}
         ${xLabels}
       </svg>
