@@ -770,18 +770,15 @@ tr.row--chart-selected td {
 
 /* Stats table */
 #stats-table-wrap {
-  width: 100vw;
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0 16px;
-  box-sizing: border-box;
+  overflow: visible;
 }
 
 .stats-table {
   width: 100%;
+  min-width: max-content;
   border-collapse: collapse;
   font-size: 0.875rem;
+  margin: 0 auto;
 }
 
 .stats-table th {
