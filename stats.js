@@ -1510,19 +1510,9 @@ const Stats = (() => {
   function showErrorModal(title, html, speedChartHtml = '', openChart = false) {
     document.getElementById('error-detail-title').textContent = title;
     document.getElementById('error-detail-body').innerHTML = html;
-    const chartEl   = document.getElementById('error-detail-speed-chart');
-    const toggleBtn = document.getElementById('btn-toggle-speed-chart');
+    const chartEl = document.getElementById('error-detail-speed-chart');
     chartEl.innerHTML = speedChartHtml;
-    const chartVisible = openChart && !!speedChartHtml;
-    chartEl.classList.toggle('hidden', !chartVisible);
-    if (toggleBtn) {
-      toggleBtn.textContent = chartVisible ? 'Скрыть график' : 'График скорости';
-      toggleBtn.style.display = speedChartHtml ? '' : 'none';
-      toggleBtn.onclick = () => {
-        const hidden = chartEl.classList.toggle('hidden');
-        toggleBtn.textContent = hidden ? 'График скорости' : 'Скрыть график';
-      };
-    }
+    chartEl.classList.toggle('hidden', !(openChart && speedChartHtml));
     document.getElementById('error-detail-overlay').classList.remove('hidden');
 
     const svg = chartEl.querySelector('svg');
