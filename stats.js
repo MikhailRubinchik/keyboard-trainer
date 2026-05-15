@@ -1579,9 +1579,9 @@ const Stats = (() => {
     const chars = run.text ? [...run.text] : [];
     let cursor = 0, wordStart = 0, wordSoFar = '', junkBuffer = '';
     let timeAcc = 0;
-    // bucket correct chars into 10s windows
     const BUCKET_MS = 10000;
     const buckets = {}; // bucketIndex -> charCount
+    const correctTimes = []; // timestamps of each correct char
     for (const [key, deltaMs] of run.keystrokeLog) {
       if (cursor >= chars.length) break;
       timeAcc += deltaMs;
@@ -1601,19 +1601,23 @@ const Stats = (() => {
             if (expected === ' ') { wordStart = cursor; wordSoFar = ''; } else { wordSoFar += expected; }
             const b = Math.floor(timeAcc / BUCKET_MS);
             buckets[b] = (buckets[b] || 0) + 1;
+            correctTimes.push(timeAcc);
           }
         }
       }
     }
 
     const maxBucket = Math.max(...Object.keys(buckets).map(Number));
+    // Regular buckets (drop the partial last one)
     const pts = Object.entries(buckets)
-      .map(([b, count]) => {
-        const bi = Number(b);
-        const durMs = bi === maxBucket ? timeAcc - bi * BUCKET_MS : BUCKET_MS;
-        return { t: bi * BUCKET_MS + durMs / 2, cpm: Math.round(count / durMs * 60000) };
-      })
+      .filter(([b]) => Number(b) !== maxBucket)
+      .map(([b, count]) => ({ t: (Number(b) + 0.5) * BUCKET_MS, cpm: count * 6 }))
       .sort((a, b) => a.t - b.t);
+    // Last point: last 10 seconds regardless of bucket boundary
+    const last10Count = correctTimes.filter(t => t >= timeAcc - BUCKET_MS).length;
+    if (last10Count > 0) {
+      pts.push({ t: timeAcc - BUCKET_MS / 2, cpm: last10Count * 6 });
+    }
 
     if (pts.length < 2) return '';
 
