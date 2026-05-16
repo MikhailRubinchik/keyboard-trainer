@@ -2246,21 +2246,27 @@ const Stats = (() => {
     const lowerTrendLine = smoothLine(lowerTrendVals, maxCpmForecast, '#06b6d4', 'chart-group-lower-trend', '3,4', lowerNowDot, false, yScaleCpm);
 
     // Скользящее среднее (формула Клавогонок)
-    const emaVals = [];
+    // EMA computed over full history so filtered views continue where they left off
+    const _emaSource = fullRuns ?? allRuns;
+    const _emaFull = [];
     let _ema = 0;
-    for (let i = 0; i < cpms.length; i++) {
-      const n = i + 1;
-      const w = n < 50 ? 1 / n : 1 / 50;
-      _ema = _ema + w * (cpms[i] - _ema);
-      emaVals.push(_ema);
+    for (let i = 0; i < _emaSource.length; i++) {
+      const ni = i + 1;
+      const w = ni < 50 ? 1 / ni : 1 / 50;
+      _ema = _ema + w * (_emaSource[i].cpm - _ema);
+      _emaFull.push(_ema);
     }
+    const emaVals = allRuns.map(run => {
+      const gi = globalIdxOf?.get(run) ?? allRuns.indexOf(run);
+      return _emaFull[gi];
+    });
     const emaTips = emaVals.map((v, i) => {
       const result = v.toFixed(1);
-      if (i === 0) return `#1 · Скользящее: ${result} зн/мин\nНачальное значение`;
-      const prev = emaVals[i - 1].toFixed(1);
-      const n = i + 1;
-      const denom = n < 50 ? n : 50;
-      return `#${i + 1} · Скользящее: ${result} зн/мин\n${prev} + 1/${denom} × (${cpms[i]} − ${prev}) = ${result}`;
+      const gi = globalIdxOf?.get(allRuns[i]) ?? i;
+      if (gi === 0) return `#${gi + 1} · Скользящее: ${result} зн/мин\nНачальное значение`;
+      const prev = _emaFull[gi - 1].toFixed(1);
+      const denom = gi < 49 ? gi + 1 : 50;
+      return `#${gi + 1} · Скользящее: ${result} зн/мин\n${prev} + 1/${denom} × (${allRuns[i].cpm} − ${prev}) = ${result}`;
     });
 
     // Error trend forecast dots (errTrendVals/maxErrForecast computed earlier)
@@ -2271,25 +2277,28 @@ const Stats = (() => {
       return `<circle cx="${x}" cy="${y}" r="4" fill="#b91c1c" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
     }).join('') : '';
 
-    // Error EMA (α=0.1)
-    const errEmaVals = (() => {
-      const out = [];
-      let prev = null;
-      for (const v of errs) {
-        if (v === null) { out.push(null); continue; }
-        prev = prev === null ? v : prev * 0.9 + v * 0.1;
-        out.push(prev);
-      }
-      return out;
-    })();
+    // Error EMA (α=0.1) over full history
+    const _errEmaFull = [];
+    let _errEmaPrev = null;
+    for (const r of _emaSource) {
+      const v = r.errors != null && r.chars ? r.errors / r.chars * 100 : null;
+      if (v === null) { _errEmaFull.push(null); continue; }
+      _errEmaPrev = _errEmaPrev === null ? v : _errEmaPrev * 0.9 + v * 0.1;
+      _errEmaFull.push(_errEmaPrev);
+    }
+    const errEmaVals = allRuns.map(run => {
+      const gi = globalIdxOf?.get(run) ?? allRuns.indexOf(run);
+      return _errEmaFull[gi];
+    });
     const errEmaTips = errEmaVals.map((v, i) => {
       if (v === null) return '';
+      const gi   = globalIdxOf?.get(allRuns[i]) ?? i;
       const result = v.toFixed(2);
-      const prev = i > 0 && errEmaVals[i - 1] !== null ? errEmaVals[i - 1].toFixed(2) : null;
+      const prev = gi > 0 && _errEmaFull[gi - 1] !== null ? _errEmaFull[gi - 1].toFixed(2) : null;
       const cur  = errs[i]?.toFixed(2);
       return prev
-        ? `#${i + 1} · Угасающее ошибок: ${result}%\n${prev} × 0.9 + ${cur} × 0.1 = ${result}`
-        : `#1 · Угасающее ошибок: ${result}%\nНачальное значение`;
+        ? `#${gi + 1} · Угасающее ошибок: ${result}%\n${prev} × 0.9 + ${cur} × 0.1 = ${result}`
+        : `#${gi + 1} · Угасающее ошибок: ${result}%\nНачальное значение`;
     });
 
     const durations = allRuns.map(r => r.chars ?? null);
