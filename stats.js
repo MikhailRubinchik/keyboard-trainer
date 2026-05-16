@@ -1943,15 +1943,15 @@ const Stats = (() => {
     const cpmMinRecords = hasDayLines ? computeRecords(allRuns.map(r => ({ cpm: r.cpmMin ?? 0 }))) : null;
     const errRecords = computeErrorRecords(allRuns);
 
-    // Rolling 5-run average
-    const cpmRolling10 = cpms.map((_, i) =>
-      i >= 9 ? Math.round(cpms.slice(i-9, i+1).reduce((s,v) => s+v, 0) / 10) : null
-    );
+    // Rolling up-to-10-run average (uses available window from run 1)
+    const cpmRolling10 = cpms.map((_, i) => {
+      const w = Math.min(i + 1, 10);
+      return Math.round(cpms.slice(i - w + 1, i + 1).reduce((s, v) => s + v, 0) / w);
+    });
     const rolling10Records = (() => {
       const out = new Array(n).fill('');
       let maxV = -1;
       for (let i = 0; i < n; i++) {
-        if (cpmRolling10[i] === null) continue;
         if (cpmRolling10[i] > maxV) { out[i] = 'record'; maxV = cpmRolling10[i]; }
         else if (cpmRolling10[i] === maxV) out[i] = 'repeat';
       }
@@ -1965,11 +1965,11 @@ const Stats = (() => {
       if (y1 === y2)         return `${d1}.${m1}–${d2}.${m2}.${y2}`;
       return `${a}–${b}`;
     }
-    const rolling10Tips = allRuns.map((_, i) =>
-      cpmRolling10[i] !== null
-        ? `Среднее 10 заездов (${i - 8}–${i + 1}, ${fmtDateRange(allRuns[i - 9].date, allRuns[i].date)}): ${cpmRolling10[i]} зн/мин`
-        : ''
-    );
+    const rolling10Tips = allRuns.map((_, i) => {
+      const w = Math.min(i + 1, 10);
+      const startIdx = i - w + 1;
+      return `Среднее ${w} заездов (${startIdx + 1}–${i + 1}, ${fmtDateRange(allRuns[startIdx].date, allRuns[i].date)}): ${cpmRolling10[i]} зн/мин`;
+    });
 
     // Vertical dividers for level transitions
 
@@ -2332,7 +2332,7 @@ const Stats = (() => {
         ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords, false, cpms.map((v, i) => v < trendVals[i] ? '#93c5fd' : '#3b82f6'), yScaleCpm)}
         ${lineGroup(errs, maxErrForecast, '#ef4444', 'chart-group-err', tips, errRecords, false, null, yScaleErr)}
         ${lineGroup(errEmaVals, maxErrForecast, '#f97316', 'chart-group-err-ema', errEmaTips, null, true, null, yScaleErr)}
-        ${lineGroup(errs.map((_, i) => i >= 9 && errs.slice(i-9,i+1).every(v=>v!==null) ? errs.slice(i-9,i+1).reduce((s,v)=>s+v,0)/10 : null), maxErrForecast, '#a855f7', 'chart-group-err-rolling5', tips, null, true, null, yScaleErr)}
+        ${lineGroup(errs.map((_, i) => { const sl = errs.slice(Math.max(0,i-9),i+1).filter(v=>v!==null); return sl.length ? sl.reduce((s,v)=>s+v,0)/sl.length : null; }), maxErrForecast, '#a855f7', 'chart-group-err-rolling5', tips, null, true, null, yScaleErr)}
         ${errTrendVals ? smoothLine(errTrendVals, maxErrForecast, '#b91c1c', 'chart-group-err-trend', '6,3', errTrendDots, true, yScaleErr) : ''}
         ${rightAxis}
         ${xLabels}
