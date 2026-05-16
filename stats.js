@@ -1856,7 +1856,7 @@ const Stats = (() => {
     }
   }
 
-  function buildCharts(allRuns, fromIso, toIso) {
+  function buildCharts(allRuns, fromIso, toIso, fullRuns) {
     if (allRuns.length < 2) return '';
 
     const W = 760, H = 400;
@@ -1943,10 +1943,21 @@ const Stats = (() => {
     const cpmMinRecords = hasDayLines ? computeRecords(allRuns.map(r => ({ cpm: r.cpmMin ?? 0 }))) : null;
     const errRecords = computeErrorRecords(allRuns);
 
-    // Rolling up-to-10-run average (uses available window from run 1)
-    const cpmRolling10 = cpms.map((_, i) => {
-      const w = Math.min(i + 1, 10);
-      return Math.round(cpms.slice(i - w + 1, i + 1).reduce((s, v) => s + v, 0) / w);
+    // Rolling up-to-10-run average using full history for context
+    const globalIdxOf = fullRuns ? new Map(fullRuns.map((r, i) => [r, i])) : null;
+    const cpmRolling10 = allRuns.map((run, i) => {
+      const gi = globalIdxOf?.get(run) ?? i;
+      const w  = Math.min(gi + 1, 10);
+      const src = fullRuns ?? allRuns;
+      return Math.round(src.slice(gi - w + 1, gi + 1).map(r => r.cpm).reduce((s, v) => s + v, 0) / w);
+    });
+    const errRolling10 = allRuns.map((run, i) => {
+      const gi  = globalIdxOf?.get(run) ?? i;
+      const src = fullRuns ?? allRuns;
+      const sl  = src.slice(Math.max(0, gi - 9), gi + 1)
+        .map(r => r.errors != null && r.chars ? r.errors / r.chars * 100 : null)
+        .filter(v => v !== null);
+      return sl.length ? sl.reduce((s, v) => s + v, 0) / sl.length : null;
     });
     const rolling10Records = (() => {
       const out = new Array(n).fill('');
@@ -1965,10 +1976,12 @@ const Stats = (() => {
       if (y1 === y2)         return `${d1}.${m1}–${d2}.${m2}.${y2}`;
       return `${a}–${b}`;
     }
-    const rolling10Tips = allRuns.map((_, i) => {
-      const w = Math.min(i + 1, 10);
-      const startIdx = i - w + 1;
-      return `Среднее ${w} заездов (${startIdx + 1}–${i + 1}, ${fmtDateRange(allRuns[startIdx].date, allRuns[i].date)}): ${cpmRolling10[i]} зн/мин`;
+    const rolling10Tips = allRuns.map((run, i) => {
+      const gi  = globalIdxOf?.get(run) ?? i;
+      const w   = Math.min(gi + 1, 10);
+      const src = fullRuns ?? allRuns;
+      const startRun = src[gi - w + 1];
+      return `Среднее ${w} заездов (${gi - w + 2}–${gi + 1}, ${fmtDateRange(startRun.date, run.date)}): ${cpmRolling10[i]} зн/мин`;
     });
 
     // Vertical dividers for level transitions
@@ -2332,7 +2345,7 @@ const Stats = (() => {
         ${lineGroup(cpms, maxCpmForecast, '#3b82f6', 'chart-group-cpm', tips, cpmRecords, false, cpms.map((v, i) => v < trendVals[i] ? '#93c5fd' : '#3b82f6'), yScaleCpm)}
         ${lineGroup(errs, maxErrForecast, '#ef4444', 'chart-group-err', tips, errRecords, false, null, yScaleErr)}
         ${lineGroup(errEmaVals, maxErrForecast, '#f97316', 'chart-group-err-ema', errEmaTips, null, true, null, yScaleErr)}
-        ${lineGroup(errs.map((_, i) => { const sl = errs.slice(Math.max(0,i-9),i+1).filter(v=>v!==null); return sl.length ? sl.reduce((s,v)=>s+v,0)/sl.length : null; }), maxErrForecast, '#a855f7', 'chart-group-err-rolling5', tips, null, true, null, yScaleErr)}
+        ${lineGroup(errRolling10, maxErrForecast, '#a855f7', 'chart-group-err-rolling5', tips, null, true, null, yScaleErr)}
         ${errTrendVals ? smoothLine(errTrendVals, maxErrForecast, '#b91c1c', 'chart-group-err-trend', '6,3', errTrendDots, true, yScaleErr) : ''}
         ${rightAxis}
         ${xLabels}
@@ -2446,7 +2459,7 @@ const Stats = (() => {
             }));
         }
 
-        chartsEl.innerHTML = buildCharts(chartRuns, fromIso, toIso);
+        chartsEl.innerHTML = buildCharts(chartRuns, fromIso, toIso, tableMode !== 'days' ? complete : null);
 
         const fromInput = document.getElementById('chart-from');
         const toInput   = document.getElementById('chart-to');
