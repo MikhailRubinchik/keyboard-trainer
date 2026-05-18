@@ -1324,7 +1324,7 @@ const Stats = (() => {
       const key = mon.toISOString().slice(0, 10);
       const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
       const fmt = d => d.toLocaleDateString('ru-RU');
-      const weekLabel = `${fmt(mon)}–${fmt(sun)}`;
+      const weekLabel = fmt(mon);
       const weekRuns = map[key] || [];
 
       rows.push({
