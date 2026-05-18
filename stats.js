@@ -1300,7 +1300,10 @@ const Stats = (() => {
 
   function isoWeekKey(date) {
     const mon = getMonday(date);
-    return mon.toISOString().slice(0, 10);
+    const y = mon.getFullYear();
+    const m = String(mon.getMonth() + 1).padStart(2, '0');
+    const d = String(mon.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   function groupByWeek(allRuns) {
@@ -1314,14 +1317,15 @@ const Stats = (() => {
       map[key].push(r);
     }
 
-    const parsedDates = Object.keys(map).map(k => new Date(k));
+    const parsedDates = Object.keys(map).map(k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); });
     const earliest = new Date(Math.min(...parsedDates));
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const mondayToday = getMonday(today);
 
     const rows = [];
     for (let mon = new Date(earliest); mon <= mondayToday; mon.setDate(mon.getDate() + 7)) {
-      const key = mon.toISOString().slice(0, 10);
+      const ky = mon.getFullYear(), km = String(mon.getMonth() + 1).padStart(2, '0'), kd = String(mon.getDate()).padStart(2, '0');
+      const key = `${ky}-${km}-${kd}`;
       const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
       const fmt = d => d.toLocaleDateString('ru-RU');
       const weekLabel = fmt(mon);
@@ -2621,7 +2625,7 @@ const Stats = (() => {
           chartRuns = aggregateRuns(src,
             r => { const [d, m, y] = r.date.split('.').map(Number); return isoWeekKey(new Date(y, m - 1, d)); },
             (a, b) => (a < b ? -1 : a > b ? 1 : 0),
-            key => new Date(key).toLocaleDateString('ru-RU')  // Monday date in ru format — parseable by parseRuDate
+            key => { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('ru-RU'); }
           );
         }
 
@@ -2836,18 +2840,20 @@ const Stats = (() => {
         });
       }
 
+      function localIso(d) {
+        const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${dd}`;
+      }
       function getDefaultFromIso() {
         if (tableMode === 'days') {
-          // last 50 calendar days
-          const d = new Date(complete[complete.length - 1].date.split('.').reverse().join('-'));
+          const d = parseRuDate(complete[complete.length - 1].date);
           d.setDate(d.getDate() - 49);
-          return d.toISOString().slice(0, 10);
+          return localIso(d);
         }
         if (tableMode === 'weeks') {
-          // last 50 weeks
-          const lastMon = getMonday(new Date(complete[complete.length - 1].date.split('.').reverse().join('-')));
+          const lastMon = getMonday(parseRuDate(complete[complete.length - 1].date));
           lastMon.setDate(lastMon.getDate() - 49 * 7);
-          return lastMon.toISOString().slice(0, 10);
+          return localIso(lastMon);
         }
         // runs mode: last 50 runs
         return ruToIso(complete[Math.max(0, complete.length - 50)].date);
