@@ -2209,16 +2209,25 @@ const Stats = (() => {
       const forecastVals = forecastDaysMsList.map(ms => trendADt + trendBDt * (ms - minDateMs) / 86400000);
       const maxCpmForecastD = Math.max(maxCpmScale, ...forecastVals);
 
-      const dateFormatter = ms => {
-        if (isWeeksMode) return `нед. ${msToWeekNum(ms)}`;
+      const ruDateFormatter = ms => {
         const d = new Date(ms);
         return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+      };
+      // Short label for X-axis tick marks
+      const dateFormatter = ms => isWeeksMode ? `н${msToWeekNum(ms)}` : ruDateFormatter(ms);
+      // Full label for forecast dot tooltips
+      const forecastLabel = ms => {
+        if (isWeeksMode) {
+          const mon = getMonday(new Date(ms));
+          return `нед. ${msToWeekNum(ms)} (${ruDateFormatter(mon)})`;
+        }
+        return ruDateFormatter(ms);
       };
 
       const trendDotsDt = forecastDaysMsList.map((ms, k) => {
         const v = forecastVals[k];
         const x = xPosByMs(ms).toFixed(1), y = yScaleD(v, maxCpmForecastD).toFixed(1);
-        const tip = `Прогноз ${dateFormatter(ms)}: ${Math.round(v)} зн/мин`.replace(/"/g, '&quot;');
+        const tip = `Прогноз ${forecastLabel(ms)}: ${Math.round(v)} зн/мин`.replace(/"/g, '&quot;');
         return `<circle cx="${x}" cy="${y}" r="4" fill="#06b6d4" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
       }).join('');
 
