@@ -7,7 +7,7 @@ const Stats = (() => {
   const LS_KEY = 'klavagonki_stats';
 
   let runs = [];   // all loaded run records
-  let tableMode = 'runs';  // 'runs' | 'days'
+  let tableMode = 'runs';  // 'runs' | 'days' | 'weeks'
   let lastInProgress = null; // last incomplete run, updated by renderStats
   let chartFromIso    = '';
   let chartToIso      = '';
@@ -621,22 +621,21 @@ const Stats = (() => {
       localStorage.setItem('klavagonki_charts_wide', chartsWide ? '1' : '0');
     });
 
-    const btnRuns = document.getElementById('btn-view-runs');
-    const btnDays = document.getElementById('btn-view-days');
-    btnRuns.addEventListener('click', () => {
-      tableMode = 'runs';
-      btnRuns.classList.add('active');
-      btnDays.classList.remove('active');
+    const btnRuns  = document.getElementById('btn-view-runs');
+    const btnDays  = document.getElementById('btn-view-days');
+    const btnWeeks = document.getElementById('btn-view-weeks');
+    function setViewMode(mode) {
+      tableMode = mode;
+      btnRuns .classList.toggle('active', mode === 'runs');
+      btnDays .classList.toggle('active', mode === 'days');
+      if (btnWeeks) btnWeeks.classList.toggle('active', mode === 'weeks');
+      chartFromIso = ''; chartToIso = '';
       renderTable(runs.filter(r => !r.incomplete), lastInProgress);
       renderChartsNow();
-    });
-    btnDays.addEventListener('click', () => {
-      tableMode = 'days';
-      btnDays.classList.add('active');
-      btnRuns.classList.remove('active');
-      renderTable(runs.filter(r => !r.incomplete), lastInProgress);
-      renderChartsNow();
-    });
+    }
+    btnRuns.addEventListener('click',  () => setViewMode('runs'));
+    btnDays.addEventListener('click',  () => setViewMode('days'));
+    if (btnWeeks) btnWeeks.addEventListener('click', () => setViewMode('weeks'));
 
     const overlay = document.getElementById('error-detail-overlay');
     document.getElementById('btn-close-detail').addEventListener('click', () => {
@@ -1290,12 +1289,119 @@ const Stats = (() => {
     `;
   }
 
+  function getMonday(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    const day = d.getDay(); // 0=Sun
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    return d;
+  }
+
+  function isoWeekKey(date) {
+    const mon = getMonday(date);
+    return mon.toISOString().slice(0, 10);
+  }
+
+  function groupByWeek(allRuns) {
+    if (!allRuns.length) return [];
+
+    const map = {};
+    for (const r of allRuns) {
+      const [d, m, y] = r.date.split('.').map(Number);
+      const key = isoWeekKey(new Date(y, m - 1, d));
+      if (!map[key]) map[key] = [];
+      map[key].push(r);
+    }
+
+    const parsedDates = Object.keys(map).map(k => new Date(k));
+    const earliest = new Date(Math.min(...parsedDates));
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const mondayToday = getMonday(today);
+
+    const rows = [];
+    for (let mon = new Date(earliest); mon <= mondayToday; mon.setDate(mon.getDate() + 7)) {
+      const key = mon.toISOString().slice(0, 10);
+      const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+      const fmt = d => d.toLocaleDateString('ru-RU');
+      const weekLabel = `${fmt(mon)}–${fmt(sun)}`;
+      const weekRuns = map[key] || [];
+
+      rows.push({
+        weekKey:  key,
+        label:    weekLabel,
+        count:    weekRuns.length,
+        avgLevel: (() => { const lvls = weekRuns.map(r => r.level).filter(v => typeof v === 'number'); return lvls.length ? avg1(lvls) : '—'; })(),
+        chars:    weekRuns.reduce((s, r) => s + r.chars, 0),
+        worstErrRun: (() => { const e = weekRuns.filter(r => r.errors != null); return e.length ? e.reduce((w, r) => errPct(r) > errPct(w) ? r : w, e[0]) : null; })(),
+        avgErrPct:   (() => { const e = weekRuns.filter(r => r.errors != null); return e.length ? parseFloat(avg(e.map(r => errPct(r)))) : null; })(),
+        seconds:  weekRuns.reduce((s, r) => s + r.seconds, 0),
+        avgCpm:   weekRuns.length ? avg(weekRuns.map(r => r.cpm)) : null,
+        maxCpm:   weekRuns.length ? Math.max(...weekRuns.map(r => r.cpm)) : null,
+      });
+    }
+
+    let maxWeekAvg = -1, maxWeekMax = -1, minWeekAvgErr = Infinity, minWeekMaxErr = Infinity;
+    rows.forEach(row => {
+      if (row.avgCpm !== null) {
+        const wPct = errPct(row.worstErrRun);
+        row.avgLabel    = row.avgCpm  > maxWeekAvg    ? 'record' : row.avgCpm  === maxWeekAvg    ? 'repeat' : '';
+        row.maxLabel    = row.maxCpm  > maxWeekMax    ? 'record' : row.maxCpm  === maxWeekMax    ? 'repeat' : '';
+        row.avgErrLabel = row.avgErrPct < minWeekAvgErr ? 'record' : row.avgErrPct === minWeekAvgErr ? 'repeat' : '';
+        row.maxErrLabel = wPct         < minWeekMaxErr ? 'record' : wPct         === minWeekMaxErr ? 'repeat' : '';
+        if (row.avgCpm    > maxWeekAvg)    maxWeekAvg    = row.avgCpm;
+        if (row.maxCpm    > maxWeekMax)    maxWeekMax    = row.maxCpm;
+        if (row.avgErrPct < minWeekAvgErr) minWeekAvgErr = row.avgErrPct;
+        if (wPct          < minWeekMaxErr) minWeekMaxErr = wPct;
+      } else {
+        row.avgLabel = row.maxLabel = row.avgErrLabel = row.maxErrLabel = '';
+      }
+    });
+
+    return rows.reverse();
+  }
+
+  function renderTableWeeks(allRuns) {
+    const rows = groupByWeek(allRuns).map(w => `
+      <tr data-week-key="${w.weekKey}">
+        <td>${w.label}</td>
+        <td>${w.avgLevel}</td>
+        <td>${w.count || '—'}</td>
+        <td>${w.count ? w.chars : '—'}</td>
+        <td>${w.worstErrRun ? fmtErr(w.worstErrRun.errors, w.worstErrRun.chars) : '—'}${dayBadge(w.maxErrLabel, '-sm')}</td>
+        <td>${w.avgErrPct !== null ? w.avgErrPct.toFixed(1) + '%' : '—'}${dayBadge(w.avgErrLabel, '-sm')}</td>
+        <td>${w.count ? formatTime(w.seconds) : '—'}</td>
+        <td>${w.maxCpm !== null ? w.maxCpm + ' зн/мин' : '—'}${dayBadge(w.maxLabel)}</td>
+        <td>${w.avgCpm !== null ? w.avgCpm + ' зн/мин' : '—'}${dayBadge(w.avgLabel)}</td>
+      </tr>
+    `).join('');
+
+    return `
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Неделя</th>
+            <th>Уровень</th>
+            <th>Текстов</th>
+            <th>Символов</th>
+            <th>Ош. макс</th>
+            <th>Ош. ср.</th>
+            <th>Длительность</th>
+            <th>Макс.</th>
+            <th>Средняя</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
   function renderTable(allRuns, inProgress) {
     const tableWrap = document.getElementById('stats-table-wrap');
     if (!tableWrap) return;
-    tableWrap.innerHTML = tableMode === 'days'
-      ? renderTableDays(allRuns)
-      : renderTableRuns(allRuns, inProgress);
+    tableWrap.innerHTML = tableMode === 'days'  ? renderTableDays(allRuns)
+                        : tableMode === 'weeks' ? renderTableWeeks(allRuns)
+                        : renderTableRuns(allRuns, inProgress);
 
     if (tableMode === 'runs') {
       const reversed = [...allRuns].reverse();
@@ -1331,6 +1437,25 @@ const Stats = (() => {
           const date = dayRows[i].date;
           const dayRuns = allRuns.filter(r => r.date === date);
           showErrorModal(date, buildDetailHtml(dayRuns));
+        });
+      });
+    }
+
+    if (tableMode === 'weeks') {
+      const weekRows = groupByWeek(allRuns);
+      tableWrap.querySelectorAll('tbody tr').forEach((tr, i) => {
+        if (!weekRows[i] || weekRows[i].count === 0) return;
+        tr.classList.add('clickable-row');
+        tr.addEventListener('click', () => {
+          const key = weekRows[i].weekKey;
+          const mon = new Date(key);
+          const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+          const weekRuns = allRuns.filter(r => {
+            const [d, m, y] = r.date.split('.').map(Number);
+            const rd = new Date(y, m - 1, d);
+            return rd >= mon && rd <= sun;
+          });
+          showErrorModal(weekRows[i].label, buildDetailHtml(weekRuns));
         });
       });
     }
@@ -2433,50 +2558,59 @@ const Stats = (() => {
         });
         const src = displayed.length >= 2 ? displayed : complete;
 
-        // Aggregate by day when in days mode
-        let chartRuns = src;
-        if (tableMode === 'days') {
-          const dayMap = {};
-          for (const r of src) {
-            if (!dayMap[r.date]) dayMap[r.date] = [];
-            dayMap[r.date].push(r);
+        // Aggregate by day or week
+        function aggregateRuns(runsArr, groupKeyFn, sortKeyFn, labelFn) {
+          const map = {};
+          for (const r of runsArr) {
+            const key = groupKeyFn(r);
+            if (!map[key]) map[key] = [];
+            map[key].push(r);
           }
-          chartRuns = Object.entries(dayMap)
-            .sort(([a], [b]) => parseRuDate(a) - parseRuDate(b))
-            .map(([date, dayRuns]) => ({
-              date,
+          return Object.entries(map)
+            .sort(([a], [b]) => sortKeyFn(a, b))
+            .map(([key, grpRuns]) => ({
+              date: labelFn(key),
               time: '',
-              level: Math.round(dayRuns.reduce((s, r) => s + (r.level || 0), 0) / dayRuns.length),
-              cpm:    Math.round(dayRuns.reduce((s, r) => s + r.cpm, 0) / dayRuns.length),
-              cpmMax: Math.max(...dayRuns.map(r => r.cpm)),
-              cpmMin: Math.min(...dayRuns.map(r => r.cpm)),
-              errors: dayRuns.every(r => r.errors != null)
-                ? Math.round(dayRuns.reduce((s, r) => s + r.errors, 0) / dayRuns.length)
+              level: Math.round(grpRuns.reduce((s, r) => s + (r.level || 0), 0) / grpRuns.length),
+              cpm:    Math.round(grpRuns.reduce((s, r) => s + r.cpm, 0) / grpRuns.length),
+              cpmMax: Math.max(...grpRuns.map(r => r.cpm)),
+              cpmMin: Math.min(...grpRuns.map(r => r.cpm)),
+              errors: grpRuns.every(r => r.errors != null)
+                ? Math.round(grpRuns.reduce((s, r) => s + r.errors, 0) / grpRuns.length)
                 : null,
-              chars:  Math.round(dayRuns.reduce((s, r) => s + r.chars, 0) / dayRuns.length),
-              errPctMax: (() => {
-                const v = dayRuns.filter(r => r.errors != null && r.chars);
-                return v.length ? Math.max(...v.map(r => r.errors / r.chars * 100)) : null;
-              })(),
-              errPctMin: (() => {
-                const v = dayRuns.filter(r => r.errors != null && r.chars);
-                return v.length ? Math.min(...v.map(r => r.errors / r.chars * 100)) : null;
-              })(),
-              seconds: dayRuns.reduce((s, r) => s + r.seconds, 0),
-              avgSeconds: Math.round(dayRuns.reduce((s, r) => s + r.seconds, 0) / dayRuns.length),
-              totalCharsDay: dayRuns.reduce((s, r) => s + r.chars, 0),
-              _count: dayRuns.length,
+              chars:  Math.round(grpRuns.reduce((s, r) => s + r.chars, 0) / grpRuns.length),
+              errPctMax: (() => { const v = grpRuns.filter(r => r.errors != null && r.chars); return v.length ? Math.max(...v.map(r => r.errors / r.chars * 100)) : null; })(),
+              errPctMin: (() => { const v = grpRuns.filter(r => r.errors != null && r.chars); return v.length ? Math.min(...v.map(r => r.errors / r.chars * 100)) : null; })(),
+              seconds: grpRuns.reduce((s, r) => s + r.seconds, 0),
+              avgSeconds: Math.round(grpRuns.reduce((s, r) => s + r.seconds, 0) / grpRuns.length),
+              totalCharsDay: grpRuns.reduce((s, r) => s + r.chars, 0),
+              _count: grpRuns.length,
             }));
         }
 
-        chartsEl.innerHTML = buildCharts(chartRuns, fromIso, toIso, tableMode !== 'days' ? complete : null);
+        let chartRuns = src;
+        if (tableMode === 'days') {
+          chartRuns = aggregateRuns(src,
+            r => r.date,
+            (a, b) => parseRuDate(a) - parseRuDate(b),
+            key => key
+          );
+        } else if (tableMode === 'weeks') {
+          chartRuns = aggregateRuns(src,
+            r => { const [d, m, y] = r.date.split('.').map(Number); return isoWeekKey(new Date(y, m - 1, d)); },
+            (a, b) => (a < b ? -1 : a > b ? 1 : 0),
+            key => { const mon = new Date(key); const sun = new Date(mon); sun.setDate(sun.getDate() + 6); return mon.toLocaleDateString('ru-RU') + '–' + sun.toLocaleDateString('ru-RU'); }
+          );
+        }
+
+        chartsEl.innerHTML = buildCharts(chartRuns, fromIso, toIso, tableMode === 'runs' ? complete : null);
 
         const fromInput = document.getElementById('chart-from');
         const toInput   = document.getElementById('chart-to');
         if (fromInput) fromInput.addEventListener('change', () => renderCharts(fromInput.value, toInput?.value || maxIso));
         if (toInput)   toInput.addEventListener('change',   () => renderCharts(fromInput?.value || minIso, toInput.value));
         const btnLast50 = document.getElementById('btn-chart-last50');
-        if (btnLast50) btnLast50.addEventListener('click', () => { chartFromIso = ''; chartToIso = ''; renderCharts(defaultFromIso, maxIso); });
+        if (btnLast50) btnLast50.addEventListener('click', () => { chartFromIso = ''; chartToIso = ''; renderCharts(getDefaultFromIso(), maxIso); });
         const btnAll = document.getElementById('btn-chart-all');
         if (btnAll) btnAll.addEventListener('click', () => { chartFromIso = ''; chartToIso = ''; renderCharts(minIso, maxIso); });
 
@@ -2680,9 +2814,25 @@ const Stats = (() => {
         });
       }
 
-      const defaultFromIso = ruToIso(complete[Math.max(0, complete.length - 50)].date);
+      function getDefaultFromIso() {
+        if (tableMode === 'days') {
+          // last 50 calendar days
+          const d = new Date(complete[complete.length - 1].date.split('.').reverse().join('-'));
+          d.setDate(d.getDate() - 49);
+          return d.toISOString().slice(0, 10);
+        }
+        if (tableMode === 'weeks') {
+          // last 50 weeks
+          const lastMon = getMonday(new Date(complete[complete.length - 1].date.split('.').reverse().join('-')));
+          lastMon.setDate(lastMon.getDate() - 49 * 7);
+          return lastMon.toISOString().slice(0, 10);
+        }
+        // runs mode: last 50 runs
+        return ruToIso(complete[Math.max(0, complete.length - 50)].date);
+      }
+      const defaultFromIso = getDefaultFromIso();
       chartDefaultFrom = defaultFromIso;
-      renderChartsNow = () => renderCharts(chartFromIso || defaultFromIso, chartToIso || maxIso);
+      renderChartsNow = () => renderCharts(chartFromIso || getDefaultFromIso(), chartToIso || maxIso);
       renderCharts(chartFromIso || defaultFromIso, chartToIso || maxIso);
     }
 
