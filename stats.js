@@ -1982,7 +1982,7 @@ const Stats = (() => {
     }
   }
 
-  function buildCharts(allRuns, fromIso, toIso, fullRuns) {
+  function buildCharts(allRuns, fromIso, toIso, fullRuns, mode) {
     if (allRuns.length < 2) return '';
 
     const W = 760, H = 400;
@@ -2054,7 +2054,9 @@ const Stats = (() => {
     const tips = allRuns.map((r, i) => {
       const errStr = (r.errors != null && r.chars) ? `${r.errors} (${(r.errors / r.chars * 100).toFixed(1)}%)` : '—';
       const base = r._count
-        ? `${r.date} · ${r._count} заездов`
+        ? (mode === 'weeks'
+            ? `Нед. ${Math.round((+getMonday(new Date(r.date.split('.').reverse().join('-'))) - +getMonday(new Date((fullRuns ?? allRuns)[0].date.split('.').reverse().join('-')))) / (7 * 86400000)) + 1} · ${r.date} · ${r._count} заездов`
+            : `${r.date} · ${r._count} заездов`)
           + (r.cpmMax != null ? `\nМакс.: ${r.cpmMax} зн/мин` : '')
           + `\nСредняя: ${r.cpm} зн/мин`
           + (r.cpmMin != null ? `\nМин.: ${r.cpmMin} зн/мин` : '')
@@ -2148,7 +2150,10 @@ const Stats = (() => {
       const dayDateMs = allRuns.map(r => +parseRuDate(r.date));
       const minDateMs = dayDateMs[0];
       const maxDateMs = dayDateMs[dayDateMs.length - 1];
-      const futureDateMs = maxDateMs + 10 * 86400000;
+      // For weeks mode: use week spacing (7 days per unit) for forecast
+      const isWeeksMode = mode === 'weeks';
+      const forecastUnit = isWeeksMode ? 7 * 86400000 : 86400000;
+      const futureDateMs = maxDateMs + 10 * forecastUnit;
       function xPosByMs(ms) {
         return padL + (ms - minDateMs) / (futureDateMs - minDateMs) * plotWd;
       }
@@ -2192,12 +2197,20 @@ const Stats = (() => {
       const trendBDt = (n * sumXYDt - sumXDt * sumYDt) / (n * sumX2Dt - sumXDt * sumXDt);
       const trendADt = (sumYDt - trendBDt * sumXDt) / n;
 
-      // Forecast dots at +1, +4, +7, +10 days from last data date
-      const forecastDaysMsList = [1, 4, 7, 10].map(d => maxDateMs + d * 86400000);
+      // For weeks mode: compute absolute week number (1 = first week ever)
+      const firstRunMs = fullRuns?.length
+        ? +parseRuDate(fullRuns[0].date)
+        : minDateMs;
+      const firstMonMs = +getMonday(new Date(firstRunMs));
+      const msToWeekNum = ms => Math.round((+getMonday(new Date(ms)) - firstMonMs) / (7 * 86400000)) + 1;
+
+      // Forecast dots at +1, +4, +7, +10 units (days or weeks) from last data
+      const forecastDaysMsList = [1, 4, 7, 10].map(d => maxDateMs + d * forecastUnit);
       const forecastVals = forecastDaysMsList.map(ms => trendADt + trendBDt * (ms - minDateMs) / 86400000);
       const maxCpmForecastD = Math.max(maxCpmScale, ...forecastVals);
 
       const dateFormatter = ms => {
+        if (isWeeksMode) return `нед. ${msToWeekNum(ms)}`;
         const d = new Date(ms);
         return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
       };
@@ -2219,7 +2232,7 @@ const Stats = (() => {
         return `<g id="chart-group-trend"><polyline points="${pts.join(' ')}" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linejoin="round" opacity="0.8" stroke-dasharray="6,3"/>${trendDotsDt}</g>`;
       })();
 
-      // X-axis labels: actual dates (DD.MM) at regular intervals + 4 forecast dates
+      // X-axis labels: week numbers or dates at regular intervals + forecast points
       const stepD = Math.max(1, Math.floor(n / 6));
       const labelMsSet = new Set();
       for (let i = 0; i < n; i += stepD) labelMsSet.add(dayDateMs[i]);
@@ -2603,7 +2616,7 @@ const Stats = (() => {
           );
         }
 
-        chartsEl.innerHTML = buildCharts(chartRuns, fromIso, toIso, tableMode === 'runs' ? complete : null);
+        chartsEl.innerHTML = buildCharts(chartRuns, fromIso, toIso, tableMode === 'runs' ? complete : null, tableMode);
 
         const fromInput = document.getElementById('chart-from');
         const toInput   = document.getElementById('chart-to');
