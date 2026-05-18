@@ -2599,7 +2599,7 @@ const Stats = (() => {
           chartRuns = aggregateRuns(src,
             r => { const [d, m, y] = r.date.split('.').map(Number); return isoWeekKey(new Date(y, m - 1, d)); },
             (a, b) => (a < b ? -1 : a > b ? 1 : 0),
-            key => { const mon = new Date(key); const sun = new Date(mon); sun.setDate(sun.getDate() + 6); return mon.toLocaleDateString('ru-RU') + '–' + sun.toLocaleDateString('ru-RU'); }
+            key => new Date(key).toLocaleDateString('ru-RU')  // Monday date in ru format — parseable by parseRuDate
           );
         }
 
