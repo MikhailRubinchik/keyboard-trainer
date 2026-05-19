@@ -304,8 +304,10 @@ const Stats = (() => {
       while (
         prefixLen < runs.length &&
         prefixLen < pulled.length &&
-        runs[prefixLen].date === pulled[prefixLen].date &&
-        runs[prefixLen].time === pulled[prefixLen].time &&
+        runs[prefixLen].date  === pulled[prefixLen].date &&
+        runs[prefixLen].time  === pulled[prefixLen].time &&
+        runs[prefixLen].cpm   === pulled[prefixLen].cpm  &&
+        runs[prefixLen].chars === pulled[prefixLen].chars &&
         !runs[prefixLen].incomplete  // чекпоинт может стать завершённым в гисте — не пропускаем
       ) prefixLen++;
       runs = runs.slice(0, prefixLen).concat(pulled.slice(prefixLen));
