@@ -233,10 +233,10 @@ const Stats = (() => {
 
   function _fillSentenceStarts(runArray) {
     for (const r of runArray) {
-      if (r.text && (r.sentenceStart == null || r.sentenceCount == null)) {
+      if (r.text && (r.sentenceStart == null || r.sentenceStart < 0 || r.sentenceCount == null || r.sentenceCount <= 0)) {
         const { startIndex, count } = findStartIndex(r.text, r.textSet ?? 1);
-        if (r.sentenceStart == null) r.sentenceStart = startIndex;
-        if (r.sentenceCount == null) r.sentenceCount = count;
+        r.sentenceStart = startIndex;
+        r.sentenceCount = count;
       }
     }
   }
