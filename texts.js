@@ -1823,9 +1823,10 @@ function setTextSet(id) {
  * Returns { text: string, startIndex: number }
  */
 function getRandomExercise(targetChars, excludeStart = -1, sentenceVisits = null) {
-  // Expand pool by repeating if the active set is too short
+  // Expand pool so that every position in SENTENCES is a valid start:
+  // the tail after the first copy must have >= targetChars chars.
   let pool = SENTENCES;
-  while (pool.reduce((s, t) => s + t.length + 1, 0) < targetChars + 1) {
+  while (pool.slice(SENTENCES.length).reduce((s, t) => s + t.length + 1, 0) < targetChars) {
     pool = [...pool, ...SENTENCES];
   }
 
