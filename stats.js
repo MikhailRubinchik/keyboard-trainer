@@ -2879,7 +2879,7 @@ const Stats = (() => {
           </div>
           <div class="summary-item">
             <span class="summary-label">Средняя скорость</span>
-            <span class="summary-value">${avg(allCpm)} зн/мин</span>
+            <span class="summary-value">${(allCpm.reduce((s,v)=>s+v,0)/allCpm.length).toFixed(1)} зн/мин</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">Заездов</span>
@@ -2897,7 +2897,7 @@ const Stats = (() => {
           </div>
           <div class="summary-item">
             <span class="summary-label">Средняя скорость</span>
-            <span class="summary-value">${avg(last5Cpm)} зн/мин</span>
+            <span class="summary-value">${(last5Cpm.reduce((s,v)=>s+v,0)/last5Cpm.length).toFixed(1)} зн/мин</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">Заездов</span>
