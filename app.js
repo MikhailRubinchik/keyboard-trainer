@@ -948,6 +948,7 @@ function handleChar(rawKey) {
       mode:           HIGHLIGHT_MODE_NUM[highlightMode] ?? 1,
       textSet:        TEXT_SET_NUM[currentTextSetId] ?? 1,
       sentenceStart:  lastStartIndex,
+      sentenceCount:  result.usedIndices.length,
       keystrokeLog:   keystrokeLog.slice(),
       incomplete:     true,
     });
@@ -1120,6 +1121,7 @@ async function finishRun() {
     mode:          HIGHLIGHT_MODE_NUM[highlightMode] ?? 1,
     textSet:       TEXT_SET_NUM[currentTextSetId] ?? 1,
     sentenceStart: lastStartIndex,
+    sentenceCount: result.usedIndices.length,
     keystrokeLog,
     stars:          lazy ? undefined : Stats.calcStars(cpm),
   });
