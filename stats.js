@@ -231,6 +231,14 @@ const Stats = (() => {
   let lastPushMs = 0;
   const PUSH_THROTTLE_MS = 20_000; // не чаще раза в 20 секунд (автоматические пуши)
 
+  function _fillSentenceStarts(runArray) {
+    for (const r of runArray) {
+      if (r.text && r.sentenceStart == null) {
+        r.sentenceStart = findStartIndex(r.text, r.textSet ?? 1);
+      }
+    }
+  }
+
   async function pushToGist({ force = false } = {}) {
     const { token, gistId } = getSyncConfig();
     if (!token || !gistId) return;
@@ -240,6 +248,7 @@ const Stats = (() => {
     const btn = document.getElementById('btn-push-gist');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Отправляю…'; }
     try {
+      _fillSentenceStarts(runs);
       const ver = typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'unknown';
       await gistFetch('PATCH', gistId, token, {
         description: `Клавогонки — статистика (${ver})`,
@@ -311,6 +320,7 @@ const Stats = (() => {
         !runs[prefixLen].incomplete  // чекпоинт может стать завершённым в гисте — не пропускаем
       ) prefixLen++;
       runs = runs.slice(0, prefixLen).concat(pulled.slice(prefixLen));
+      _fillSentenceStarts(runs);
       // Recompute derived fields for newly pulled runs (gist strips errorsDetail etc.)
       let dirty = false;
       for (const r of runs) {

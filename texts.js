@@ -1893,3 +1893,20 @@ function _findValidStarts(pool, target, exclude) {
   }
   return valid;
 }
+
+// Given a run's text and textSet number, find which sentence index it starts at.
+function findStartIndex(text, textSetNum) {
+  const numToId = { 1:'neznaika', 2:'winnie', 3:'punct', 4:'wizard', 5:'numbers', 6:'godzilla' };
+  const set = TEXT_SETS.find(s => s.id === (numToId[textSetNum] || 'neznaika')) || TEXT_SETS[0];
+  const sents = set.sentences;
+  for (let i = 0; i < sents.length; i++) {
+    if (!text.startsWith(sents[i])) continue;
+    let acc = '';
+    for (let j = i; ; j++) {
+      if (acc) acc += ' ';
+      acc += sents[j % sents.length];
+      if (acc.length >= text.length) { if (acc === text) return i; break; }
+    }
+  }
+  return -1;
+}

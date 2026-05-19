@@ -947,6 +947,7 @@ function handleChar(rawKey) {
       errorPositions: cpErrorPositions,
       mode:           HIGHLIGHT_MODE_NUM[highlightMode] ?? 1,
       textSet:        TEXT_SET_NUM[currentTextSetId] ?? 1,
+      sentenceStart:  lastStartIndex,
       keystrokeLog:   keystrokeLog.slice(),
       incomplete:     true,
     });
@@ -1116,8 +1117,9 @@ async function finishRun() {
     errorPositions,
     idleSeconds,
     lazy,
-    mode:     HIGHLIGHT_MODE_NUM[highlightMode] ?? 1,
-    textSet:  TEXT_SET_NUM[currentTextSetId] ?? 1,
+    mode:          HIGHLIGHT_MODE_NUM[highlightMode] ?? 1,
+    textSet:       TEXT_SET_NUM[currentTextSetId] ?? 1,
+    sentenceStart: lastStartIndex,
     keystrokeLog,
     stars:          lazy ? undefined : Stats.calcStars(cpm),
   });
