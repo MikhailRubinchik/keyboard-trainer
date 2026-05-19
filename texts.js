@@ -1900,16 +1900,19 @@ function findStartIndex(text, textSetNum) {
   const numToId = { 1:'neznaika', 2:'winnie', 3:'punct', 4:'wizard', 5:'numbers', 6:'godzilla' };
   const set = TEXT_SETS.find(s => s.id === (numToId[textSetNum] || 'neznaika')) || TEXT_SETS[0];
   const sents = set.sentences;
-  for (let i = 0; i < sents.length; i++) {
-    if (!text.startsWith(sents[i])) continue;
+  const norm = s => s.replace(/[«»]/g, '"');
+  const normText = norm(text);
+  const normSents = sents.map(norm);
+  for (let i = 0; i < normSents.length; i++) {
+    if (!normText.startsWith(normSents[i])) continue;
     let acc = '';
     let count = 0;
     for (let j = i; ; j++) {
       if (acc) acc += ' ';
-      acc += sents[j % sents.length];
+      acc += normSents[j % normSents.length];
       count++;
-      if (acc.length >= text.length) {
-        if (acc === text) return { startIndex: i, count };
+      if (acc.length >= normText.length) {
+        if (acc === normText) return { startIndex: i, count };
         break;
       }
     }
