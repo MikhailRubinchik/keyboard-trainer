@@ -268,7 +268,7 @@ function startExercise(level) {
   for (const idx of result.usedIndices) sentenceVisits[idx] = (sentenceVisits[idx] || 0) + 1;
   _saveSentenceVisits(currentTextSetId, sentenceVisits);
 
-  chars      = [...result.text.replace(/[«»]/g, '"')];
+  chars      = [...result.text];
   charStates = new Array(chars.length).fill('pending');
   cursor     = 0;
   wordStart  = 0;
