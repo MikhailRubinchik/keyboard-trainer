@@ -2977,7 +2977,8 @@ async function pushToGist({ force = false } = {}) {
     while (level < 8) {
       const modeRuns = complete.filter(r => r.mode === level);
       if (modeRuns.length < 10) break;
-      const avg = modeRuns.reduce((s, r) => s + r.cpm, 0) / modeRuns.length;
+      const last10 = modeRuns.slice(-10);
+      const avg = last10.reduce((s, r) => s + r.cpm, 0) / 10;
       if (avg < 100) break;
       level++;
     }
