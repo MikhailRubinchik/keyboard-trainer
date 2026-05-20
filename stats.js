@@ -2528,7 +2528,7 @@ async function pushToGist({ force = false } = {}) {
   function applyRunFilters(allRuns) {
     return allRuns.filter(r =>
       filterTextSets.has(r.textSet ?? 1) &&
-      filterModes.has(r.mode)
+      filterModes.has(r.mode ?? 1)
     );
   }
 
@@ -2536,7 +2536,7 @@ async function pushToGist({ force = false } = {}) {
     const el = document.getElementById('stats-filters');
     if (!el) return;
     const usedSets  = [...new Set(allRuns.map(r => r.textSet ?? 1))].sort((a,b) => a-b);
-    const usedModes = [...new Set(allRuns.map(r => r.mode).filter(Boolean))].sort((a,b) => a-b);
+    const usedModes = [...new Set(allRuns.map(r => r.mode ?? 1))].sort((a,b) => a-b);
     for (const s of usedSets)  if (!_seenTextSets.has(s)) { _seenTextSets.add(s); filterTextSets.add(s); }
     for (const m of usedModes) if (!_seenModes.has(m))    { _seenModes.add(m);    filterModes.add(m); }
     const makeRow = (label, items, names, activeSet, attr) => {
