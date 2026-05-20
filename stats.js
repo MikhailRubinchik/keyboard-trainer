@@ -105,6 +105,7 @@ const Stats = (() => {
       bigramStats:    undefined,
       intervalMap:    undefined,
       errorPositions: undefined,
+      text:           undefined,
     }))).join('\n') + '\n';
   }
 
