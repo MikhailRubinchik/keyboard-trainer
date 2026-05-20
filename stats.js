@@ -1880,13 +1880,8 @@ async function pushToGist({ force = false } = {}) {
     const finger = (ch) => (typeof getFinger === 'function' ? getFinger(ch) : '');
     const title  = `${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`;
 
-    if (!run.errorsDetail && run.keystrokeLog?.length) {
-      const d = recomputeDerivedFields(run);
-      run.errorsDetail   = d.errorsDetail;
-      run.errorPositions = d.errorPositions;
-      run.intervalMap    = d.intervalMap;
-      run.bigramStats    = d.bigramStats;
-    }
+    const { errorsDetail, errorPositions, intervalMap, bigramStats } =
+      run.keystrokeLog?.length ? recomputeDerivedFields(run) : {};
 
     const runText = getRunText(run);
     const stopAt = (run.incomplete && runText && runText.length > run.chars)
@@ -1894,24 +1889,23 @@ async function pushToGist({ force = false } = {}) {
 
     const textBlock = runText
       ? '<p class="freq-section-title">Текст упражнения</p>'
-      + buildTextWithErrorsHtml(runText, run.errorPositions || {}, stopAt)
+      + buildTextWithErrorsHtml(runText, errorPositions || {}, stopAt)
       + '<div class="freq-divider"></div>'
       : '';
 
     const coverageHtml = buildRunCoverageHtml(run, allRuns);
 
-    if (!run.errorsDetail) {
+    if (!errorsDetail) {
       showErrorModal(title, textBlock + '<p class="error-detail-empty">Данные об ошибках не сохранены (старый заезд)</p>' + coverageHtml);
       return;
     }
 
-    if (!run.errorsDetail.length) {
+    if (!errorsDetail.length) {
       showErrorModal(title, textBlock + '<p class="error-detail-empty">Ошибок нет!</p>' + coverageHtml);
       return;
     }
 
-    // Per-word list (unique attempts for display)
-    const perWord = run.errorsDetail.map(entry => {
+    const perWord = errorsDetail.map(entry => {
       const wordHtml = entry.word.split('').map((ch, i) =>
         i === entry.charInWord
           ? `<span class="eword--error">${ch}</span>`
@@ -1937,9 +1931,9 @@ async function pushToGist({ force = false } = {}) {
     }).join('');
 
     // Frequency summary for this run
-    const freqHtml   = renderFreqHtml(buildErrorFreq([run]));
-    const iHtml      = renderIntervalHtml(mergeIntervalMaps([run]));
-    const bigramHtml = renderBigramHtml(run.bigramStats || {});
+    const freqHtml   = renderFreqHtml(buildErrorFreq([{ errorsDetail }]));
+    const iHtml      = renderIntervalHtml(mergeIntervalMaps([{ intervalMap }]));
+    const bigramHtml = renderBigramHtml(bigramStats || {});
 
     showErrorModal(title, textBlock
       + '<p class="freq-section-title">Ошибки по словам <button id="btn-filter-frequent" class="filter-btn">Частые</button></p>'
