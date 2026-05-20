@@ -1838,22 +1838,20 @@ function getRandomExercise(targetChars, sentenceVisits = null) {
 }
 
 function _pickStartByVisits(n, target, visits) {
-  for (let threshold = 0; threshold <= 1000; threshold++) {
-    let maxCount = 0;
-    for (let s = 0; s < n; s++) {
-      const count = _getExerciseIndices(s, n, target)
-        .filter(i => (visits[i] || 0) === threshold).length;
-      if (count > maxCount) maxCount = count;
+  let bestMin = Infinity, bestCount = 0;
+  const scores = [];
+  for (let s = 0; s < n; s++) {
+    const indices = _getExerciseIndices(s, n, target);
+    const minVisits = Math.min(...indices.map(i => visits[i] || 0));
+    const countOfMin = indices.filter(i => (visits[i] || 0) === minVisits).length;
+    scores.push({ s, minVisits, countOfMin });
+    if (minVisits < bestMin || (minVisits === bestMin && countOfMin > bestCount)) {
+      bestMin = minVisits;
+      bestCount = countOfMin;
     }
-    if (maxCount === 0) continue;
-    const candidates = [];
-    for (let s = 0; s < n; s++) {
-      if (_getExerciseIndices(s, n, target).filter(i => (visits[i] || 0) === threshold).length === maxCount)
-        candidates.push(s);
-    }
-    return candidates[Math.floor(Math.random() * candidates.length)];
   }
-  return Math.floor(Math.random() * n);
+  const candidates = scores.filter(x => x.minVisits === bestMin && x.countOfMin === bestCount).map(x => x.s);
+  return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
 function _getExerciseIndices(startIndex, n, target) {
