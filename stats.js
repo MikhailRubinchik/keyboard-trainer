@@ -1454,9 +1454,12 @@ async function pushToGist({ force = false } = {}) {
 
     // Sentence coverage section (runs mode only)
     if (tableMode === 'runs' && typeof SENTENCES !== 'undefined' && SENTENCES.length) {
+      const TEXT_SET_NUM = { neznaika:1, winnie:2, punct:3, wizard:4, numbers:5, godzilla:6 };
+      const currentSetNum = TEXT_SET_NUM[_currentTextSetId] ?? 1;
       const n = SENTENCES.length;
       const counts = new Array(n).fill(0);
       for (const run of allRuns) {
+        if ((run.textSet ?? 1) !== currentSetNum) continue;
         if (run.sentenceStart < 0 || !run.sentenceCount) continue;
         for (let i = 0; i < run.sentenceCount; i++) {
           counts[(run.sentenceStart + i) % n]++;
@@ -1847,7 +1850,9 @@ async function pushToGist({ force = false } = {}) {
     const counts = new Array(n).fill(0);
     const runIdx = (allRuns || []).indexOf(run);
     const before = runIdx === -1 ? [] : (allRuns || []).slice(0, runIdx);
+    const runTextSet = run.textSet ?? 1;
     for (const r of before) {
+      if ((r.textSet ?? 1) !== runTextSet) continue;
       if (r.sentenceStart < 0 || !r.sentenceCount) continue;
       for (let i = 0; i < r.sentenceCount; i++) {
         const idx = (r.sentenceStart + i) % n;
