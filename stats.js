@@ -1457,11 +1457,9 @@ async function pushToGist({ force = false } = {}) {
       const n = SENTENCES.length;
       const counts = new Array(n).fill(0);
       for (const run of allRuns) {
-        const runTxt = getRunText(run);
-        if (!runTxt) continue;
-        const padded = ' ' + runTxt + ' ';
-        for (let i = 0; i < n; i++) {
-          if (padded.includes(' ' + SENTENCES[i] + ' ') || runTxt === SENTENCES[i]) counts[i]++;
+        if (run.sentenceStart < 0 || !run.sentenceCount) continue;
+        for (let i = 0; i < run.sentenceCount; i++) {
+          counts[(run.sentenceStart + i) % n]++;
         }
       }
       const hist = new Map();
@@ -1839,23 +1837,19 @@ async function pushToGist({ force = false } = {}) {
   }
 
   function buildRunCoverageHtml(run, allRuns) {
-    const runText = getRunText(run);
-    if (!runText || typeof SENTENCES === 'undefined' || !SENTENCES.length) return '';
+    if (run.sentenceStart < 0 || !run.sentenceCount || typeof SENTENCES === 'undefined' || !SENTENCES.length) return '';
     const n = SENTENCES.length;
-    const padded = ' ' + runText + ' ';
     const foundIndices = [];
-    for (let i = 0; i < n; i++) {
-      if (padded.includes(' ' + SENTENCES[i] + ' ') || runText === SENTENCES[i]) foundIndices.push(i);
-    }
+    for (let i = 0; i < run.sentenceCount; i++) foundIndices.push((run.sentenceStart + i) % n);
     if (!foundIndices.length) return '';
 
+    const foundSet = new Set(foundIndices);
     const counts = new Array(n).fill(0);
     for (const r of (allRuns || [])) {
-      const rText = getRunText(r);
-      if (!rText) continue;
-      const rPadded = ' ' + rText + ' ';
-      for (const i of foundIndices) {
-        if (rPadded.includes(' ' + SENTENCES[i] + ' ') || rText === SENTENCES[i]) counts[i]++;
+      if (r.sentenceStart < 0 || !r.sentenceCount) continue;
+      for (let i = 0; i < r.sentenceCount; i++) {
+        const idx = (r.sentenceStart + i) % n;
+        if (foundSet.has(idx)) counts[idx]++;
       }
     }
 
