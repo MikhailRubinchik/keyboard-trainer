@@ -2540,7 +2540,7 @@ async function pushToGist({ force = false } = {}) {
     for (const s of usedSets)  if (!_seenTextSets.has(s)) { _seenTextSets.add(s); filterTextSets.add(s); }
     for (const m of usedModes) if (!_seenModes.has(m))    { _seenModes.add(m);    filterModes.add(m); }
     const makeRow = (label, items, names, activeSet, attr) => {
-      if (items.length < 2) return '';
+      if (!items.length) return '';
       const cbs = items.map(v =>
         `<label class="stats-filter-cb"><input type="checkbox" ${attr}="${v}"${activeSet.has(v) ? ' checked' : ''}>${names[v] ?? v}</label>`
       ).join('');
