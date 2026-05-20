@@ -1880,6 +1880,14 @@ async function pushToGist({ force = false } = {}) {
     const finger = (ch) => (typeof getFinger === 'function' ? getFinger(ch) : '');
     const title  = `${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`;
 
+    if (!run.errorsDetail && run.keystrokeLog?.length) {
+      const d = recomputeDerivedFields(run);
+      run.errorsDetail   = d.errorsDetail;
+      run.errorPositions = d.errorPositions;
+      run.intervalMap    = d.intervalMap;
+      run.bigramStats    = d.bigramStats;
+    }
+
     const runText = getRunText(run);
     const stopAt = (run.incomplete && runText && runText.length > run.chars)
       ? run.chars : undefined;
@@ -1889,14 +1897,6 @@ async function pushToGist({ force = false } = {}) {
       + buildTextWithErrorsHtml(runText, run.errorPositions || {}, stopAt)
       + '<div class="freq-divider"></div>'
       : '';
-
-    if (!run.errorsDetail && run.keystrokeLog?.length) {
-      const d = recomputeDerivedFields(run);
-      run.errorsDetail   = d.errorsDetail;
-      run.errorPositions = d.errorPositions;
-      run.intervalMap    = d.intervalMap;
-      run.bigramStats    = d.bigramStats;
-    }
 
     const coverageHtml = buildRunCoverageHtml(run, allRuns);
 
