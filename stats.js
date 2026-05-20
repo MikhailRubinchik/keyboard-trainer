@@ -155,6 +155,7 @@ const Stats = (() => {
       bigramStats:    undefined,
       intervalMap:    undefined,
       errorPositions: undefined,
+      text:           undefined,
     }))).join('\n') + '\n';
     try {
       localStorage.setItem(LS_KEY, content);
@@ -258,7 +259,6 @@ const Stats = (() => {
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Отправляю…'; }
     try {
       _fillSentenceStarts(runs);
-      for (const r of runs) delete r.text;
       const ver = typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'unknown';
       await gistFetch('PATCH', gistId, token, {
         description: `Клавогонки — статистика (${ver})`,
