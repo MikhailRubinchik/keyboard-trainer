@@ -1198,7 +1198,7 @@ async function pushToGist({ force = false } = {}) {
       const pct = totalChars
         ? Math.round(inProgress.chars / totalChars * 100) + '%'
         : '—';
-      const continueBtn = (ipText && inProgress.chars < (inProgress.totalChars || ipText.length))
+      const continueBtn = (inProgress.chars < (inProgress.totalChars || ipText.length))
         ? ' <button class="btn-continue-run" title="Продолжить заезд">▶▶</button>' : '';
       return `
       <tr class="row--in-progress">
