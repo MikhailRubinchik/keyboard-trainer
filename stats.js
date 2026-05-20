@@ -141,7 +141,7 @@ const Stats = (() => {
   function lsRead() {
     const runs = parseLines(localStorage.getItem(LS_KEY) || '');
     for (const r of runs) {
-      if (!r.text && r.sentenceStart >= 0 && r.sentenceCount > 0) {
+      if (r.sentenceStart >= 0 && r.sentenceCount > 0) {
         r.text = reconstructText(r.textSet ?? 1, r.sentenceStart, r.sentenceCount);
       }
     }
@@ -873,7 +873,7 @@ const Stats = (() => {
       runs.pop();
     }
 
-    if (!entry.text && entry.sentenceStart >= 0 && entry.sentenceCount > 0) {
+    if (entry.sentenceStart >= 0 && entry.sentenceCount > 0) {
       entry.text = reconstructText(entry.textSet ?? 1, entry.sentenceStart, entry.sentenceCount);
     }
     runs.push(entry);
