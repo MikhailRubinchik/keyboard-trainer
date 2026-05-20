@@ -2989,5 +2989,5 @@ async function pushToGist({ force = false } = {}) {
   let _currentTextSetId = 'neznaika';
   function setTextSetId(id) { _currentTextSetId = id; }
 
-  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount, calcStars, setTextSetId, getHighlightLevel };
+  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount, calcStars, setTextSetId, getHighlightLevel, getRuns: () => runs };
 })();

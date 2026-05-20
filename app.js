@@ -48,7 +48,6 @@ const LS_SHOW_FINGER      = 'klavagonki_show_finger';
 const LS_HIGHLIGHT_MODE   = 'klavagonki_highlight_mode';
 const LS_TEXT_SET         = 'klavagonki_text_set';
 const LS_CAR_COLOR        = 'klavagonki_car_color';
-const LS_SENTENCE_VISITS  = 'klavagonki_sentence_visits';
 const HIGHLIGHT_MODE_NUM  = { finger: 1, full: 2, prefix: 3, 'word-error': 4, 'word-error-blind': 5, none: 6, blind: 7, 'full-blind': 8 };
 const TEXT_SET_NUM        = { neznaika: 1, winnie: 2, punct: 3, wizard: 4, numbers: 5, godzilla: 6 };
 
@@ -56,25 +55,22 @@ let showFinger      = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
 let highlightMode   = localStorage.getItem(LS_HIGHLIGHT_MODE) || 'full'; // 'full' | 'prefix' | 'none'
 
 let currentTextSetId = 'neznaika';
-let sentenceVisits   = [];
-
-function _loadSentenceVisits(id) {
-  try { return JSON.parse(localStorage.getItem(LS_SENTENCE_VISITS) || '{}')[id] || []; }
-  catch { return []; }
-}
-function _saveSentenceVisits(id, visits) {
-  try {
-    const all = JSON.parse(localStorage.getItem(LS_SENTENCE_VISITS) || '{}');
-    all[id] = visits;
-    localStorage.setItem(LS_SENTENCE_VISITS, JSON.stringify(all));
-  } catch {}
+function _computeSentenceVisits(textSetNum) {
+  const visits = [];
+  for (const r of (Stats.getRuns?.() || [])) {
+    if (r.incomplete || r.textSet !== textSetNum || r.sentenceStart < 0 || !r.sentenceCount) continue;
+    for (let i = 0; i < r.sentenceCount; i++) {
+      const idx = (r.sentenceStart + i) % SENTENCES.length;
+      visits[idx] = (visits[idx] || 0) + 1;
+    }
+  }
+  return visits;
 }
 
 // Initialise active text set from localStorage
 (function () {
   const saved = localStorage.getItem(LS_TEXT_SET) || 'neznaika';
   currentTextSetId = saved;
-  sentenceVisits   = _loadSentenceVisits(saved);
   setTextSet(saved);
   Stats.setTextSetId(saved);
   const sel = document.getElementById('text-set-select');
@@ -82,7 +78,6 @@ function _saveSentenceVisits(id, visits) {
     sel.value = saved;
     sel.addEventListener('change', () => {
       currentTextSetId = sel.value;
-      sentenceVisits   = _loadSentenceVisits(sel.value);
       setTextSet(sel.value);
       localStorage.setItem(LS_TEXT_SET, sel.value);
       Stats.setTextSetId(sel.value);
@@ -264,11 +259,9 @@ function restoreFingerSetting() {
 function startExercise(level) {
   noFinger = highlightMode !== 'finger';
   applyFingerSetting();
-  const result = getRandomExercise(LEVEL_SIZES[level - 1], sentenceVisits);
+  const result = getRandomExercise(LEVEL_SIZES[level - 1], _computeSentenceVisits(TEXT_SET_NUM[currentTextSetId] ?? 1));
   lastStartIndex       = result.startIndex;
   currentSentenceCount = result.usedIndices.length;
-  for (const idx of result.usedIndices) sentenceVisits[idx] = (sentenceVisits[idx] || 0) + 1;
-  _saveSentenceVisits(currentTextSetId, sentenceVisits);
 
   chars      = [...result.text];
   charStates = new Array(chars.length).fill('pending');
