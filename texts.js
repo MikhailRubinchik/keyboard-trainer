@@ -1817,72 +1817,56 @@ function setTextSet(id) {
 }
 
 function getRandomExercise(targetChars, sentenceVisits = null) {
-  let pool = SENTENCES;
-  while (pool.reduce((s, t) => s + t.length + 1, 0) < targetChars + 1) {
-    pool = [...pool, ...SENTENCES];
-  }
-
-  const starts = _findValidStarts(pool, targetChars);
-
+  const n = SENTENCES.length;
   const startIndex = sentenceVisits
-    ? _pickStartByVisits(pool, starts, targetChars, sentenceVisits)
-    : starts[Math.floor(Math.random() * starts.length)];
+    ? _pickStartByVisits(n, targetChars, sentenceVisits)
+    : Math.floor(Math.random() * n);
 
   const parts = [];
   const usedIndices = [];
   let accumulated = 0;
-  for (let i = startIndex; i < pool.length; i++) {
+  for (let i = 0; ; i++) {
+    const idx = (startIndex + i) % n;
     if (parts.length > 0) accumulated += 1;
-    accumulated += pool[i].length;
-    parts.push(pool[i]);
-    usedIndices.push(i % SENTENCES.length);
+    accumulated += SENTENCES[idx].length;
+    parts.push(SENTENCES[idx]);
+    usedIndices.push(idx);
     if (accumulated >= targetChars) break;
   }
 
   return { text: parts.join(' '), startIndex, usedIndices };
 }
 
-function _pickStartByVisits(pool, starts, target, visits) {
+function _pickStartByVisits(n, target, visits) {
   for (let threshold = 0; threshold <= 1000; threshold++) {
     let maxCount = 0;
-    for (const s of starts) {
-      const count = _getExerciseSentenceIndices(pool, s, target)
-        .filter(i => (visits[i % SENTENCES.length] || 0) === threshold).length;
+    for (let s = 0; s < n; s++) {
+      const count = _getExerciseIndices(s, n, target)
+        .filter(i => (visits[i] || 0) === threshold).length;
       if (count > maxCount) maxCount = count;
     }
     if (maxCount === 0) continue;
-    const candidates = starts.filter(s =>
-      _getExerciseSentenceIndices(pool, s, target)
-        .filter(i => (visits[i % SENTENCES.length] || 0) === threshold).length === maxCount
-    );
+    const candidates = [];
+    for (let s = 0; s < n; s++) {
+      if (_getExerciseIndices(s, n, target).filter(i => (visits[i] || 0) === threshold).length === maxCount)
+        candidates.push(s);
+    }
     return candidates[Math.floor(Math.random() * candidates.length)];
   }
-  return starts[Math.floor(Math.random() * starts.length)];
+  return Math.floor(Math.random() * n);
 }
 
-function _getExerciseSentenceIndices(pool, startIndex, target) {
+function _getExerciseIndices(startIndex, n, target) {
   const indices = [];
   let accumulated = 0;
-  for (let i = startIndex; i < pool.length; i++) {
-    if (indices.length > 0) accumulated += 1;
-    accumulated += pool[i].length;
-    indices.push(i);
+  for (let i = 0; ; i++) {
+    const idx = (startIndex + i) % n;
+    if (i > 0) accumulated += 1;
+    accumulated += SENTENCES[idx].length;
+    indices.push(idx);
     if (accumulated >= target) break;
   }
   return indices;
-}
-
-function _findValidStarts(pool, target) {
-  const valid = [];
-  for (let i = 0; i < pool.length; i++) {
-    let acc = 0;
-    for (let j = i; j < pool.length; j++) {
-      if (j > i) acc += 1;
-      acc += pool[j].length;
-      if (acc >= target) { valid.push(i); break; }
-    }
-  }
-  return valid;
 }
 
 // Given a run's text and textSet number, find which sentence index it starts at.
