@@ -319,22 +319,22 @@ function startExercise(level) {
 }
 
 window.startContinueRun = function(run) {
-  if (!run.text) return;
+  const runText = reconstructText(run.textSet ?? 1, run.sentenceStart, run.sentenceCount);
+  if (!runText) return;
 
   // Restore run identity (date/time preserved so saveRun can replace it)
   runStartDate = run.date || '';
   runStartTime = run.time || '';
   resumeElapsedOffset = run.seconds || 0;
 
-  chars      = [...run.text];
+  chars      = [...runText];
   cursor     = run.chars || 0;
   charStates = new Array(chars.length).fill('pending');
 
-  // Reconstruct wordStart / wordSoFar from cursor position
-  const textSoFar   = run.text.slice(0, cursor);
+  const textSoFar   = runText.slice(0, cursor);
   const lastSpaceIdx = textSoFar.lastIndexOf(' ');
   wordStart  = lastSpaceIdx === -1 ? 0 : lastSpaceIdx + 1;
-  wordSoFar  = run.text.slice(wordStart, cursor);
+  wordSoFar  = runText.slice(wordStart, cursor);
 
   junkBuffer  = '';
   startTime   = null;

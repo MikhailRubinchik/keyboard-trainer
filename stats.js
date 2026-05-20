@@ -105,7 +105,6 @@ const Stats = (() => {
       bigramStats:    undefined,
       intervalMap:    undefined,
       errorPositions: undefined,
-      text:           undefined,
     }))).join('\n') + '\n';
   }
 
@@ -138,14 +137,15 @@ const Stats = (() => {
     return parseFloat(ema.toFixed(1));
   }
 
-  function lsRead() {
-    const runs = parseLines(localStorage.getItem(LS_KEY) || '');
-    for (const r of runs) {
-      if (r.sentenceStart >= 0 && r.sentenceCount > 0) {
-        r.text = reconstructText(r.textSet ?? 1, r.sentenceStart, r.sentenceCount);
-      }
+  function getRunText(run) {
+    if (run.sentenceStart >= 0 && run.sentenceCount > 0) {
+      return reconstructText(run.textSet ?? 1, run.sentenceStart, run.sentenceCount);
     }
-    return runs;
+    return '';
+  }
+
+  function lsRead() {
+    return parseLines(localStorage.getItem(LS_KEY) || '');
   }
 
   function lsWrite(runArray) {
@@ -155,7 +155,6 @@ const Stats = (() => {
       bigramStats:    undefined,
       intervalMap:    undefined,
       errorPositions: undefined,
-      text:           undefined,
     }))).join('\n') + '\n';
     try {
       localStorage.setItem(LS_KEY, content);
@@ -239,17 +238,7 @@ const Stats = (() => {
   let lastPushMs = 0;
   const PUSH_THROTTLE_MS = 20_000; // не чаще раза в 20 секунд (автоматические пуши)
 
-  function _fillSentenceStarts(runArray) {
-    for (const r of runArray) {
-      if (r.text && (r.sentenceStart == null || r.sentenceStart < 0 || r.sentenceCount == null || r.sentenceCount <= 0)) {
-        const { startIndex, count } = findStartIndex(r.text, r.textSet ?? 1);
-        r.sentenceStart = startIndex;
-        r.sentenceCount = count;
-      }
-    }
-  }
-
-  async function pushToGist({ force = false } = {}) {
+async function pushToGist({ force = false } = {}) {
     const { token, gistId } = getSyncConfig();
     if (!token || !gistId) return;
     const now = Date.now();
@@ -258,7 +247,6 @@ const Stats = (() => {
     const btn = document.getElementById('btn-push-gist');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Отправляю…'; }
     try {
-      _fillSentenceStarts(runs);
       const ver = typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'unknown';
       await gistFetch('PATCH', gistId, token, {
         description: `Клавогонки — статистика (${ver})`,
@@ -319,11 +307,6 @@ const Stats = (() => {
         content = await rawRes.text();
       }
       const pulled = parseLines(content);
-      for (const r of pulled) {
-        if (r.sentenceStart >= 0 && r.sentenceCount > 0) {
-          r.text = reconstructText(r.textSet ?? 1, r.sentenceStart, r.sentenceCount);
-        }
-      }
       let prefixLen = 0;
       while (
         prefixLen < runs.length &&
@@ -335,11 +318,10 @@ const Stats = (() => {
         !runs[prefixLen].incomplete  // чекпоинт может стать завершённым в гисте — не пропускаем
       ) prefixLen++;
       runs = runs.slice(0, prefixLen).concat(pulled.slice(prefixLen));
-      _fillSentenceStarts(runs);
       // Recompute derived fields for newly pulled runs (gist strips errorsDetail etc.)
       let dirty = false;
       for (const r of runs) {
-        if (r.keystrokeLog?.length && r.text && (!r.intervalMap || !r.bigramStats || !r.errorsDetail)) {
+        if (r.keystrokeLog?.length && getRunText(r) && (!r.intervalMap || !r.bigramStats || !r.errorsDetail)) {
           const d = recomputeDerivedFields(r);
           r.errorsDetail   = d.errorsDetail;
           r.errorPositions = d.errorPositions;
@@ -404,7 +386,7 @@ const Stats = (() => {
   // ── Derived field recompute (from keystrokeLog + text) ────────
 
   function recomputeDerivedFields(run) {
-    const chars      = [...run.text];
+    const chars      = [...getRunText(run)];
     const errors     = {};   // pos → { expected, attempts[] }
     let cursor       = 0;
     let wordStart    = 0;
@@ -812,7 +794,7 @@ const Stats = (() => {
     {
       let dirty = false;
       for (const r of runs) {
-        if (r.keystrokeLog?.length && r.text && (!r.intervalMap || !r.bigramStats || !r.errorsDetail)) {
+        if (r.keystrokeLog?.length && getRunText(r) && (!r.intervalMap || !r.bigramStats || !r.errorsDetail)) {
           const d = recomputeDerivedFields(r);
           r.errorsDetail   = d.errorsDetail;
           r.errorPositions = d.errorPositions;
@@ -873,9 +855,6 @@ const Stats = (() => {
       runs.pop();
     }
 
-    if (entry.sentenceStart >= 0 && entry.sentenceCount > 0) {
-      entry.text = reconstructText(entry.textSet ?? 1, entry.sentenceStart, entry.sentenceCount);
-    }
     runs.push(entry);
     lsWrite(runs);
     renderStats(runs);
@@ -1058,7 +1037,7 @@ const Stats = (() => {
   // ── Replay engine ──────────────────────────────────────────
 
   function showReplay(run) {
-    if (!run.keystrokeLog || !run.keystrokeLog.length || !run.text) return;
+    if (!run.keystrokeLog || !run.keystrokeLog.length || !getRunText(run)) return;
     const overlay = document.getElementById('replay-overlay');
     if (!overlay) return;
     overlay.classList.remove('hidden');
@@ -1074,7 +1053,7 @@ const Stats = (() => {
 
   function startReplay(run, speed) {
     if (replayState?.timeoutId) clearTimeout(replayState.timeoutId);
-    const chars = run.text.split('');
+    const chars = getRunText(run).split('');
     replayState = {
       run,
       chars,
@@ -1241,11 +1220,12 @@ const Stats = (() => {
     }).join('');
 
     const inProgressRow = inProgress ? (() => {
-      const totalChars = inProgress.totalChars || inProgress.text?.length || null;
+      const ipText = getRunText(inProgress);
+      const totalChars = inProgress.totalChars || ipText.length || null;
       const pct = totalChars
         ? Math.round(inProgress.chars / totalChars * 100) + '%'
         : '—';
-      const continueBtn = (inProgress.text && inProgress.chars < (inProgress.totalChars || inProgress.text.length))
+      const continueBtn = (ipText && inProgress.chars < (inProgress.totalChars || ipText.length))
         ? ' <button class="btn-continue-run" title="Продолжить заезд">▶▶</button>' : '';
       return `
       <tr class="row--in-progress">
@@ -1505,10 +1485,11 @@ const Stats = (() => {
       const n = SENTENCES.length;
       const counts = new Array(n).fill(0);
       for (const run of allRuns) {
-        if (!run.text) continue;
-        const padded = ' ' + run.text + ' ';
+        const runTxt = getRunText(run);
+        if (!runTxt) continue;
+        const padded = ' ' + runTxt + ' ';
         for (let i = 0; i < n; i++) {
-          if (padded.includes(' ' + SENTENCES[i] + ' ') || run.text === SENTENCES[i]) counts[i]++;
+          if (padded.includes(' ' + SENTENCES[i] + ' ') || runTxt === SENTENCES[i]) counts[i]++;
         }
       }
       const hist = new Map();
@@ -1754,7 +1735,7 @@ const Stats = (() => {
 
   function buildRunSpeedSvg(run) {
     if (!run.keystrokeLog?.length) return '';
-    const chars = run.text ? [...run.text] : [];
+    const chars = [...getRunText(run)];
     let cursor = 0, wordStart = 0, wordSoFar = '', junkBuffer = '';
     let timeAcc = 0;
     const BUCKET_MS = 10000;
@@ -1886,22 +1867,23 @@ const Stats = (() => {
   }
 
   function buildRunCoverageHtml(run, allRuns) {
-    if (!run.text || typeof SENTENCES === 'undefined' || !SENTENCES.length) return '';
+    const runText = getRunText(run);
+    if (!runText || typeof SENTENCES === 'undefined' || !SENTENCES.length) return '';
     const n = SENTENCES.length;
-    const padded = ' ' + run.text + ' ';
+    const padded = ' ' + runText + ' ';
     const foundIndices = [];
     for (let i = 0; i < n; i++) {
-      if (padded.includes(' ' + SENTENCES[i] + ' ') || run.text === SENTENCES[i]) foundIndices.push(i);
+      if (padded.includes(' ' + SENTENCES[i] + ' ') || runText === SENTENCES[i]) foundIndices.push(i);
     }
     if (!foundIndices.length) return '';
 
-    // Count how many runs contain each sentence (same approach as home page coverage)
     const counts = new Array(n).fill(0);
     for (const r of (allRuns || [])) {
-      if (!r.text) continue;
-      const rPadded = ' ' + r.text + ' ';
+      const rText = getRunText(r);
+      if (!rText) continue;
+      const rPadded = ' ' + rText + ' ';
       for (const i of foundIndices) {
-        if (rPadded.includes(' ' + SENTENCES[i] + ' ') || r.text === SENTENCES[i]) counts[i]++;
+        if (rPadded.includes(' ' + SENTENCES[i] + ' ') || rText === SENTENCES[i]) counts[i]++;
       }
     }
 
@@ -1925,17 +1907,17 @@ const Stats = (() => {
     const finger = (ch) => (typeof getFinger === 'function' ? getFinger(ch) : '');
     const title  = `${run.date}  ${run.time ?? ''}  —  ${run.cpm} зн/мин`;
 
-    // For incomplete runs where full text is stored, mark the stop position
-    const stopAt = (run.incomplete && run.text && run.text.length > run.chars)
+    const runText = getRunText(run);
+    const stopAt = (run.incomplete && runText && runText.length > run.chars)
       ? run.chars : undefined;
 
-    const textBlock = run.text
+    const textBlock = runText
       ? '<p class="freq-section-title">Текст упражнения</p>'
-      + buildTextWithErrorsHtml(run.text, run.errorPositions || {}, stopAt)
+      + buildTextWithErrorsHtml(runText, run.errorPositions || {}, stopAt)
       + '<div class="freq-divider"></div>'
       : '';
 
-    if (!run.errorsDetail && run.keystrokeLog?.length && run.text) {
+    if (!run.errorsDetail && run.keystrokeLog?.length && runText) {
       const d = recomputeDerivedFields(run);
       run.errorsDetail   = d.errorsDetail;
       run.errorPositions = d.errorPositions;
