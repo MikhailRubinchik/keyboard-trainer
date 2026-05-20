@@ -756,15 +756,9 @@ const Stats = (() => {
     if (btnFixCpm) {
       btnFixCpm.addEventListener('click', () => {
         const runs = lsRead();
-        let fixed = false;
-        for (let i = runs.length - 1; i >= 0; i--) {
-          if (runs[i].cpm === 135) {
-            runs[i].cpm = 114;
-            fixed = true;
-            break;
-          }
-        }
-        if (!fixed) { alert('Заезд со скоростью 135 не найден'); return; }
+        const last = runs[runs.length - 1];
+        if (!last || last.cpm !== 132) { alert(`Последний заезд имеет скорость ${last?.cpm ?? '—'}, ожидалось 132`); return; }
+        last.cpm = 114;
         lsWrite(runs);
         pushToGist({ force: true });
         btnFixCpm.remove();
