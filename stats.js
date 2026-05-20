@@ -17,6 +17,7 @@ const Stats = (() => {
 
   const _TEXT_SET_NAMES = {1:'Незнайка',2:'Винни-Пух',3:'Знаки',4:'Волшебник',5:'Цифры',6:'Годзилла'};
   const _MODE_NAMES = {1:'Палец',2:'Символ',3:'Префикс',4:'Слово',5:'Слово+рамка',6:'Рамка',7:'Слепой',8:'П.слепой'};
+  function _effectiveMode(r) { return r.mode != null ? r.mode : (r.noFinger ? 2 : 1); }
   let chartFromIso    = '';
   let chartToIso      = '';
   let chartDefaultFrom = ''; // date of run[max(0,n-50)], updated on renderStats
@@ -2528,7 +2529,7 @@ async function pushToGist({ force = false } = {}) {
   function applyRunFilters(allRuns) {
     return allRuns.filter(r =>
       filterTextSets.has(r.textSet ?? 1) &&
-      filterModes.has(r.mode ?? 1)
+      filterModes.has(_effectiveMode(r))
     );
   }
 
@@ -2536,7 +2537,7 @@ async function pushToGist({ force = false } = {}) {
     const el = document.getElementById('stats-filters');
     if (!el) return;
     const usedSets  = [...new Set(allRuns.map(r => r.textSet ?? 1))].sort((a,b) => a-b);
-    const usedModes = [...new Set(allRuns.map(r => r.mode ?? 1))].sort((a,b) => a-b);
+    const usedModes = [...new Set(allRuns.map(_effectiveMode))].sort((a,b) => a-b);
     for (const s of usedSets)  if (!_seenTextSets.has(s)) { _seenTextSets.add(s); filterTextSets.add(s); }
     for (const m of usedModes) if (!_seenModes.has(m))    { _seenModes.add(m);    filterModes.add(m); }
     const makeRow = (label, items, names, activeSet, attr) => {
