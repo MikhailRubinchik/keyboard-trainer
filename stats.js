@@ -858,6 +858,9 @@ const Stats = (() => {
       incomplete:     record.incomplete     || false,
       totalChars:     record.totalChars     || null,
       mode:           record.mode           ?? null,
+      textSet:        record.textSet        ?? null,
+      sentenceStart:  record.sentenceStart  ?? null,
+      sentenceCount:  record.sentenceCount  ?? null,
       keystrokeLog:   record.keystrokeLog   || [],
       stars:          record.stars          ?? null,
     };
@@ -1219,7 +1222,7 @@ const Stats = (() => {
       const lvlBadge      = lc != null ? ` <span class="run-badge run-badge--level">→${lc}</span>` : '';
       const runMode = r.mode != null ? r.mode : (r.noFinger ? 2 : 1);
       const modeBadge = ` <span class="run-badge run-badge--mode" title="Режим ${runMode}">${runMode}</span>`;
-      const replayBtn = (r.keystrokeLog?.length && r.text)
+      const replayBtn = r.keystrokeLog?.length
         ? ' <button class="btn-replay-run" title="Виртуальный заезд">▶</button>' : '';
       return `
       <tr${r.lazy ? ' class="row--lazy"' : ''} data-run-key="${r.date}~${r.time ?? ''}">
