@@ -752,18 +752,6 @@ const Stats = (() => {
     btnRefresh.addEventListener('click', () => pullFromGist());
     btnPush.addEventListener('click', () => pushToGist({ force: true }));
 
-    const btnFixCpm = document.getElementById('btn-fix-cpm');
-    if (btnFixCpm) {
-      btnFixCpm.addEventListener('click', () => {
-        const runs = lsRead();
-        const last = runs[runs.length - 1];
-        if (!last || last.cpm !== 132) { alert(`Последний заезд имеет скорость ${last?.cpm ?? '—'}, ожидалось 132`); return; }
-        last.cpm = 114;
-        lsWrite(runs);
-        btnFixCpm.remove();
-        renderStats();
-      });
-    }
 
     // Replay overlay
     const replayOverlay = document.getElementById('replay-overlay');
