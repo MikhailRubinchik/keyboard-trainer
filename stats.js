@@ -1193,12 +1193,11 @@ async function pushToGist({ force = false } = {}) {
     }).join('');
 
     const inProgressRow = inProgress ? (() => {
-      const ipText = getRunText(inProgress);
-      const totalChars = inProgress.totalChars || ipText.length || null;
+      const totalChars = inProgress.totalChars || null;
       const pct = totalChars
         ? Math.round(inProgress.chars / totalChars * 100) + '%'
         : '—';
-      const continueBtn = (inProgress.chars < (inProgress.totalChars || ipText.length))
+      const continueBtn = (inProgress.chars < inProgress.totalChars)
         ? ' <button class="btn-continue-run" title="Продолжить заезд">▶▶</button>' : '';
       return `
       <tr class="row--in-progress">
