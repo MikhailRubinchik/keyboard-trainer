@@ -321,7 +321,7 @@ async function pushToGist({ force = false } = {}) {
       // Recompute derived fields for newly pulled runs (gist strips errorsDetail etc.)
       let dirty = false;
       for (const r of runs) {
-        if (r.keystrokeLog?.length && getRunText(r) && (!r.intervalMap || !r.bigramStats || !r.errorsDetail)) {
+        if (r.keystrokeLog?.length && (!r.intervalMap || !r.bigramStats || !r.errorsDetail)) {
           const d = recomputeDerivedFields(r);
           r.errorsDetail   = d.errorsDetail;
           r.errorPositions = d.errorPositions;
@@ -794,7 +794,7 @@ async function pushToGist({ force = false } = {}) {
     {
       let dirty = false;
       for (const r of runs) {
-        if (r.keystrokeLog?.length && getRunText(r) && (!r.intervalMap || !r.bigramStats || !r.errorsDetail)) {
+        if (r.keystrokeLog?.length && (!r.intervalMap || !r.bigramStats || !r.errorsDetail)) {
           const d = recomputeDerivedFields(r);
           r.errorsDetail   = d.errorsDetail;
           r.errorPositions = d.errorPositions;
