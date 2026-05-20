@@ -1877,7 +1877,7 @@ async function pushToGist({ force = false } = {}) {
       run.keystrokeLog?.length ? recomputeDerivedFields(run) : {};
 
     const runText = getRunText(run);
-    const stopAt = (run.incomplete && runText && runText.length > run.chars)
+    const stopAt = (run.incomplete && run.totalChars > run.chars)
       ? run.chars : undefined;
 
     const textBlock = runText
