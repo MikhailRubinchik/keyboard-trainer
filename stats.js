@@ -9,6 +9,14 @@ const Stats = (() => {
   let runs = [];   // all loaded run records
   let tableMode = 'runs';  // 'runs' | 'days' | 'weeks'
   let lastInProgress = null; // last incomplete run, updated by renderStats
+  let lastFilteredRuns = [];
+  let filterTextSets = new Set();
+  let filterModes = new Set();
+  let _seenTextSets = new Set();
+  let _seenModes = new Set();
+
+  const _TEXT_SET_NAMES = {1:'Незнайка',2:'Винни-Пух',3:'Знаки',4:'Волшебник',5:'Цифры',6:'Годзилла'};
+  const _MODE_NAMES = {1:'Палец',2:'Символ',3:'Префикс',4:'Слово',5:'Слово+рамка',6:'Рамка',7:'Слепой',8:'П.слепой'};
   let chartFromIso    = '';
   let chartToIso      = '';
   let chartDefaultFrom = ''; // date of run[max(0,n-50)], updated on renderStats
@@ -627,7 +635,7 @@ async function pushToGist({ force = false } = {}) {
       btnDays .classList.toggle('active', mode === 'days');
       if (btnWeeks) btnWeeks.classList.toggle('active', mode === 'weeks');
       chartFromIso = ''; chartToIso = '';
-      renderTable(runs.filter(r => !r.incomplete), lastInProgress);
+      renderTable(lastFilteredRuns, lastInProgress);
       renderChartsNow();
     }
     btnRuns.addEventListener('click',  () => setViewMode('runs'));
@@ -2517,6 +2525,45 @@ async function pushToGist({ force = false } = {}) {
     </div>`;
   }
 
+  function applyRunFilters(allRuns) {
+    return allRuns.filter(r =>
+      filterTextSets.has(r.textSet ?? 1) &&
+      filterModes.has(r.mode)
+    );
+  }
+
+  function renderFilters(allRuns) {
+    const el = document.getElementById('stats-filters');
+    if (!el) return;
+    const usedSets  = [...new Set(allRuns.map(r => r.textSet ?? 1))].sort((a,b) => a-b);
+    const usedModes = [...new Set(allRuns.map(r => r.mode).filter(Boolean))].sort((a,b) => a-b);
+    for (const s of usedSets)  if (!_seenTextSets.has(s)) { _seenTextSets.add(s); filterTextSets.add(s); }
+    for (const m of usedModes) if (!_seenModes.has(m))    { _seenModes.add(m);    filterModes.add(m); }
+    const makeRow = (label, items, names, activeSet, attr) => {
+      if (items.length < 2) return '';
+      const cbs = items.map(v =>
+        `<label class="stats-filter-cb"><input type="checkbox" ${attr}="${v}"${activeSet.has(v) ? ' checked' : ''}>${names[v] ?? v}</label>`
+      ).join('');
+      return `<div class="stats-filter-row"><span class="stats-filter-label">${label}</span>${cbs}</div>`;
+    };
+    el.innerHTML = makeRow('Текст:', usedSets, _TEXT_SET_NAMES, filterTextSets, 'data-filter-set') +
+                   makeRow('Режим:', usedModes, _MODE_NAMES, filterModes, 'data-filter-mode');
+    el.querySelectorAll('[data-filter-set]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const s = +cb.dataset.filterSet;
+        cb.checked ? filterTextSets.add(s) : filterTextSets.delete(s);
+        renderStats(runs);
+      });
+    });
+    el.querySelectorAll('[data-filter-mode]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const m = +cb.dataset.filterMode;
+        cb.checked ? filterModes.add(m) : filterModes.delete(m);
+        renderStats(runs);
+      });
+    });
+  }
+
   function renderStats(allRuns) {
     const summaryEl = document.getElementById('stats-summary');
     const tableWrap = document.getElementById('stats-table-wrap');
@@ -2530,6 +2577,10 @@ async function pushToGist({ force = false } = {}) {
     lastInProgress = inProgress;
 
     allRuns = allRuns.filter(r => !trulyIncomplete(r));
+
+    renderFilters(allRuns);
+    const filteredRuns = applyRunFilters(allRuns);
+    lastFilteredRuns = filteredRuns;
 
     const chartsEl = document.getElementById('stats-charts');
 
@@ -2554,8 +2605,15 @@ async function pushToGist({ force = false } = {}) {
       return;
     }
 
+    if (!filteredRuns.length) {
+      summaryEl.innerHTML = '';
+      if (chartsEl) chartsEl.innerHTML = '';
+      tableWrap.innerHTML = '';
+      return;
+    }
+
     if (chartsEl) {
-      const complete = allRuns;  // already filtered by !incomplete in renderStats
+      const complete = filteredRuns;
       const allDates = complete.map(r => ruToIso(r.date));
       const minIso = allDates[0];
       const maxIso = allDates[allDates.length - 1];
@@ -2849,10 +2907,10 @@ async function pushToGist({ force = false } = {}) {
       renderCharts(chartFromIso || defaultFromIso, chartToIso || maxIso);
     }
 
-    const last5R  = last10Runs(allRuns);
-    const allCpm  = allRuns.map(r => r.cpm);
+    const last5R  = last10Runs(filteredRuns);
+    const allCpm  = filteredRuns.map(r => r.cpm);
     const last5Cpm = last5R.map(r => r.cpm);
-    const emaValue = calcEma(allRuns);
+    const emaValue = calcEma(filteredRuns);
 
     summaryEl.innerHTML = `
       <div class="summary-group clickable-card" data-period="all">
@@ -2868,7 +2926,7 @@ async function pushToGist({ force = false } = {}) {
           </div>
           <div class="summary-item">
             <span class="summary-label">Заездов</span>
-            <span class="summary-value">${allRuns.length}</span>
+            <span class="summary-value">${filteredRuns.length}</span>
           </div>
         </div>
       </div>
@@ -2907,14 +2965,14 @@ async function pushToGist({ force = false } = {}) {
       card.addEventListener('click', () => {
         const period = card.dataset.period;
         let subset, label;
-        if (period === 'all')     { subset = allRuns;      label = 'За всё время'; }
+        if (period === 'all')     { subset = filteredRuns; label = 'За всё время'; }
         if (period === 'last10')  { subset = last5R;      label = `Последние ${last5R.length}`; }
         if (period === 'lastday') { subset = lastDayRuns;  label = lastDayLabel; }
         showErrorModal(label, buildDetailHtml(subset));
       });
     });
 
-    renderTable(allRuns, inProgress);
+    renderTable(filteredRuns, inProgress);
 
   }
 

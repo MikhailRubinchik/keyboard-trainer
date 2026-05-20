@@ -546,6 +546,29 @@ button:active  { transform: scale(0.97); }
   color: var(--text-dim);
 }
 
+.stats-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+
+.stats-filter-label {
+  color: var(--text-dim);
+  font-weight: 600;
+  min-width: 60px;
+}
+
+.stats-filter-cb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: var(--text-main);
+}
+
 .charts-wrap {
   display: flex;
   gap: 16px;
