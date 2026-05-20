@@ -1845,7 +1845,9 @@ async function pushToGist({ force = false } = {}) {
 
     const foundSet = new Set(foundIndices);
     const counts = new Array(n).fill(0);
-    for (const r of (allRuns || [])) {
+    const runIdx = (allRuns || []).indexOf(run);
+    const before = runIdx === -1 ? [] : (allRuns || []).slice(0, runIdx);
+    for (const r of before) {
       if (r.sentenceStart < 0 || !r.sentenceCount) continue;
       for (let i = 0; i < r.sentenceCount; i++) {
         const idx = (r.sentenceStart + i) % n;
