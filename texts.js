@@ -1816,21 +1816,13 @@ function setTextSet(id) {
   SENTENCES = set.sentences;
 }
 
-/**
- * Returns a random contiguous slice of sentences with total length >= targetChars.
- * If the active set is shorter than needed, sentences are repeated until sufficient.
- * excludeStart - previous start index to exclude for variety.
- * Returns { text: string, startIndex: number }
- */
-function getRandomExercise(targetChars, excludeStart = -1, sentenceVisits = null) {
-  // Expand pool by repeating if the active set is too short
+function getRandomExercise(targetChars, sentenceVisits = null) {
   let pool = SENTENCES;
   while (pool.reduce((s, t) => s + t.length + 1, 0) < targetChars + 1) {
     pool = [...pool, ...SENTENCES];
   }
 
-  const valid = _findValidStarts(pool, targetChars, excludeStart);
-  const starts = valid.length > 0 ? valid : _findValidStarts(pool, targetChars, -1);
+  const starts = _findValidStarts(pool, targetChars);
 
   const startIndex = sentenceVisits
     ? _pickStartByVisits(pool, starts, targetChars, sentenceVisits)
@@ -1880,10 +1872,9 @@ function _getExerciseSentenceIndices(pool, startIndex, target) {
   return indices;
 }
 
-function _findValidStarts(pool, target, exclude) {
+function _findValidStarts(pool, target) {
   const valid = [];
   for (let i = 0; i < pool.length; i++) {
-    if (i === exclude) continue;
     let acc = 0;
     for (let j = i; j < pool.length; j++) {
       if (j > i) acc += 1;

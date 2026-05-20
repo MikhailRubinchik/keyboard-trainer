@@ -128,7 +128,7 @@ const LEVEL_SIZES = [50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 800, 900, 
 const LEVEL_THRESHOLDS = [4, 6, 9, 11, 14, 18, 23, 28, 33, 38, 43, 48, 53, 58, 63, 68, 73, 78, 83, 88, 93, 98, 103, 108, 113, 118, 123, 128, 133, 138, 143, 148, 150];
 
 let currentLevel   = 1;
-let lastStartIndex    = -1;
+let lastStartIndex = -1;
 let currentSentenceCount = 0;
 let levelUnlocked  = false;  // level buttons locked by default
 
@@ -264,7 +264,7 @@ function restoreFingerSetting() {
 function startExercise(level) {
   noFinger = highlightMode !== 'finger';
   applyFingerSetting();
-  const result = getRandomExercise(LEVEL_SIZES[level - 1], lastStartIndex, sentenceVisits);
+  const result = getRandomExercise(LEVEL_SIZES[level - 1], sentenceVisits);
   lastStartIndex       = result.startIndex;
   currentSentenceCount = result.usedIndices.length;
   for (const idx of result.usedIndices) sentenceVisits[idx] = (sentenceVisits[idx] || 0) + 1;
