@@ -139,7 +139,13 @@ const Stats = (() => {
   }
 
   function lsRead() {
-    return parseLines(localStorage.getItem(LS_KEY) || '');
+    const runs = parseLines(localStorage.getItem(LS_KEY) || '');
+    for (const r of runs) {
+      if (!r.text && r.sentenceStart >= 0 && r.sentenceCount > 0) {
+        r.text = reconstructText(r.textSet ?? 1, r.sentenceStart, r.sentenceCount);
+      }
+    }
+    return runs;
   }
 
   function lsWrite(runArray) {
