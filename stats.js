@@ -318,18 +318,6 @@ async function pushToGist({ force = false } = {}) {
         !runs[prefixLen].incomplete  // чекпоинт может стать завершённым в гисте — не пропускаем
       ) prefixLen++;
       runs = runs.slice(0, prefixLen).concat(pulled.slice(prefixLen));
-      // Recompute derived fields for newly pulled runs (gist strips errorsDetail etc.)
-      let dirty = false;
-      for (const r of runs) {
-        if (r.keystrokeLog?.length && (!r.intervalMap || !r.bigramStats || !r.errorsDetail)) {
-          const d = recomputeDerivedFields(r);
-          r.errorsDetail   = d.errorsDetail;
-          r.errorPositions = d.errorPositions;
-          r.intervalMap    = d.intervalMap;
-          r.bigramStats    = d.bigramStats;
-          dirty = true;
-        }
-      }
       lsWrite(runs);
       const achFile = data.files[GIST_ACHIEVEMENTS_FILE];
       if (achFile) {
@@ -790,21 +778,6 @@ async function pushToGist({ force = false } = {}) {
 
     runs = lsRead();
 
-    // Recompute derived fields for runs that arrived from gist without them
-    {
-      let dirty = false;
-      for (const r of runs) {
-        if (r.keystrokeLog?.length && (!r.intervalMap || !r.bigramStats || !r.errorsDetail)) {
-          const d = recomputeDerivedFields(r);
-          r.errorsDetail   = d.errorsDetail;
-          r.errorPositions = d.errorPositions;
-          r.intervalMap    = d.intervalMap;
-          r.bigramStats    = d.bigramStats;
-          dirty = true;
-        }
-      }
-      if (dirty) lsWrite(runs);
-    }
 
     // One-time migration: if localStorage still has old-format keystrokeLog
     // (array-of-arrays), re-serialize everything in compact format and push.
@@ -1917,7 +1890,7 @@ async function pushToGist({ force = false } = {}) {
       + '<div class="freq-divider"></div>'
       : '';
 
-    if (!run.errorsDetail && run.keystrokeLog?.length && runText) {
+    if (!run.errorsDetail && run.keystrokeLog?.length) {
       const d = recomputeDerivedFields(run);
       run.errorsDetail   = d.errorsDetail;
       run.errorPositions = d.errorPositions;
