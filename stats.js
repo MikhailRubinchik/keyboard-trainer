@@ -760,7 +760,6 @@ const Stats = (() => {
         if (!last || last.cpm !== 132) { alert(`Последний заезд имеет скорость ${last?.cpm ?? '—'}, ожидалось 132`); return; }
         last.cpm = 114;
         lsWrite(runs);
-        pushToGist({ force: true });
         btnFixCpm.remove();
         renderStats();
       });
