@@ -873,6 +873,9 @@ const Stats = (() => {
       runs.pop();
     }
 
+    if (!entry.text && entry.sentenceStart >= 0 && entry.sentenceCount > 0) {
+      entry.text = reconstructText(entry.textSet ?? 1, entry.sentenceStart, entry.sentenceCount);
+    }
     runs.push(entry);
     lsWrite(runs);
     renderStats(runs);
