@@ -311,6 +311,11 @@ const Stats = (() => {
         content = await rawRes.text();
       }
       const pulled = parseLines(content);
+      for (const r of pulled) {
+        if (r.sentenceStart >= 0 && r.sentenceCount > 0) {
+          r.text = reconstructText(r.textSet ?? 1, r.sentenceStart, r.sentenceCount);
+        }
+      }
       let prefixLen = 0;
       while (
         prefixLen < runs.length &&
