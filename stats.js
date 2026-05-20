@@ -1010,7 +1010,7 @@ async function pushToGist({ force = false } = {}) {
   // ── Replay engine ──────────────────────────────────────────
 
   function showReplay(run) {
-    if (!run.keystrokeLog || !run.keystrokeLog.length || !getRunText(run)) return;
+    if (!run.keystrokeLog || !run.keystrokeLog.length) return;
     const overlay = document.getElementById('replay-overlay');
     if (!overlay) return;
     overlay.classList.remove('hidden');
