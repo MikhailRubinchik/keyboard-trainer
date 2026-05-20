@@ -1123,7 +1123,7 @@ async function finishRun() {
     mode:          HIGHLIGHT_MODE_NUM[highlightMode] ?? 1,
     textSet:       TEXT_SET_NUM[currentTextSetId] ?? 1,
     sentenceStart: lastStartIndex,
-    sentenceCount: result.usedIndices.length,
+    sentenceCount: currentSentenceCount,
     keystrokeLog,
     stars:          lazy ? undefined : Stats.calcStars(cpm),
   });
