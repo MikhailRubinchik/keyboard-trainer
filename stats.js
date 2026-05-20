@@ -851,7 +851,6 @@ const Stats = (() => {
       errorsDetail:   record.errorsDetail   || [],
       intervalMap:    record.intervalMap    || {},
       bigramStats:    record.bigramStats    || {},
-      text:           record.text           || '',
       errorPositions: record.errorPositions || {},
       idleSeconds:    record.idleSeconds    || 0,
       lazy:           record.lazy           || false,
