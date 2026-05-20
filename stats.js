@@ -752,6 +752,26 @@ const Stats = (() => {
     btnRefresh.addEventListener('click', () => pullFromGist());
     btnPush.addEventListener('click', () => pushToGist({ force: true }));
 
+    const btnFixCpm = document.getElementById('btn-fix-cpm');
+    if (btnFixCpm) {
+      btnFixCpm.addEventListener('click', () => {
+        const runs = lsRead();
+        let fixed = false;
+        for (let i = runs.length - 1; i >= 0; i--) {
+          if (runs[i].cpm === 135) {
+            runs[i].cpm = 114;
+            fixed = true;
+            break;
+          }
+        }
+        if (!fixed) { alert('Заезд со скоростью 135 не найден'); return; }
+        lsWrite(runs);
+        pushToGist({ force: true });
+        btnFixCpm.remove();
+        renderStats();
+      });
+    }
+
     // Replay overlay
     const replayOverlay = document.getElementById('replay-overlay');
     if (replayOverlay) {
@@ -1218,6 +1238,7 @@ const Stats = (() => {
         <td${timeTip}>${formatTime(netSecs)}${lazyBadge}</td>
         <td style="white-space:nowrap">${r.cpm} зн/мин <button class="btn-run-detail" title="Детали заезда"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" style="display:inline;vertical-align:middle"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4.5" y="3" width="3" height="7" fill="currentColor"/><rect x="9" y="0" width="3" height="10" fill="currentColor"/></svg></button>${cpmBadge}</td>
         <td style="white-space:nowrap">${r.stars != null ? '<span style="color:#f59e0b">★</span>'.repeat(r.stars) + '<span style="color:#d1d5db">★</span>'.repeat(3 - r.stars) : ''}</td>
+        <td><button class="btn-delete-run" title="Удалить заезд" style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:14px;padding:0 4px">✕</button></td>
       </tr>`;
     }).join('');
 
