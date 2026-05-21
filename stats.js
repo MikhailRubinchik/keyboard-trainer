@@ -2049,6 +2049,8 @@ async function pushToGist({ force = false } = {}) {
       return `<g id="${groupId}"${hidden ? ' style="display:none"' : ''}>${polylines}${dots.join('')}</g>`;
     }
 
+    const globalIdxOf = fullRuns ? new Map(fullRuns.map((r, i) => [r, i])) : null;
+
     const tips = allRuns.map((r, i) => {
       const errStr = (r.errors != null && r.chars) ? `${r.errors} (${(r.errors / r.chars * 100).toFixed(1)}%)` : '—';
       const base = r._count
@@ -2061,7 +2063,7 @@ async function pushToGist({ force = false } = {}) {
           + (r.errPctMax != null ? `\nОшибок макс.: ${r.errPctMax.toFixed(1)}%` : '')
           + `\nОшибок ср.: ${errStr}`
           + (r.errPctMin != null ? `\nОшибок мин.: ${r.errPctMin.toFixed(1)}%` : '')
-        : `#${i + 1} · ${r.date} ${r.time ?? ''}\nУровень ${r.level ?? '—'} · ${r.cpm} зн/мин\nОшибок: ${errStr} · ${formatTime(r.seconds)}`;
+        : `#${(globalIdxOf?.get(r) ?? i) + 1} · ${r.date} ${r.time ?? ''}\nУровень ${r.level ?? '—'} · ${r.cpm} зн/мин\nОшибок: ${errStr} · ${formatTime(r.seconds)}`;
       return base;
     });
     const cpmRecords    = computeRecords(allRuns);
@@ -2070,7 +2072,6 @@ async function pushToGist({ force = false } = {}) {
     const errRecords = computeErrorRecords(allRuns);
 
     // Rolling up-to-10-run average using full history for context
-    const globalIdxOf = fullRuns ? new Map(fullRuns.map((r, i) => [r, i])) : null;
     const cpmRolling10 = allRuns.map((run, i) => {
       const gi = globalIdxOf?.get(run) ?? i;
       const w  = Math.min(gi + 1, 10);
