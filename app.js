@@ -706,40 +706,9 @@ wordInput.addEventListener('keydown', (e) => {
     if (k !== null) { keystrokeLog.push([k, delta]); lastKeystrokeTime = now; }
   }
 
-  // Option+Arrow: jump by word within typed text
-  if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
-    e.preventDefault();
-    const typed = wordSoFar + junkBuffer;
-    if (e.key === 'ArrowLeft') {
-      let p = localCursor - 1;
-      while (p > 0 && typed[p - 1] === ' ') p--;
-      while (p > 0 && typed[p - 1] !== ' ') p--;
-      localCursor = Math.max(0, p);
-    } else {
-      let p = localCursor;
-      while (p < typed.length && typed[p] === ' ') p++;
-      while (p < typed.length && typed[p] !== ' ') p++;
-      localCursor = p;
-    }
-    syncInputValue();
-    updateWordDisplay();
-    return;
-  }
-
-  if (e.metaKey || e.ctrlKey || e.altKey) return;
-
-  if (e.key === 'Backspace') {
-    const atEnd = localCursor === wordSoFar.length + junkBuffer.length;
-    if (atEnd) {
-      e.preventDefault();
-      resetIdleTimer();
-      handleBackspace();
-    }
-    // not at end: let browser handle → input event fires → setTypedText syncs
-    return;
-  }
-
-  if (e.key.length !== 1) return;
+  // Let browser handle all non-printable keys (arrows, backspace, delete,
+  // and all modifier combos) — input/selectionchange events sync back.
+  if (e.key.length !== 1 || e.metaKey || e.ctrlKey || e.altKey) return;
 
   e.preventDefault();
   resetIdleTimer();
@@ -1059,28 +1028,6 @@ function setTypedText(newText, newLocalCursor) {
 }
 
 // ── Backspace handler ─────────────────────────────────────────
-
-function handleBackspace() {
-  if (junkBuffer.length > 0) {
-    junkBuffer = junkBuffer.slice(0, -1);
-    localCursor = wordSoFar.length + junkBuffer.length;
-    syncInputValue();
-    updateWordDisplay();
-    updateDisplay();
-    updateFingerHint();
-    return;
-  }
-  if (cursor <= wordStart) return;
-  cursor--;
-  updateCarPos();
-  charStates[cursor] = 'pending';
-  wordSoFar = wordSoFar.slice(0, -1);
-  localCursor = wordSoFar.length;
-  syncInputValue();
-  updateWordDisplay();
-  updateDisplay();
-  updateFingerHint();
-}
 
 // ── Run completion ────────────────────────────────────────────
 
