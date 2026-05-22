@@ -446,7 +446,12 @@ html, body {
   height: 1.1em;
   background: var(--text-main);
   vertical-align: text-bottom;
-  animation: blink-cursor 1s step-end infinite;
+  animation: wchar-blink 0.8s step-start infinite;
+}
+
+@keyframes wchar-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
 }
 
 /* ── Result overlay ──────────────────────────────────────── */
