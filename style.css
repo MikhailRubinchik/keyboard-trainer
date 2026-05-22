@@ -440,6 +440,12 @@ html, body {
   color: var(--text-dim);
 }
 
+.wchar--selected {
+  background: #3b82f6;
+  color: #fff;
+  border-radius: 2px;
+}
+
 .wchar--cursor {
   display: inline-block;
   width: 2px;

@@ -212,6 +212,8 @@ let wordStart   = 0;
 let wordSoFar   = '';
 let junkBuffer  = '';
 let localCursor = 0;  // cursor position within (wordSoFar + junkBuffer)
+let _selStart   = 0;  // selection start in wordInput
+let _selEnd     = 0;  // selection end   in wordInput
 let noFinger   = false;  // true when finger hint was disabled for this run
 
 let lineStartChars = [];  // char index where each line starts
@@ -513,7 +515,10 @@ function updateWordDisplay() {
     if (i < typed.length) {
       const span = document.createElement('span');
       const ch = typed[i];
-      if (i >= wordSoFar.length) {
+      const inSel = _selStart < _selEnd && i >= _selStart && i < _selEnd;
+      if (inSel) {
+        span.className = 'wchar--selected';
+      } else if (i >= wordSoFar.length) {
         if (highlightMode !== 'word-error-blind' && highlightMode !== 'none' && highlightMode !== 'blind' && highlightMode !== 'full-blind') span.className = 'wchar--wrong';
       }
       span.textContent = ch === ' ' ? '\u00A0' : ch;
@@ -532,9 +537,13 @@ wordInput.addEventListener('input', () => {
 
 document.addEventListener('selectionchange', () => {
   if (document.activeElement !== wordInput || wordInput.disabled) return;
-  const pos = wordInput.selectionStart ?? 0;
-  if (pos !== localCursor) {
-    localCursor = pos;
+  const s = wordInput.selectionStart ?? 0;
+  const e = wordInput.selectionEnd   ?? s;
+  const bwd = wordInput.selectionDirection === 'backward';
+  if (s !== _selStart || e !== _selEnd) {
+    _selStart   = s;
+    _selEnd     = e;
+    localCursor = bwd ? s : e;
     updateWordDisplay();
   }
 });
@@ -898,6 +907,12 @@ function recordError(key) {
 // cleared via Backspace.
 
 function handleChar(rawKey) {
+  // Replace selection before inserting
+  if (_selStart < _selEnd) {
+    const typed = wordSoFar + junkBuffer;
+    setTypedText(typed.slice(0, _selStart) + typed.slice(_selEnd), _selStart);
+  }
+
   // Mac CapsLock quirk: Ё key produces 'ё' even when CapsLock is on
   const expected0 = chars[cursor];
   const key = (rawKey === 'ё' && expected0 === 'Ё') ? 'Ё'
@@ -1034,10 +1049,15 @@ function handleChar(rawKey) {
 // ── Mid-word editing ──────────────────────────────────────────
 
 function syncInputValue() {
-  if (!wordInput.disabled) {
-    wordInput.value = wordSoFar + junkBuffer;
-    wordInput.setSelectionRange(localCursor, localCursor);
-  }
+  if (wordInput.disabled) return;
+  wordInput.value = wordSoFar + junkBuffer;
+  wordInput.setSelectionRange(localCursor, localCursor);
+  _selStart = _selEnd = localCursor;
+}
+
+// Like syncInputValue but preserves an existing selection range
+function syncInputValueOnly() {
+  if (!wordInput.disabled) wordInput.value = wordSoFar + junkBuffer;
 }
 
 function setTypedText(newText, newLocalCursor) {
