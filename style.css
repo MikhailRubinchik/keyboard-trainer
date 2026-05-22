@@ -446,12 +446,7 @@ html, body {
   height: 1.1em;
   background: var(--text-main);
   vertical-align: text-bottom;
-  animation: blink 1s step-end infinite;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0; }
+  animation: blink-cursor 1s step-end infinite;
 }
 
 /* ── Result overlay ──────────────────────────────────────── */
