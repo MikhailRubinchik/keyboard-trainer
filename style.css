@@ -444,7 +444,7 @@ html, body {
   display: inline-block;
   width: 2px;
   height: 1.1em;
-  background: var(--text-main);
+  background: var(--text);
   vertical-align: text-bottom;
   animation: wchar-blink 0.8s step-start infinite;
 }
