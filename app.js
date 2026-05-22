@@ -26,6 +26,8 @@ const btnNext  = document.getElementById('btn-next');
 const btnStart = document.getElementById('btn-start');
 const exerciseLevelLabel = document.getElementById('exercise-level-label');
 const wordDisplay = document.getElementById('word-display');
+const _cursorSpan = document.createElement('span');
+_cursorSpan.className = 'wchar--cursor';
 
 const FINGER_IMAGE = {
   'Левый мизинец':        '_1.png',
@@ -500,20 +502,14 @@ function updateWordDisplay() {
   }
 
   if (wordSoFar === '' && junkBuffer === '') {
-    const cur = document.createElement('span');
-    cur.className = 'wchar--cursor';
-    wordDisplay.appendChild(cur);
+    wordDisplay.appendChild(_cursorSpan);
     wordDisplay.classList.remove('has-error');
     return;
   }
 
   const typed = wordSoFar + junkBuffer;
   for (let i = 0; i <= typed.length; i++) {
-    if (i === localCursor) {
-      const cur = document.createElement('span');
-      cur.className = 'wchar--cursor';
-      wordDisplay.appendChild(cur);
-    }
+    if (i === localCursor) wordDisplay.appendChild(_cursorSpan);
     if (i < typed.length) {
       const span = document.createElement('span');
       const ch = typed[i];
