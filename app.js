@@ -706,29 +706,6 @@ wordInput.addEventListener('keydown', (e) => {
     if (k !== null) { keystrokeLog.push([k, delta]); lastKeystrokeTime = now; }
   }
 
-  const wordErase = e.key === 'Backspace' && (e.ctrlKey || e.altKey) && !e.metaKey;
-  if (wordErase) {
-    e.preventDefault();
-    resetIdleTimer();
-    if (junkBuffer.length > 0) {
-      // Delete last "word" in junk: back to last space, or clear all junk
-      const lastSpace = junkBuffer.lastIndexOf(' ');
-      junkBuffer = lastSpace >= 0 ? junkBuffer.slice(0, lastSpace) : '';
-    } else {
-      // Delete current correct word: back to last typed space
-      const eraseLen = wordSoFar.length;
-      for (let i = cursor - eraseLen; i < cursor; i++) charStates[i] = 'pending';
-      cursor   -= eraseLen;
-      wordSoFar = '';
-    }
-    localCursor = wordSoFar.length + junkBuffer.length;
-    syncInputValue();
-    updateWordDisplay();
-    updateDisplay();
-    updateFingerHint();
-    return;
-  }
-
   // Option+Arrow: jump by word within typed text
   if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
     e.preventDefault();
