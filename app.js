@@ -555,6 +555,9 @@ document.addEventListener('selectionchange', () => {
 
 wordInput.addEventListener('keyup', () => readBackSelection());
 
+wordInput.addEventListener('paste', (e) => e.preventDefault());
+wordInput.addEventListener('drop',  (e) => e.preventDefault());
+
 wordInput.addEventListener('focus', () => wordDisplay.classList.add('focused'));
 wordInput.addEventListener('blur', () => {
   wordDisplay.classList.remove('focused');
