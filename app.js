@@ -206,9 +206,10 @@ let chars      = [];
 let charStates = [];
 let cursor     = 0;
 let lastCheckpointCursor = 0;
-let wordStart  = 0;
-let wordSoFar  = '';
-let junkBuffer = '';
+let wordStart   = 0;
+let wordSoFar   = '';
+let junkBuffer  = '';
+let localCursor = 0;  // cursor position within (wordSoFar + junkBuffer)
 let noFinger   = false;  // true when finger hint was disabled for this run
 
 let lineStartChars = [];  // char index where each line starts
@@ -265,11 +266,12 @@ function startExercise(level) {
 
   chars      = [...result.text];
   charStates = new Array(chars.length).fill('pending');
-  cursor     = 0;
-  wordStart  = 0;
-  wordSoFar  = '';
-  junkBuffer = '';
-  startTime  = null;
+  cursor      = 0;
+  wordStart   = 0;
+  wordSoFar   = '';
+  junkBuffer  = '';
+  localCursor = 0;
+  startTime   = null;
   elapsedSeconds = 0;
   resumeElapsedOffset = 0;
   runStartDate = '';
@@ -330,6 +332,7 @@ window.startContinueRun = function(run) {
   wordSoFar  = runText.slice(wordStart, cursor);
 
   junkBuffer  = '';
+  localCursor = wordSoFar.length;
   startTime   = null;
   elapsedSeconds = resumeElapsedOffset;
   errorCount  = run.errors || 0;
@@ -487,7 +490,7 @@ function updateScroll() {
 function updateWordDisplay() {
   wordDisplay.innerHTML = '';
 
-  if (wordInput.disabled || (wordSoFar === '' && junkBuffer === '')) {
+  if (wordInput.disabled) {
     const ph = document.createElement('span');
     ph.className = 'wchar--placeholder';
     ph.textContent = 'печатай здесь…';
@@ -496,21 +499,49 @@ function updateWordDisplay() {
     return;
   }
 
-  for (const ch of wordSoFar) {
-    const span = document.createElement('span');
-    span.textContent = ch;
-    wordDisplay.appendChild(span);
+  if (wordSoFar === '' && junkBuffer === '') {
+    const cur = document.createElement('span');
+    cur.className = 'wchar--cursor';
+    wordDisplay.appendChild(cur);
+    wordDisplay.classList.remove('has-error');
+    return;
   }
 
-  for (const ch of junkBuffer) {
-    const span = document.createElement('span');
-    if (highlightMode !== 'word-error-blind' && highlightMode !== 'none' && highlightMode !== 'blind' && highlightMode !== 'full-blind') span.className = 'wchar--wrong';
-    span.textContent = ch === ' ' ? '\u00A0' : ch;
-    wordDisplay.appendChild(span);
+  const typed = wordSoFar + junkBuffer;
+  for (let i = 0; i <= typed.length; i++) {
+    if (i === localCursor) {
+      const cur = document.createElement('span');
+      cur.className = 'wchar--cursor';
+      wordDisplay.appendChild(cur);
+    }
+    if (i < typed.length) {
+      const span = document.createElement('span');
+      const ch = typed[i];
+      if (i >= wordSoFar.length) {
+        if (highlightMode !== 'word-error-blind' && highlightMode !== 'none' && highlightMode !== 'blind' && highlightMode !== 'full-blind') span.className = 'wchar--wrong';
+      }
+      span.textContent = ch === ' ' ? '\u00A0' : ch;
+      wordDisplay.appendChild(span);
+    }
   }
 
   wordDisplay.classList.toggle('has-error', junkBuffer.length > 0 && highlightMode !== 'blind' && highlightMode !== 'full-blind');
 }
+
+// Sync browser-native editing (Delete, arrows, mid-text Backspace) back to model
+wordInput.addEventListener('input', () => {
+  if (wordInput.disabled) return;
+  setTypedText(wordInput.value, wordInput.selectionStart ?? wordInput.value.length);
+});
+
+document.addEventListener('selectionchange', () => {
+  if (document.activeElement !== wordInput || wordInput.disabled) return;
+  const pos = wordInput.selectionStart ?? 0;
+  if (pos !== localCursor) {
+    localCursor = pos;
+    updateWordDisplay();
+  }
+});
 
 wordInput.addEventListener('focus', () => wordDisplay.classList.add('focused'));
 wordInput.addEventListener('blur', () => {
@@ -685,6 +716,8 @@ wordInput.addEventListener('keydown', (e) => {
       cursor   -= eraseLen;
       wordSoFar = '';
     }
+    localCursor = wordSoFar.length + junkBuffer.length;
+    syncInputValue();
     updateWordDisplay();
     updateDisplay();
     updateFingerHint();
@@ -694,9 +727,13 @@ wordInput.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
 
   if (e.key === 'Backspace') {
-    e.preventDefault();
-    resetIdleTimer();
-    handleBackspace();
+    const atEnd = localCursor === wordSoFar.length + junkBuffer.length;
+    if (atEnd) {
+      e.preventDefault();
+      resetIdleTimer();
+      handleBackspace();
+    }
+    // not at end: let browser handle → input event fires → setTypedText syncs
     return;
   }
 
@@ -851,10 +888,19 @@ function handleChar(rawKey) {
             : (rawKey === 'Ё' && expected0 === 'ё') ? 'ё'
             : rawKey;
 
+  // If cursor is not at the end, insert at position (no bigram/error tracking)
+  const typed = wordSoFar + junkBuffer;
+  if (localCursor < typed.length) {
+    setTypedText(typed.slice(0, localCursor) + key + typed.slice(localCursor), localCursor + 1);
+    return;
+  }
+
   if (junkBuffer.length > 0) {
     junkBuffer += key;
+    localCursor = wordSoFar.length + junkBuffer.length;
     errorCount++;
     recordError(key);
+    syncInputValue();
     updateWordDisplay();
     updateDisplay();
     updateFingerHint();
@@ -865,6 +911,7 @@ function handleChar(rawKey) {
 
   if (key !== expected) {
     junkBuffer += key;
+    localCursor = wordSoFar.length + junkBuffer.length;
     errorCount++;
     recordError(key);
     // Track consecutive first-errors at the same position
@@ -877,6 +924,7 @@ function handleChar(rawKey) {
     if (samePosMistakes % 3 === 0) {
       playCheckFinger();
     }
+    syncInputValue();
     updateWordDisplay();
     updateDisplay();
     updateFingerHint();
@@ -951,10 +999,13 @@ function handleChar(rawKey) {
   if (expected === ' ') {
     wordStart = cursor;
     wordSoFar = '';
+    localCursor = 0;
   } else {
     wordSoFar += expected;
+    localCursor = wordSoFar.length;
   }
 
+  syncInputValue();
   updateWordDisplay();
   updateDisplay();
   updateFingerHint();
@@ -964,24 +1015,55 @@ function handleChar(rawKey) {
   }
 }
 
+// ── Mid-word editing ──────────────────────────────────────────
+
+function syncInputValue() {
+  if (!wordInput.disabled) {
+    wordInput.value = wordSoFar + junkBuffer;
+    wordInput.setSelectionRange(localCursor, localCursor);
+  }
+}
+
+function setTypedText(newText, newLocalCursor) {
+  for (let i = wordStart; i < cursor; i++) charStates[i] = 'pending';
+  let matchLen = 0;
+  for (let i = 0; i < newText.length; i++) {
+    if (wordStart + i >= chars.length) break;
+    if (newText[i] === chars[wordStart + i]) matchLen++;
+    else break;
+  }
+  wordSoFar  = newText.slice(0, matchLen);
+  junkBuffer = newText.slice(matchLen);
+  cursor     = wordStart + matchLen;
+  localCursor = Math.max(0, Math.min(newLocalCursor, newText.length));
+  for (let i = wordStart; i < cursor; i++) charStates[i] = 'correct';
+  updateCarPos();
+  syncInputValue();
+  updateWordDisplay();
+  updateDisplay();
+  updateFingerHint();
+  if (cursor >= chars.length && junkBuffer.length === 0) finishRun();
+}
+
 // ── Backspace handler ─────────────────────────────────────────
 
 function handleBackspace() {
   if (junkBuffer.length > 0) {
     junkBuffer = junkBuffer.slice(0, -1);
+    localCursor = wordSoFar.length + junkBuffer.length;
+    syncInputValue();
     updateWordDisplay();
     updateDisplay();
     updateFingerHint();
     return;
   }
-
-  // No junk — retreat one correct character, but not past word start
   if (cursor <= wordStart) return;
-
   cursor--;
   updateCarPos();
   charStates[cursor] = 'pending';
   wordSoFar = wordSoFar.slice(0, -1);
+  localCursor = wordSoFar.length;
+  syncInputValue();
   updateWordDisplay();
   updateDisplay();
   updateFingerHint();
