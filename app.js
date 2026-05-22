@@ -535,10 +535,10 @@ wordInput.addEventListener('input', () => {
   setTypedText(wordInput.value, wordInput.selectionStart ?? wordInput.value.length);
 });
 
-document.addEventListener('selectionchange', () => {
-  if (document.activeElement !== wordInput || wordInput.disabled) return;
-  const s = wordInput.selectionStart ?? 0;
-  const e = wordInput.selectionEnd   ?? s;
+function readBackSelection() {
+  if (wordInput.disabled) return;
+  const s   = wordInput.selectionStart ?? 0;
+  const e   = wordInput.selectionEnd   ?? s;
   const bwd = wordInput.selectionDirection === 'backward';
   if (s !== _selStart || e !== _selEnd) {
     _selStart   = s;
@@ -546,7 +546,14 @@ document.addEventListener('selectionchange', () => {
     localCursor = bwd ? s : e;
     updateWordDisplay();
   }
+}
+
+document.addEventListener('selectionchange', () => {
+  if (document.activeElement !== wordInput) return;
+  readBackSelection();
 });
+
+wordInput.addEventListener('keyup', () => readBackSelection());
 
 wordInput.addEventListener('focus', () => wordDisplay.classList.add('focused'));
 wordInput.addEventListener('blur', () => {
@@ -706,28 +713,30 @@ wordInput.addEventListener('keydown', (e) => {
     if (k !== null) { keystrokeLog.push([k, delta]); lastKeystrokeTime = now; }
   }
 
+  // Any key (incl. navigation/edit combos) counts as activity:
+  // reset voice reminder + abandon timers, update idle accounting.
+  resetIdleTimer();
+  if (startTime) {
+    const now = Date.now();
+    if (lastKeyTime !== null) {
+      const deltaMs = now - lastKeyTime;
+      const tenths  = Math.round(deltaMs / 100);
+      if (tenths > 0) runIntervalMap[tenths] = (runIntervalMap[tenths] || 0) + 1;
+      if (deltaMs > 3000) {
+        runIdleMs += deltaMs - 3000;
+        if (runIdleMs >= 180_000) { abandonRun(); return; }
+      }
+    }
+    lastKeyTime = now;
+    resetIdleAbandonTimer();
+  }
+
   // Let browser handle all non-printable keys (arrows, backspace, delete,
   // and all modifier combos) — input/selectionchange events sync back.
   if (e.key.length !== 1 || e.metaKey || e.ctrlKey || e.altKey) return;
 
   e.preventDefault();
-  resetIdleTimer();
-
   if (!startTime) startTimer();
-
-  const now = Date.now();
-  if (lastKeyTime !== null) {
-    const deltaMs = now - lastKeyTime;
-    const tenths  = Math.round(deltaMs / 100);
-    if (tenths > 0) runIntervalMap[tenths] = (runIntervalMap[tenths] || 0) + 1;
-    if (deltaMs > 3000) {
-      runIdleMs += deltaMs - 3000;
-      if (runIdleMs >= 180_000) { abandonRun(); return; }
-    }
-  }
-  lastKeyTime = now;
-  resetIdleAbandonTimer();
-
   handleChar(e.key);
 });
 
