@@ -720,6 +720,26 @@ wordInput.addEventListener('keydown', (e) => {
     return;
   }
 
+  // Option+Arrow: jump by word within typed text
+  if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    e.preventDefault();
+    const typed = wordSoFar + junkBuffer;
+    if (e.key === 'ArrowLeft') {
+      let p = localCursor - 1;
+      while (p > 0 && typed[p - 1] === ' ') p--;
+      while (p > 0 && typed[p - 1] !== ' ') p--;
+      localCursor = Math.max(0, p);
+    } else {
+      let p = localCursor;
+      while (p < typed.length && typed[p] === ' ') p++;
+      while (p < typed.length && typed[p] !== ' ') p++;
+      localCursor = p;
+    }
+    syncInputValue();
+    updateWordDisplay();
+    return;
+  }
+
   if (e.metaKey || e.ctrlKey || e.altKey) return;
 
   if (e.key === 'Backspace') {
