@@ -1799,6 +1799,21 @@ const GODZILLA_SENTENCES = [
   "Гидра летает со скоростью 30 МАХ - его три головы выпускают молнии мощностью 109 ГВт каждая; пугающая статистика!",
 ];
 
+const RULES_SENTENCES = [
+  "Восьмое. Помните: жизнь любит удачливых. О прошедшем жалеть бесполезно.",
+  "Девятое. Анализируйте каждый прожитый день: учиться лучше всего на собственных ошибках.",
+  "Десятое. Лучшее лекарство от грусти, от стресса, от неудач - оптимизм.",
+  "Одиннадцатое. Никогда не начинайте новую жизнь. Начинать новую жизнь - это самообман. Улучшайте свою старую жизнь, но делайте это постепенно.",
+  "Двенадцатое. Помните: злиться на других - бесполезное дело. Злость лишь испортит Ваш характер и помешает Вашим делам. Что было, то было.",
+  "Тринадцатое. Запомните, Ваша установка должна быть такой: \"Без меня (без Вас) мир неполон\".",
+  "Четырнадцатое. Не забывайте о \"правиле тридцатого сентября\" (день имени Веры, Надежды, Любови): ВЕРА, НАДЕЖДА, ЛЮБОВЬ. Каждый из нас должен знать, во что он верит, на что надеется, кого любит.",
+  "Пятнадцатое. Даже если Вы очень любите свой компьютер, у Вас круглосуточный бесплатный выход в Интернет, компьютер помогает Вам заработать деньги, помните, что он всего лишь инструмент.",
+  "А добрые отношения между людьми могут быть, только если Вы продолжите нормальное общение с ними.",
+  "Не просиживайте сутки за компьютером, ибо жизнь может пройти мимо.",
+  "А она, согласитесь, интересна сама по себе, какой бы трудной ни была.",
+  "Нет ничего интереснее самой жизни. А она у нас одна.",
+];
+
 const TEXT_SETS = [
   { id: 'neznaika', label: 'Незнайка',    sentences: NEZNAIKA_SENTENCES },
   { id: 'winnie',   label: 'Винни-Пух',   sentences: WINNIE_SENTENCES  },
@@ -1806,6 +1821,7 @@ const TEXT_SETS = [
   { id: 'wizard',   label: 'Волшебник',   sentences: WIZARD_SENTENCES  },
   { id: 'numbers',  label: 'Цифры',       sentences: NUMBERS_SENTENCES },
   { id: 'godzilla', label: 'Годзилла',    sentences: GODZILLA_SENTENCES},
+  { id: 'rules',    label: 'Правила',     sentences: RULES_SENTENCES   },
 ];
 
 // Active sentence pool - updated by setTextSet()
@@ -1870,7 +1886,7 @@ function _getExerciseIndices(startIndex, n, target) {
 // Given a run's text and textSet number, find which sentence index it starts at.
 // Returns { startIndex, count } or { startIndex: -1, count: 0 }.
 function reconstructText(textSetNum, sentenceStart, sentenceCount) {
-  const numToId = { 1:'neznaika', 2:'winnie', 3:'punct', 4:'wizard', 5:'numbers', 6:'godzilla' };
+  const numToId = { 1:'neznaika', 2:'winnie', 3:'punct', 4:'wizard', 5:'numbers', 6:'godzilla', 7:'rules' };
   const set = TEXT_SETS.find(s => s.id === (numToId[textSetNum] || 'neznaika')) || TEXT_SETS[0];
   const sents = set.sentences;
   const parts = [];
@@ -1879,7 +1895,7 @@ function reconstructText(textSetNum, sentenceStart, sentenceCount) {
 }
 
 function findStartIndex(text, textSetNum) {
-  const numToId = { 1:'neznaika', 2:'winnie', 3:'punct', 4:'wizard', 5:'numbers', 6:'godzilla' };
+  const numToId = { 1:'neznaika', 2:'winnie', 3:'punct', 4:'wizard', 5:'numbers', 6:'godzilla', 7:'rules' };
   const set = TEXT_SETS.find(s => s.id === (numToId[textSetNum] || 'neznaika')) || TEXT_SETS[0];
   const sents = set.sentences;
   for (let i = 0; i < sents.length; i++) {
