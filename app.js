@@ -60,7 +60,7 @@ let currentTextSetId = 'neznaika';
 function _computeSentenceVisits(textSetNum) {
   const visits = [];
   for (const r of (Stats.getRuns?.() || [])) {
-    if (r.incomplete || (r.textSet ?? 1) !== textSetNum || r.sentenceStart < 0 || !r.sentenceCount) continue;
+    if ((r.textSet ?? 1) !== textSetNum || r.sentenceStart < 0 || !r.sentenceCount) continue;
     for (let i = 0; i < r.sentenceCount; i++) {
       const idx = (r.sentenceStart + i) % SENTENCES.length;
       visits[idx] = (visits[idx] || 0) + 1;
