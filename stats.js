@@ -131,7 +131,7 @@ const Stats = (() => {
   function isoToRu(iso) { const [y, m, d] = iso.split('-'); return `${d}.${m}.${y}`; }
 
   function last10Runs(allRuns) {
-    return allRuns.slice(-10);
+    return allRuns.slice(-5);
   }
 
   function calcEma(runsArr) {
@@ -2071,17 +2071,17 @@ async function pushToGist({ force = false } = {}) {
     const cpmMinRecords = hasDayLines ? computeRecords(allRuns.map(r => ({ cpm: r.cpmMin ?? 0 }))) : null;
     const errRecords = computeErrorRecords(allRuns);
 
-    // Rolling up-to-10-run average using full history for context
+    // Rolling up-to-5-run average using full history for context
     const cpmRolling10 = allRuns.map((run, i) => {
       const gi = globalIdxOf?.get(run) ?? i;
-      const w  = Math.min(gi + 1, 10);
+      const w  = Math.min(gi + 1, 5);
       const src = fullRuns ?? allRuns;
       return Math.round(src.slice(gi - w + 1, gi + 1).map(r => r.cpm).reduce((s, v) => s + v, 0) / w);
     });
     const errRolling10 = allRuns.map((run, i) => {
       const gi  = globalIdxOf?.get(run) ?? i;
       const src = fullRuns ?? allRuns;
-      const sl  = src.slice(Math.max(0, gi - 9), gi + 1)
+      const sl  = src.slice(Math.max(0, gi - 4), gi + 1)
         .map(r => r.errors != null && r.chars ? r.errors / r.chars * 100 : null)
         .filter(v => v !== null);
       return sl.length ? sl.reduce((s, v) => s + v, 0) / sl.length : null;
@@ -2105,7 +2105,7 @@ async function pushToGist({ force = false } = {}) {
     }
     const rolling10Tips = allRuns.map((run, i) => {
       const gi  = globalIdxOf?.get(run) ?? i;
-      const w   = Math.min(gi + 1, 10);
+      const w   = Math.min(gi + 1, 5);
       const src = fullRuns ?? allRuns;
       const startRun = src[gi - w + 1];
       return `Среднее ${w} заездов (${gi - w + 2}–${gi + 1}, ${fmtDateRange(startRun.date, run.date)}): ${cpmRolling10[i]} зн/мин`;
@@ -2481,11 +2481,11 @@ async function pushToGist({ force = false } = {}) {
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-cpm" checked> <span style="color:#3b82f6">● скорость, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-trend" checked> <span style="color:#06b6d4">● тренд</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-ema"> <span style="color:#f97316">● скользящее</span></label>
-        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-rolling5"> <span style="color:#a855f7">● ср-10, зн/мин</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-rolling5"> <span style="color:#a855f7">● ср-5, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#ef4444">● ошибки, %</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-trend"> <span style="color:#b91c1c">╌ тренд ошибок</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-ema"> <span style="color:#f97316">● скользящее ошибок</span></label>
-        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-rolling5"> <span style="color:#a855f7">● ср-10 ошибок</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-rolling5"> <span style="color:#a855f7">● ср-5 ошибок</span></label>
       </div>
       </div>
       <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block" data-plot-r="${W - padR}">
@@ -3036,9 +3036,9 @@ async function pushToGist({ force = false } = {}) {
     let level = 2;
     while (level < 8) {
       const modeRuns = complete.filter(r => r.mode === level);
-      if (modeRuns.length < 10) break;
-      const last10 = modeRuns.slice(-10);
-      const avg = last10.reduce((s, r) => s + r.cpm, 0) / 10;
+      if (modeRuns.length < 5) break;
+      const last5 = modeRuns.slice(-5);
+      const avg = last5.reduce((s, r) => s + r.cpm, 0) / 5;
       if (avg < 100) break;
       level++;
     }
