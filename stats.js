@@ -2540,7 +2540,7 @@ async function pushToGist({ force = false } = {}) {
     const usedSets  = [...new Set(allRuns.map(r => r.textSet ?? 1))].sort((a,b) => a-b);
     const usedModes = [...new Set(allRuns.map(_effectiveMode))].sort((a,b) => a-b);
     for (const s of usedSets)  if (!_seenTextSets.has(s)) { _seenTextSets.add(s); filterTextSets.add(s); }
-    for (const m of usedModes) if (!_seenModes.has(m))    { _seenModes.add(m);    filterModes.add(m); }
+    for (const m of usedModes) if (!_seenModes.has(m))    { _seenModes.add(m); if (m === _currentMode) filterModes.add(m); }
     const makeRow = (label, items, names, activeSet, attr) => {
       if (!items.length) return '';
       const cbs = items.map(v =>
@@ -3048,5 +3048,8 @@ async function pushToGist({ force = false } = {}) {
   let _currentTextSetId = 'neznaika';
   function setTextSetId(id) { _currentTextSetId = id; }
 
-  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount, calcStars, setTextSetId, getHighlightLevel, getRuns: () => runs };
+  let _currentMode = 1;
+  function setMode(m) { _currentMode = m; }
+
+  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount, calcStars, setTextSetId, setMode, getHighlightLevel, getRuns: () => runs };
 })();

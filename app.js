@@ -109,9 +109,11 @@ function initHighlightSetting() {
   if (!sel) return;
   sel.value = highlightMode;
   applyFingerSetting();
+  Stats.setMode(HIGHLIGHT_MODE_NUM[highlightMode] ?? 1);
   sel.addEventListener('change', () => {
     highlightMode = sel.value;
     localStorage.setItem(LS_HIGHLIGHT_MODE, highlightMode);
+    Stats.setMode(HIGHLIGHT_MODE_NUM[highlightMode] ?? 1);
     applyFingerSetting();
     updateDisplay();
   });
