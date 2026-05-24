@@ -2017,7 +2017,7 @@ async function pushToGist({ force = false } = {}) {
       errTrendVals = Array.from({length: n + 10}, (_, i) => Math.max(0, eA + eB * i));
     }
     const maxErrForecast = errTrendVals
-      ? Math.max(maxErr, ...[n, n+3, n+6, n+9].map(i => errTrendVals[i]))
+      ? Math.max(maxErr, ...[n, n+3, n+6, n+9].map(i => errTrendVals[i] * 1.1))
       : maxErr;
 
     // Error scale: bottom half of chart (v=maxErrForecast → midpoint, v=0 → near bottom)
@@ -2423,6 +2423,13 @@ async function pushToGist({ force = false } = {}) {
       const tip = `Прогноз #${i + 1}: ${v.toFixed(1)}%`.replace(/"/g, '&quot;');
       return `<circle cx="${x}" cy="${y}" r="4" fill="#b91c1c" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
     }).join('') : '';
+    const upperErrTrendVals = errTrendVals ? errTrendVals.map(v => v * 1.1) : null;
+    const upperErrNowDot = upperErrTrendVals ? (() => {
+      const v = upperErrTrendVals[n - 1];
+      const x = xPos(n - 1).toFixed(1), y = yScaleErr(v).toFixed(1);
+      const tip = `Верхний тренд ошибок сейчас: ${v.toFixed(1)}%`.replace(/"/g, '&quot;');
+      return `<circle cx="${x}" cy="${y}" r="4" fill="#b91c1c" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
+    })() : '';
 
     // Error EMA (α=0.1) over full history
     const _errEmaFull = [];
@@ -2503,6 +2510,7 @@ async function pushToGist({ force = false } = {}) {
         ${lineGroup(errEmaVals, maxErrForecast, '#f97316', 'chart-group-err-ema', errEmaTips, null, true, null, yScaleErr)}
         ${lineGroup(errRolling10, maxErrForecast, '#a855f7', 'chart-group-err-rolling5', tips, null, true, null, yScaleErr)}
         ${errTrendVals ? smoothLine(errTrendVals, maxErrForecast, '#b91c1c', 'chart-group-err-trend', '6,3', errTrendDots, true, yScaleErr) : ''}
+        ${upperErrTrendVals ? smoothLine(upperErrTrendVals, maxErrForecast, '#b91c1c', 'chart-group-upper-err-trend', '3,4', upperErrNowDot, true, yScaleErr) : ''}
         ${rightAxis}
         ${xLabels}
       </svg>
@@ -2714,8 +2722,10 @@ async function pushToGist({ force = false } = {}) {
         });
         const togErrTrend = document.getElementById('chart-toggle-err-trend');
         if (togErrTrend) togErrTrend.addEventListener('change', () => {
-          const g = document.getElementById('chart-group-err-trend');
-          if (g) g.style.display = togErrTrend.checked ? '' : 'none';
+          ['chart-group-err-trend', 'chart-group-upper-err-trend'].forEach(id => {
+            const g = document.getElementById(id);
+            if (g) g.style.display = togErrTrend.checked ? '' : 'none';
+          });
         });
         const togErrEma = document.getElementById('chart-toggle-err-ema');
         if (togErrEma) togErrEma.addEventListener('change', () => {
