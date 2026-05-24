@@ -1160,15 +1160,17 @@ async function pushToGist({ force = false } = {}) {
     el.textContent = `${replayState.logIdx} / ${total}`;
   }
 
-  function backfillCpmStars(globalRuns) {
+  function backfillCpmStars(sourceRuns) {
     const result = new Map();
     const completeCpms = [];
-    for (const r of globalRuns) {
+    for (const r of sourceRuns) {
+      const cpm = (!r.incomplete && r.cpm != null && !r.lazy) ? r.cpm : null;
+      if (cpm !== null) completeCpms.push(cpm);
       if (r.stars != null) {
         result.set(r, r.stars);
-      } else if (r.incomplete || r.cpm == null || r.lazy) {
+      } else if (cpm === null) {
         result.set(r, null);
-      } else if (completeCpms.length < 2) {
+      } else if (completeCpms.length < 3) {
         result.set(r, 3);
       } else {
         const window = completeCpms.slice(-50);
@@ -1182,19 +1184,18 @@ async function pushToGist({ force = false } = {}) {
         const a = (sy - b * sx) / n;
         const trend = a + b * (n - 1);
         const lower = trend * 0.9;
-        if (r.cpm >= trend)       result.set(r, 3);
-        else if (r.cpm >= lower)  result.set(r, 2);
-        else                      result.set(r, 1);
+        if (cpm >= trend)       result.set(r, 3);
+        else if (cpm >= lower)  result.set(r, 2);
+        else                    result.set(r, 1);
       }
-      if (!r.incomplete && r.cpm != null && !r.lazy) completeCpms.push(r.cpm);
     }
     return result;
   }
 
-  function computeErrorTrendStars(globalRuns) {
+  function computeErrorTrendStars(sourceRuns) {
     const result = new Map();
     const completeErrs = [];
-    for (const r of globalRuns) {
+    for (const r of sourceRuns) {
       const v = (!r.incomplete && !r.lazy && r.errors != null && r.chars) ? r.errors / r.chars * 100 : null;
       if (v !== null) completeErrs.push(v);
       if (v === null) {
@@ -1225,8 +1226,8 @@ async function pushToGist({ force = false } = {}) {
     const cpmLabels = computeRecords(allRuns);
     const errLabels = computeErrorRecords(allRuns);
     const lvlChanges = computeLevelChanges(allRuns);
-    const errStarsMap = computeErrorTrendStars(runs);
-    const cpmStarsMap = backfillCpmStars(runs);
+    const errStarsMap = computeErrorTrendStars(allRuns);
+    const cpmStarsMap = backfillCpmStars(allRuns);
     const total = allRuns.length;
     const rows = [...allRuns].map((r, i) => ({ r, i, cl: cpmLabels[i], el: errLabels[i], lc: lvlChanges[i], es: errStarsMap.get(r), cs: cpmStarsMap.get(r) })).reverse().map(({ r, i, cl, el, lc, es, cs }) => {
       const cpmBadge = cl === 'record'
