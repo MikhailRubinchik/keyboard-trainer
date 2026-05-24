@@ -246,6 +246,7 @@ html, body {
 
 .car-color-picker {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 7px;
   justify-content: center;
@@ -262,6 +263,7 @@ html, body {
 .car-swatch {
   width: 22px;
   height: 22px;
+  flex-shrink: 0;
   border-radius: 50%;
   border: 2px solid transparent;
   outline: none;
