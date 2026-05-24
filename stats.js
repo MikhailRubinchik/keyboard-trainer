@@ -1265,7 +1265,7 @@ async function pushToGist({ force = false } = {}) {
 
       const lvlBadge      = lc != null ? ` <span class="run-badge run-badge--level">→${lc}</span>` : '';
       const runMode = r.mode != null ? r.mode : (r.noFinger ? 2 : 1);
-      const modeBadge = ` <span class="run-badge run-badge--mode" title="Режим ${runMode}">${runMode}</span>`;
+      const modeBadge = ` <span class="run-badge run-badge--mode" title="${_MODE_NAMES[runMode] ?? 'Режим ' + runMode}">${runMode}</span>`;
       const runExt = r.externalFeature || 'laptop';
       const runExtNum = _EXTERNAL_FEATURE_NUM[runExt] ?? '?';
       const extBadge = ` <span class="run-badge run-badge--mode" title="${_EXTERNAL_FEATURE_NAMES[runExt] ?? runExt}">${runExtNum}</span>`;
