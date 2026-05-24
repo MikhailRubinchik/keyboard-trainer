@@ -1826,7 +1826,7 @@ const TEXT_SETS = [
   { id: 'numbers',   label: 'Цифры',             sentences: NUMBERS_SENTENCES },
   { id: 'godzilla',  label: 'Годзилла',          sentences: GODZILLA_SENTENCES},
   { id: 'rules',     label: 'Правила',           sentences: RULES_SENTENCES   },
-  { id: 'neznaika2', label: 'Незнайка-подвеска', sentences: NEZNAIKA_SENTENCES },
+  { id: 'neznaika2', label: 'Незнайка-подвеска', sentences: NEZNAIKA_SENTENCES2 },
 ];
 
 // Active sentence pool - updated by setTextSet()
