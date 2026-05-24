@@ -2710,8 +2710,6 @@ async function pushToGist({ force = false } = {}) {
       const maxIso = allDates[allDates.length - 1];
 
       function renderCharts(fromIso, toIso) {
-        chartFromIso = fromIso;
-        chartToIso   = toIso;
         const displayed = complete.filter(r => {
           const iso = ruToIso(r.date);
           return iso >= fromIso && iso <= toIso;
@@ -2767,8 +2765,8 @@ async function pushToGist({ force = false } = {}) {
 
         const fromInput = document.getElementById('chart-from');
         const toInput   = document.getElementById('chart-to');
-        if (fromInput) fromInput.addEventListener('change', () => renderCharts(fromInput.value, toInput?.value || maxIso));
-        if (toInput)   toInput.addEventListener('change',   () => renderCharts(fromInput?.value || minIso, toInput.value));
+        if (fromInput) fromInput.addEventListener('change', () => { chartFromIso = fromInput.value; renderCharts(fromInput.value, toInput?.value || maxIso); });
+        if (toInput)   toInput.addEventListener('change',   () => { chartToIso   = toInput.value;   renderCharts(fromInput?.value || minIso, toInput.value); });
         const btnLast50 = document.getElementById('btn-chart-last50');
         if (btnLast50) btnLast50.addEventListener('click', () => { chartFromIso = ''; chartToIso = ''; renderCharts(getDefaultFromIso(), maxIso); });
         const btnAll = document.getElementById('btn-chart-all');
@@ -2872,8 +2870,8 @@ async function pushToGist({ force = false } = {}) {
         const toEl   = document.getElementById('chart-to');
         if (fromEl) { fromEl.min = minIso; fromEl.max = maxIso; }
         if (toEl)   { toEl.min   = minIso; toEl.max   = maxIso; }
-        if (fromEl) fromEl.addEventListener('change', () => renderCharts(fromEl.value, toEl?.value || maxIso));
-        if (toEl)   toEl.addEventListener('change',   () => renderCharts(fromEl?.value || minIso, toEl.value));
+        if (fromEl) fromEl.addEventListener('change', () => { chartFromIso = fromEl.value; renderCharts(fromEl.value, toEl?.value || maxIso); });
+        if (toEl)   toEl.addEventListener('change',   () => { chartToIso   = toEl.value;   renderCharts(fromEl?.value || minIso, toEl.value); });
 
         let tip = document.getElementById('chart-tooltip');
         if (!tip) {
