@@ -1568,11 +1568,20 @@ async function pushToGist({ force = false } = {}) {
       ${bars}${xLabels}${yLabel}
     </svg>`;
 
+    // Cumulative sums: prefix = same speed or faster (t ≤ current), suffix = same or slower (t ≥ current)
+    let _pre = 0;
+    const prefixPct = byTime.map(d => (_pre += d.pct));
+    const suffixPct = new Array(byTime.length);
+    let _suf = 0;
+    for (let i = byTime.length - 1; i >= 0; i--) suffixPct[i] = (_suf += byTime[i].pct);
+
     // List: sorted by time asc
     const list = byTime
-      .map(({ t, count, pct }) => `<div class="interval-row">
+      .map(({ t, count, pct }, i) => `<div class="interval-row">
         <span class="interval-label">${(t / 10).toFixed(1)}с</span>
         <span class="interval-pct">${Math.round(pct)}% <span class="freq-total">(${count})</span></span>
+        <span class="interval-pct" style="color:var(--text-dim);width:3rem" title="С такой же скоростью или быстрее">≤ ${Math.round(prefixPct[i])}%</span>
+        <span class="interval-pct" style="color:var(--text-dim);width:3rem" title="С такой же скоростью или медленнее">≥ ${Math.round(suffixPct[i])}%</span>
       </div>`).join('');
 
     return svg + list;
