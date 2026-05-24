@@ -25,7 +25,6 @@ const Stats = (() => {
     'external':             'Внешняя',
     'external-stand':       'Внешняя на подвеске',
     'external-stand-towel': 'Внешняя на подвеске + полотенце',
-    '':                     '—',
   };
   function _effectiveMode(r) { return r.mode != null ? r.mode : (r.noFinger ? 2 : 1); }
   let chartFromIso    = '';
@@ -2631,7 +2630,7 @@ async function pushToGist({ force = false } = {}) {
     return allRuns.filter(r =>
       filterTextSets.has(r.textSet ?? 1) &&
       filterModes.has(_effectiveMode(r)) &&
-      filterExternalFeatures.has(r.externalFeature ?? '')
+      filterExternalFeatures.has(r.externalFeature || 'laptop')
     );
   }
 
@@ -2640,7 +2639,7 @@ async function pushToGist({ force = false } = {}) {
     if (!el) return;
     const usedSets  = [...new Set(allRuns.map(r => r.textSet ?? 1))].sort((a,b) => a-b);
     const usedModes = [...new Set(allRuns.map(_effectiveMode))].sort((a,b) => a-b);
-    const usedExternalFeatures = [...new Set(allRuns.map(r => r.externalFeature ?? ''))].sort();
+    const usedExternalFeatures = [...new Set(allRuns.map(r => r.externalFeature || 'laptop'))].sort();
     const currentSetNum = ({ neznaika:1, winnie:2, punct:3, wizard:4, numbers:5, godzilla:6, rules:7, neznaika2:8 })[_currentTextSetId] ?? 1;
     for (const s of usedSets)  if (!_seenTextSets.has(s)) { _seenTextSets.add(s); if (s === currentSetNum) filterTextSets.add(s); }
     for (const m of usedModes) if (!_seenModes.has(m))    { _seenModes.add(m); if (m <= _currentMode) filterModes.add(m); }
