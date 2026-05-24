@@ -248,12 +248,10 @@ html, body {
 
 .car-color-picker {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 7px;
   justify-content: center;
   margin: 0 auto 12px;
-  max-width: 400px;
 }
 
 .car-color-label {
