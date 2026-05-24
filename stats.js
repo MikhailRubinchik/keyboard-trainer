@@ -1160,12 +1160,35 @@ async function pushToGist({ force = false } = {}) {
     el.textContent = `${replayState.logIdx} / ${total}`;
   }
 
+  function computeErrorTrendStars(allRuns) {
+    const n = allRuns.length;
+    const errs = allRuns.map(r => (r.errors != null && r.chars) ? r.errors / r.chars * 100 : null);
+    const nonNull = errs.map((v, i) => [i, v]).filter(([, v]) => v !== null);
+    if (nonNull.length < 2) return new Array(n).fill(null);
+    const eN     = nonNull.length;
+    const eSumX  = nonNull.reduce((s, [i])    => s + i,     0);
+    const eSumX2 = nonNull.reduce((s, [i])    => s + i * i, 0);
+    const eSumY  = nonNull.reduce((s, [, v])  => s + v,     0);
+    const eSumXY = nonNull.reduce((s, [i, v]) => s + i * v, 0);
+    const eB = (eN * eSumXY - eSumX * eSumY) / (eN * eSumX2 - eSumX * eSumX);
+    const eA = (eSumY - eB * eSumX) / eN;
+    return errs.map((v, i) => {
+      if (v === null) return null;
+      const trend = Math.max(0, eA + eB * i);
+      if (v < trend / 3) return 3;
+      if (v < trend / 2) return 2;
+      if (v < trend)     return 1;
+      return 0;
+    });
+  }
+
   function renderTableRuns(allRuns, inProgress) {
     const cpmLabels = computeRecords(allRuns);
     const errLabels = computeErrorRecords(allRuns);
     const lvlChanges = computeLevelChanges(allRuns);
+    const errStars = computeErrorTrendStars(allRuns);
     const total = allRuns.length;
-    const rows = [...allRuns].map((r, i) => ({ r, i, cl: cpmLabels[i], el: errLabels[i], lc: lvlChanges[i] })).reverse().map(({ r, i, cl, el, lc }) => {
+    const rows = [...allRuns].map((r, i) => ({ r, i, cl: cpmLabels[i], el: errLabels[i], lc: lvlChanges[i], es: errStars[i] })).reverse().map(({ r, i, cl, el, lc, es }) => {
       const cpmBadge = cl === 'record'
         ? ' <span class="run-badge run-badge--record">Рекорд</span>'
         : cl === 'repeat'
@@ -1197,7 +1220,7 @@ async function pushToGist({ force = false } = {}) {
         <td style="white-space:nowrap">${fmtErr(r.errors, r.chars)}${errBadge}</td>
         <td${timeTip}>${formatTime(netSecs)}${lazyBadge}</td>
         <td style="white-space:nowrap">${r.cpm} зн/мин <button class="btn-run-detail" title="Детали заезда"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" style="display:inline;vertical-align:middle"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4.5" y="3" width="3" height="7" fill="currentColor"/><rect x="9" y="0" width="3" height="10" fill="currentColor"/></svg></button>${cpmBadge}</td>
-        <td style="white-space:nowrap">${r.stars != null ? '<span style="color:#f59e0b">★</span>'.repeat(r.stars) + '<span style="color:#d1d5db">★</span>'.repeat(3 - r.stars) : ''}</td>
+        <td style="white-space:nowrap">${r.stars != null ? '<span style="color:#f59e0b">★</span>'.repeat(r.stars) + '<span style="color:#d1d5db">★</span>'.repeat(3 - r.stars) : ''}${es != null ? ' ' + '<span style="color:#3b82f6">★</span>'.repeat(es) + '<span style="color:#d1d5db">★</span>'.repeat(3 - es) : ''}</td>
       </tr>`;
     }).join('');
 
