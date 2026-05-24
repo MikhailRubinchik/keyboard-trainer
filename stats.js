@@ -1160,6 +1160,37 @@ async function pushToGist({ force = false } = {}) {
     el.textContent = `${replayState.logIdx} / ${total}`;
   }
 
+  function backfillCpmStars(globalRuns) {
+    const result = new Map();
+    const completeCpms = [];
+    for (const r of globalRuns) {
+      if (r.stars != null) {
+        result.set(r, r.stars);
+      } else if (r.incomplete || r.cpm == null || r.lazy) {
+        result.set(r, null);
+      } else if (completeCpms.length < 2) {
+        result.set(r, 3);
+      } else {
+        const window = completeCpms.slice(-50);
+        const n = window.length;
+        const sx  = (n - 1) * n / 2;
+        const sx2 = (n - 1) * n * (2 * n - 1) / 6;
+        const sy  = window.reduce((s, v) => s + v, 0);
+        const sxy = window.reduce((s, v, j) => s + j * v, 0);
+        const denom = n * sx2 - sx * sx || 1;
+        const b = (n * sxy - sx * sy) / denom;
+        const a = (sy - b * sx) / n;
+        const trend = a + b * (n - 1);
+        const lower = trend * 0.9;
+        if (r.cpm >= trend)       result.set(r, 3);
+        else if (r.cpm >= lower)  result.set(r, 2);
+        else                      result.set(r, 1);
+      }
+      if (!r.incomplete && r.cpm != null && !r.lazy) completeCpms.push(r.cpm);
+    }
+    return result;
+  }
+
   function computeErrorTrendStars(allRuns) {
     const n = allRuns.length;
     const errs = allRuns.map(r => (r.errors != null && r.chars) ? r.errors / r.chars * 100 : null);
@@ -1187,8 +1218,9 @@ async function pushToGist({ force = false } = {}) {
     const errLabels = computeErrorRecords(allRuns);
     const lvlChanges = computeLevelChanges(allRuns);
     const errStars = computeErrorTrendStars(allRuns);
+    const cpmStarsMap = backfillCpmStars(runs);
     const total = allRuns.length;
-    const rows = [...allRuns].map((r, i) => ({ r, i, cl: cpmLabels[i], el: errLabels[i], lc: lvlChanges[i], es: errStars[i] })).reverse().map(({ r, i, cl, el, lc, es }) => {
+    const rows = [...allRuns].map((r, i) => ({ r, i, cl: cpmLabels[i], el: errLabels[i], lc: lvlChanges[i], es: errStars[i], cs: cpmStarsMap.get(r) })).reverse().map(({ r, i, cl, el, lc, es, cs }) => {
       const cpmBadge = cl === 'record'
         ? ' <span class="run-badge run-badge--record">Рекорд</span>'
         : cl === 'repeat'
@@ -1220,7 +1252,7 @@ async function pushToGist({ force = false } = {}) {
         <td style="white-space:nowrap">${fmtErr(r.errors, r.chars)}${errBadge}</td>
         <td${timeTip}>${formatTime(netSecs)}${lazyBadge}</td>
         <td style="white-space:nowrap">${r.cpm} зн/мин <button class="btn-run-detail" title="Детали заезда"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" style="display:inline;vertical-align:middle"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4.5" y="3" width="3" height="7" fill="currentColor"/><rect x="9" y="0" width="3" height="10" fill="currentColor"/></svg></button>${cpmBadge}</td>
-        <td style="white-space:nowrap">${r.stars != null ? '<span style="color:#f59e0b">★</span>'.repeat(r.stars) + '<span style="color:#d1d5db">★</span>'.repeat(3 - r.stars) : ''}${es != null ? ' ' + '<span style="color:#3b82f6">★</span>'.repeat(es) + '<span style="color:#d1d5db">★</span>'.repeat(3 - es) : ''}</td>
+        <td style="white-space:nowrap">${cs != null ? '<span style="color:#f59e0b">★</span>'.repeat(cs) + '<span style="color:#d1d5db">★</span>'.repeat(3 - cs) : ''}${es != null ? ' ' + '<span style="color:#3b82f6">★</span>'.repeat(es) + '<span style="color:#d1d5db">★</span>'.repeat(3 - es) : ''}</td>
       </tr>`;
     }).join('');
 
