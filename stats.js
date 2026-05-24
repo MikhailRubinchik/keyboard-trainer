@@ -2423,7 +2423,7 @@ async function pushToGist({ force = false } = {}) {
       const tip = `Прогноз #${i + 1}: ${v.toFixed(1)}%`.replace(/"/g, '&quot;');
       return `<circle cx="${x}" cy="${y}" r="4" fill="#b91c1c" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
     }).join('') : '';
-    const lowerErrTrendVals = errTrendVals ? errTrendVals.map(v => v * 0.9) : null;
+    const lowerErrTrendVals = errTrendVals ? errTrendVals.map(v => v / 3) : null;
     const lowerErrNowDot = lowerErrTrendVals ? (() => {
       const v = lowerErrTrendVals[n - 1];
       const x = xPos(n - 1).toFixed(1), y = yScaleErr(v).toFixed(1);
