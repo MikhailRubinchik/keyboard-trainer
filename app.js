@@ -64,9 +64,11 @@ function initExternalFeatureSetting() {
   const sel = document.getElementById('setting-external-feature');
   if (!sel) return;
   sel.value = externalFeature;
+  Stats.setExternalFeature(externalFeature);
   sel.addEventListener('change', () => {
     externalFeature = sel.value;
     localStorage.setItem(LS_EXTERNAL_FEATURE, externalFeature);
+    Stats.setExternalFeature(externalFeature);
   });
 }
 

@@ -12,11 +12,21 @@ const Stats = (() => {
   let lastFilteredRuns = [];
   let filterTextSets = new Set();
   let filterModes = new Set();
+  let filterExternalFeatures = new Set();
   let _seenTextSets = new Set();
   let _seenModes = new Set();
+  let _seenExternalFeatures = new Set();
 
   const _TEXT_SET_NAMES = {1:'Незнайка',2:'Винни-Пух',3:'Знаки',4:'Волшебник',5:'Цифры',6:'Годзилла',7:'Правила',8:'Незнайка-подвеска'};
   const _MODE_NAMES = {1:'Палец',2:'Символ',3:'Префикс',4:'Слово',5:'Слово+рамка',6:'Рамка',7:'Слепой',8:'П.слепой'};
+  const _EXTERNAL_FEATURE_NAMES = {
+    'laptop':               'Ноутбук',
+    'laptop-stickers':      'Ноутбук + наклейки',
+    'external':             'Внешняя',
+    'external-stand':       'Внешняя на подвеске',
+    'external-stand-towel': 'Внешняя на подвеске + полотенце',
+    '':                     '—',
+  };
   function _effectiveMode(r) { return r.mode != null ? r.mode : (r.noFinger ? 2 : 1); }
   let chartFromIso    = '';
   let chartToIso      = '';
@@ -2620,7 +2630,8 @@ async function pushToGist({ force = false } = {}) {
   function applyRunFilters(allRuns) {
     return allRuns.filter(r =>
       filterTextSets.has(r.textSet ?? 1) &&
-      filterModes.has(_effectiveMode(r))
+      filterModes.has(_effectiveMode(r)) &&
+      filterExternalFeatures.has(r.externalFeature ?? '')
     );
   }
 
@@ -2629,9 +2640,11 @@ async function pushToGist({ force = false } = {}) {
     if (!el) return;
     const usedSets  = [...new Set(allRuns.map(r => r.textSet ?? 1))].sort((a,b) => a-b);
     const usedModes = [...new Set(allRuns.map(_effectiveMode))].sort((a,b) => a-b);
+    const usedExternalFeatures = [...new Set(allRuns.map(r => r.externalFeature ?? ''))].sort();
     const currentSetNum = ({ neznaika:1, winnie:2, punct:3, wizard:4, numbers:5, godzilla:6, rules:7, neznaika2:8 })[_currentTextSetId] ?? 1;
     for (const s of usedSets)  if (!_seenTextSets.has(s)) { _seenTextSets.add(s); if (s === currentSetNum) filterTextSets.add(s); }
     for (const m of usedModes) if (!_seenModes.has(m))    { _seenModes.add(m); if (m <= _currentMode) filterModes.add(m); }
+    for (const f of usedExternalFeatures) if (!_seenExternalFeatures.has(f)) { _seenExternalFeatures.add(f); if (f === _currentExternalFeature) filterExternalFeatures.add(f); }
     const makeRow = (label, items, names, activeSet, attr) => {
       if (!items.length) return '';
       const cbs = items.map(v =>
@@ -2640,7 +2653,8 @@ async function pushToGist({ force = false } = {}) {
       return `<div class="stats-filter-row"><span class="stats-filter-label">${label}</span>${cbs}</div>`;
     };
     el.innerHTML = makeRow('Текст:', usedSets, _TEXT_SET_NAMES, filterTextSets, 'data-filter-set') +
-                   makeRow('Режим:', usedModes, _MODE_NAMES, filterModes, 'data-filter-mode');
+                   makeRow('Режим:', usedModes, _MODE_NAMES, filterModes, 'data-filter-mode') +
+                   makeRow('Особенности:', usedExternalFeatures, _EXTERNAL_FEATURE_NAMES, filterExternalFeatures, 'data-filter-ext');
     el.querySelectorAll('[data-filter-set]').forEach(cb => {
       cb.addEventListener('change', () => {
         const s = +cb.dataset.filterSet;
@@ -2652,6 +2666,13 @@ async function pushToGist({ force = false } = {}) {
       cb.addEventListener('change', () => {
         const m = +cb.dataset.filterMode;
         cb.checked ? filterModes.add(m) : filterModes.delete(m);
+        renderStats(runs);
+      });
+    });
+    el.querySelectorAll('[data-filter-ext]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const f = cb.dataset.filterExt;
+        cb.checked ? filterExternalFeatures.add(f) : filterExternalFeatures.delete(f);
         renderStats(runs);
       });
     });
@@ -3145,5 +3166,8 @@ async function pushToGist({ force = false } = {}) {
   let _currentMode = 1;
   function setMode(m) { _currentMode = m; }
 
-  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount, calcStars, setTextSetId, setMode, getHighlightLevel, getRuns: () => runs };
+  let _currentExternalFeature = 'laptop';
+  function setExternalFeature(f) { _currentExternalFeature = f; }
+
+  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount, calcStars, setTextSetId, setMode, setExternalFeature, getHighlightLevel, getRuns: () => runs };
 })();
