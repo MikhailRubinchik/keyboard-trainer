@@ -50,6 +50,7 @@ const LS_SHOW_FINGER      = 'klavagonki_show_finger';
 const LS_HIGHLIGHT_MODE   = 'klavagonki_highlight_mode';
 const LS_TEXT_SET         = 'klavagonki_text_set';
 const LS_CAR_COLOR        = 'klavagonki_car_color';
+const LS_CAR_DINO         = 'klavagonki_car_dino';
 const HIGHLIGHT_MODE_NUM  = { finger: 1, full: 2, prefix: 3, 'word-error': 4, 'word-error-blind': 5, none: 6, blind: 7, 'full-blind': 8 };
 const HIGHLIGHT_MODE_NAME = Object.fromEntries(Object.entries(HIGHLIGHT_MODE_NUM).map(([k, v]) => [v, k]));
 const TEXT_SET_NUM        = { neznaika: 1, winnie: 2, punct: 3, wizard: 4, numbers: 5, godzilla: 6, rules: 7, neznaika2: 8 };
@@ -315,6 +316,7 @@ function startExercise(level) {
 
   resultOverlay.classList.add('hidden');
   document.querySelector('.car-color-picker')?.classList.remove('locked');
+  document.querySelector('.dino-picker')?.classList.remove('locked');
   showScreen('exercise');
   wordInput.focus();
   resetCarPos();
@@ -388,6 +390,7 @@ window.startContinueRun = function(run) {
 
   resultOverlay.classList.add('hidden');
   document.querySelector('.car-color-picker')?.classList.add('locked');
+  document.querySelector('.dino-picker')?.classList.add('locked');
   showScreen('exercise');
   wordInput.focus();
   updateCarPos();
@@ -631,6 +634,7 @@ function updateFingerHint() {
 
 function startTimer() {
   document.querySelector('.car-color-picker')?.classList.add('locked');
+  document.querySelector('.dino-picker')?.classList.add('locked');
   startTime = Date.now();
   const now = new Date();
   if (!runStartDate) {
@@ -683,6 +687,30 @@ document.querySelectorAll('.car-swatch').forEach(swatch => {
 });
 
 applyCarColor(carColor);
+
+let carDino = localStorage.getItem(LS_CAR_DINO) || '';
+
+function applyCarDino(dino) {
+  carDino = dino;
+  const trackDino  = document.getElementById('track-car-dino');
+  const finishDino = document.getElementById('finish-car-dino');
+  if (trackDino)  trackDino.textContent  = dino;
+  if (finishDino) finishDino.textContent = dino;
+  document.querySelectorAll('.dino-swatch').forEach(s => {
+    s.classList.toggle('active', s.dataset.dino === dino);
+  });
+}
+
+document.querySelectorAll('.dino-swatch').forEach(swatch => {
+  swatch.addEventListener('click', () => {
+    if (startTime) return;
+    const next = swatch.dataset.dino === carDino ? '' : swatch.dataset.dino;
+    localStorage.setItem(LS_CAR_DINO, next);
+    applyCarDino(next);
+  });
+});
+
+applyCarDino(carDino);
 
 // ── Track car ─────────────────────────────────────────────────
 

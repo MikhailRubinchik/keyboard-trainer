@@ -293,6 +293,48 @@ html, body {
   opacity: 0.35;
 }
 
+.dino-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+
+.dino-swatch {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  outline: none;
+  cursor: pointer;
+  padding: 0;
+  background: #f3f4f6;
+  font-size: 17px;
+  line-height: 1;
+  transition: transform 0.1s;
+}
+
+.dino-swatch:hover {
+  transform: scale(1.2);
+}
+
+.dino-swatch.active {
+  border-color: #2563eb;
+  background: #dbeafe;
+}
+
+.dino-picker.locked .dino-swatch {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
+.dino-picker.locked .car-color-label {
+  opacity: 0.35;
+}
+
 .exercise-header {
   display: flex;
   align-items: center;
