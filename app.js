@@ -51,12 +51,24 @@ const LS_HIGHLIGHT_MODE   = 'klavagonki_highlight_mode';
 const LS_TEXT_SET         = 'klavagonki_text_set';
 const LS_CAR_COLOR        = 'klavagonki_car_color';
 const LS_CAR_DINO         = 'klavagonki_car_dino';
+const LS_EXTERNAL_FEATURE = 'klavagonki_external_feature';
 const HIGHLIGHT_MODE_NUM  = { finger: 1, full: 2, prefix: 3, 'word-error': 4, 'word-error-blind': 5, none: 6, blind: 7, 'full-blind': 8 };
 const HIGHLIGHT_MODE_NAME = Object.fromEntries(Object.entries(HIGHLIGHT_MODE_NUM).map(([k, v]) => [v, k]));
 const TEXT_SET_NUM        = { neznaika: 1, winnie: 2, punct: 3, wizard: 4, numbers: 5, godzilla: 6, rules: 7, neznaika2: 8 };
 
 let showFinger      = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
 let highlightMode   = localStorage.getItem(LS_HIGHLIGHT_MODE) || 'full'; // 'full' | 'prefix' | 'none'
+let externalFeature = localStorage.getItem(LS_EXTERNAL_FEATURE) || 'laptop';
+
+function initExternalFeatureSetting() {
+  const sel = document.getElementById('setting-external-feature');
+  if (!sel) return;
+  sel.value = externalFeature;
+  sel.addEventListener('change', () => {
+    externalFeature = sel.value;
+    localStorage.setItem(LS_EXTERNAL_FEATURE, externalFeature);
+  });
+}
 
 let currentTextSetId = 'neznaika';
 function _computeSentenceVisits(textSetNum) {
@@ -1012,6 +1024,7 @@ function handleChar(rawKey) {
       sentenceStart:  lastStartIndex,
       sentenceCount:  currentSentenceCount,
       keystrokeLog:   keystrokeLog.slice(),
+      externalFeature,
       incomplete:     true,
     });
   }
@@ -1201,6 +1214,7 @@ async function finishRun() {
     sentenceStart: lastStartIndex,
     sentenceCount: currentSentenceCount,
     keystrokeLog,
+    externalFeature,
     stars:          lazy ? undefined : Stats.calcStars(cpm),
   });
 
@@ -1326,6 +1340,7 @@ function updateLevelProgressHint() {
 async function init() {
   loadLevel();
   initHighlightSetting();
+  initExternalFeatureSetting();
 
   // Level buttons on home screen
   renderLevelButtons('level-buttons-main', (n) => {
