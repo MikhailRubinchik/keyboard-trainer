@@ -1191,36 +1191,44 @@ async function pushToGist({ force = false } = {}) {
     return result;
   }
 
-  function computeErrorTrendStars(allRuns) {
-    const n = allRuns.length;
-    const errs = allRuns.map(r => (r.errors != null && r.chars) ? r.errors / r.chars * 100 : null);
-    const nonNull = errs.map((v, i) => [i, v]).filter(([, v]) => v !== null);
-    if (nonNull.length < 2) return new Array(n).fill(null);
-    const eN     = nonNull.length;
-    const eSumX  = nonNull.reduce((s, [i])    => s + i,     0);
-    const eSumX2 = nonNull.reduce((s, [i])    => s + i * i, 0);
-    const eSumY  = nonNull.reduce((s, [, v])  => s + v,     0);
-    const eSumXY = nonNull.reduce((s, [i, v]) => s + i * v, 0);
-    const eB = (eN * eSumXY - eSumX * eSumY) / (eN * eSumX2 - eSumX * eSumX);
-    const eA = (eSumY - eB * eSumX) / eN;
-    return errs.map((v, i) => {
-      if (v === null) return null;
-      const trend = Math.max(0, eA + eB * i);
-      if (v < trend / 3) return 3;
-      if (v < trend / 2) return 2;
-      if (v < trend)     return 1;
-      return 0;
-    });
+  function computeErrorTrendStars(globalRuns) {
+    const result = new Map();
+    const completeErrs = [];
+    for (const r of globalRuns) {
+      const v = (!r.incomplete && !r.lazy && r.errors != null && r.chars) ? r.errors / r.chars * 100 : null;
+      if (v === null) {
+        result.set(r, null);
+      } else if (completeErrs.length < 2) {
+        result.set(r, 3);
+      } else {
+        const window = completeErrs.slice(-50);
+        const n = window.length;
+        const sx  = (n - 1) * n / 2;
+        const sx2 = (n - 1) * n * (2 * n - 1) / 6;
+        const sy  = window.reduce((s, x) => s + x, 0);
+        const sxy = window.reduce((s, x, j) => s + j * x, 0);
+        const denom = n * sx2 - sx * sx || 1;
+        const b = (n * sxy - sx * sy) / denom;
+        const a = (sy - b * sx) / n;
+        const trend = Math.max(0, a + b * (n - 1));
+        if (v < trend / 3)      result.set(r, 3);
+        else if (v < trend / 2) result.set(r, 2);
+        else if (v < trend)     result.set(r, 1);
+        else                    result.set(r, 0);
+      }
+      if (v !== null) completeErrs.push(v);
+    }
+    return result;
   }
 
   function renderTableRuns(allRuns, inProgress) {
     const cpmLabels = computeRecords(allRuns);
     const errLabels = computeErrorRecords(allRuns);
     const lvlChanges = computeLevelChanges(allRuns);
-    const errStars = computeErrorTrendStars(allRuns);
+    const errStarsMap = computeErrorTrendStars(runs);
     const cpmStarsMap = backfillCpmStars(runs);
     const total = allRuns.length;
-    const rows = [...allRuns].map((r, i) => ({ r, i, cl: cpmLabels[i], el: errLabels[i], lc: lvlChanges[i], es: errStars[i], cs: cpmStarsMap.get(r) })).reverse().map(({ r, i, cl, el, lc, es, cs }) => {
+    const rows = [...allRuns].map((r, i) => ({ r, i, cl: cpmLabels[i], el: errLabels[i], lc: lvlChanges[i], es: errStarsMap.get(r), cs: cpmStarsMap.get(r) })).reverse().map(({ r, i, cl, el, lc, es, cs }) => {
       const cpmBadge = cl === 'record'
         ? ' <span class="run-badge run-badge--record">Рекорд</span>'
         : cl === 'repeat'
