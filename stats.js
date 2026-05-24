@@ -26,6 +26,13 @@ const Stats = (() => {
     'external-stand':       'Внешняя на подвеске',
     'external-stand-towel': 'Внешняя на подвеске + полотенце',
   };
+  const _EXTERNAL_FEATURE_NUM = {
+    'laptop':               1,
+    'laptop-stickers':      2,
+    'external':             3,
+    'external-stand':       4,
+    'external-stand-towel': 5,
+  };
   function _effectiveMode(r) { return r.mode != null ? r.mode : (r.noFinger ? 2 : 1); }
   let chartFromIso    = '';
   let chartToIso      = '';
@@ -1259,12 +1266,15 @@ async function pushToGist({ force = false } = {}) {
       const lvlBadge      = lc != null ? ` <span class="run-badge run-badge--level">→${lc}</span>` : '';
       const runMode = r.mode != null ? r.mode : (r.noFinger ? 2 : 1);
       const modeBadge = ` <span class="run-badge run-badge--mode" title="Режим ${runMode}">${runMode}</span>`;
+      const runExt = r.externalFeature || 'laptop';
+      const runExtNum = _EXTERNAL_FEATURE_NUM[runExt] ?? '?';
+      const extBadge = ` <span class="run-badge run-badge--mode" title="${_EXTERNAL_FEATURE_NAMES[runExt] ?? runExt}">${runExtNum}</span>`;
       const replayBtn = r.keystrokeLog?.length
         ? ' <button class="btn-replay-run" title="Виртуальный заезд">▶</button>' : '';
       return `
       <tr${r.lazy ? ' class="row--lazy"' : ''} data-run-key="${r.date}~${r.time ?? ''}">
         <td class="run-num" style="white-space:nowrap">${i + 1}${replayBtn}</td>
-        <td title="${r.date}${r.time ? ' · ' + fmtAmPm(r.time) : ''}">${r.date}${modeBadge}</td>
+        <td title="${r.date}${r.time ? ' · ' + fmtAmPm(r.time) : ''}">${r.date}${modeBadge}${extBadge}</td>
         <td style="white-space:nowrap">${r.textSet ?? 1} · ${r.sentenceStart ?? '?'} · ${r.sentenceCount ?? '?'}</td>
         <td>${r.level ?? r.exercise ?? '—'}${lvlBadge}</td>
         <td>${r.chars}</td>
