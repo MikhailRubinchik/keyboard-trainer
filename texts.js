@@ -2,7 +2,9 @@
 // getRandomExercise() picks a random contiguous slice of sentences >= targetChars.
 // If the active text set is too short, sentences are repeated until there is enough.
 
-const NEZNAIKA_SENTENCES2 = [];
+const NEZNAIKA_SENTENCES2 = [
+  "В маленьком городе, который назывался Цветочным, жили маленькие существа - коротышки.",
+];
 const NEZNAIKA_SENTENCES = [
   // ── Знакомство с Цветочным городом ──
   "В маленьком городе, который назывался Цветочным, жили маленькие существа - коротышки.",
