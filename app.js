@@ -52,7 +52,7 @@ const LS_TEXT_SET         = 'klavagonki_text_set';
 const LS_CAR_COLOR        = 'klavagonki_car_color';
 const HIGHLIGHT_MODE_NUM  = { finger: 1, full: 2, prefix: 3, 'word-error': 4, 'word-error-blind': 5, none: 6, blind: 7, 'full-blind': 8 };
 const HIGHLIGHT_MODE_NAME = Object.fromEntries(Object.entries(HIGHLIGHT_MODE_NUM).map(([k, v]) => [v, k]));
-const TEXT_SET_NUM        = { neznaika: 1, winnie: 2, punct: 3, wizard: 4, numbers: 5, godzilla: 6, rules: 7 };
+const TEXT_SET_NUM        = { neznaika: 1, winnie: 2, punct: 3, wizard: 4, numbers: 5, godzilla: 6, rules: 7, neznaika2: 8 };
 
 let showFinger      = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
 let highlightMode   = localStorage.getItem(LS_HIGHLIGHT_MODE) || 'full'; // 'full' | 'prefix' | 'none'

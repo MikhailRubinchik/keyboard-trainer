@@ -1816,13 +1816,14 @@ const RULES_SENTENCES = [
 ];
 
 const TEXT_SETS = [
-  { id: 'neznaika', label: 'Незнайка',    sentences: NEZNAIKA_SENTENCES },
-  { id: 'winnie',   label: 'Винни-Пух',   sentences: WINNIE_SENTENCES  },
-  { id: 'punct',    label: 'Знаки',       sentences: PUNCT_SENTENCES   },
-  { id: 'wizard',   label: 'Волшебник',   sentences: WIZARD_SENTENCES  },
-  { id: 'numbers',  label: 'Цифры',       sentences: NUMBERS_SENTENCES },
-  { id: 'godzilla', label: 'Годзилла',    sentences: GODZILLA_SENTENCES},
-  { id: 'rules',    label: 'Правила',     sentences: RULES_SENTENCES   },
+  { id: 'neznaika',  label: 'Незнайка',          sentences: NEZNAIKA_SENTENCES },
+  { id: 'winnie',    label: 'Винни-Пух',         sentences: WINNIE_SENTENCES  },
+  { id: 'punct',     label: 'Знаки',             sentences: PUNCT_SENTENCES   },
+  { id: 'wizard',    label: 'Волшебник',         sentences: WIZARD_SENTENCES  },
+  { id: 'numbers',   label: 'Цифры',             sentences: NUMBERS_SENTENCES },
+  { id: 'godzilla',  label: 'Годзилла',          sentences: GODZILLA_SENTENCES},
+  { id: 'rules',     label: 'Правила',           sentences: RULES_SENTENCES   },
+  { id: 'neznaika2', label: 'Незнайка-подвеска', sentences: NEZNAIKA_SENTENCES },
 ];
 
 // Active sentence pool - updated by setTextSet()
@@ -1887,7 +1888,7 @@ function _getExerciseIndices(startIndex, n, target) {
 // Given a run's text and textSet number, find which sentence index it starts at.
 // Returns { startIndex, count } or { startIndex: -1, count: 0 }.
 function reconstructText(textSetNum, sentenceStart, sentenceCount) {
-  const numToId = { 1:'neznaika', 2:'winnie', 3:'punct', 4:'wizard', 5:'numbers', 6:'godzilla', 7:'rules' };
+  const numToId = { 1:'neznaika', 2:'winnie', 3:'punct', 4:'wizard', 5:'numbers', 6:'godzilla', 7:'rules', 8:'neznaika2' };
   const set = TEXT_SETS.find(s => s.id === (numToId[textSetNum] || 'neznaika')) || TEXT_SETS[0];
   const sents = set.sentences;
   const parts = [];
@@ -1896,7 +1897,7 @@ function reconstructText(textSetNum, sentenceStart, sentenceCount) {
 }
 
 function findStartIndex(text, textSetNum) {
-  const numToId = { 1:'neznaika', 2:'winnie', 3:'punct', 4:'wizard', 5:'numbers', 6:'godzilla', 7:'rules' };
+  const numToId = { 1:'neznaika', 2:'winnie', 3:'punct', 4:'wizard', 5:'numbers', 6:'godzilla', 7:'rules', 8:'neznaika2' };
   const set = TEXT_SETS.find(s => s.id === (numToId[textSetNum] || 'neznaika')) || TEXT_SETS[0];
   const sents = set.sentences;
   for (let i = 0; i < sents.length; i++) {
