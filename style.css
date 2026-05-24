@@ -240,8 +240,10 @@ html, body {
 /* ── Exercise screen ─────────────────────────────────────── */
 
 .track-container {
-  margin: 0 -24px 8px;
-  width: calc(100% + 48px);
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  margin-bottom: 8px;
 }
 
 .car-color-picker {
