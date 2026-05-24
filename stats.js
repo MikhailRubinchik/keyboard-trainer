@@ -1196,9 +1196,10 @@ async function pushToGist({ force = false } = {}) {
     const completeErrs = [];
     for (const r of globalRuns) {
       const v = (!r.incomplete && !r.lazy && r.errors != null && r.chars) ? r.errors / r.chars * 100 : null;
+      if (v !== null) completeErrs.push(v);
       if (v === null) {
         result.set(r, null);
-      } else if (completeErrs.length < 2) {
+      } else if (completeErrs.length < 3) {
         result.set(r, 3);
       } else {
         const window = completeErrs.slice(-50);
@@ -1216,7 +1217,6 @@ async function pushToGist({ force = false } = {}) {
         else if (v < trend)     result.set(r, 1);
         else                    result.set(r, 0);
       }
-      if (v !== null) completeErrs.push(v);
     }
     return result;
   }
