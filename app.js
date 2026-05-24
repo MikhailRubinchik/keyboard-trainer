@@ -693,12 +693,12 @@ function updateCarPos() {
   const progress = chars.length > 0 ? cursor / chars.length : 0;
   const x = CAR_X_START + progress * (CAR_X_END - CAR_X_START);
   const car = document.getElementById('track-car');
-  if (car) car.setAttribute('transform', `translate(${x.toFixed(1)},36)`);
+  if (car) car.setAttribute('transform', `translate(${x.toFixed(1)},36) scale(2)`);
 }
 
 function resetCarPos() {
   const car = document.getElementById('track-car');
-  if (car) car.setAttribute('transform', `translate(${CAR_X_START},36)`);
+  if (car) car.setAttribute('transform', `translate(${CAR_X_START},36) scale(2)`);
 }
 
 // ── Main keydown handler ──────────────────────────────────────
