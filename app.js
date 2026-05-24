@@ -704,26 +704,104 @@ applyCarColor(carColor);
 
 let carDino = localStorage.getItem(LS_CAR_DINO) || '';
 
+const DINO_STEGO_PATHS = `
+  <rect x="-3.5" y="-2" width="1" height="2" fill="#15803d"/>
+  <rect x="-1" y="-2" width="1" height="2" fill="#15803d"/>
+  <rect x="1.5" y="-2" width="1" height="2" fill="#15803d"/>
+  <rect x="4" y="-2" width="1" height="2" fill="#15803d"/>
+  <path d="M -5 -5 Q -6.5 -3 -5 -2 L 6 -2 Q 7.5 -3 6 -5 Z" fill="#16a34a"/>
+  <circle cx="7.5" cy="-4.5" r="1.3" fill="#16a34a"/>
+  <path d="M -5 -4 Q -8 -4 -9 -2.5" stroke="#16a34a" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <polygon points="-3,-5 -2,-7.5 -1,-5" fill="#0e7c2c"/>
+  <polygon points="0,-5 1,-8 2,-5" fill="#0e7c2c"/>
+  <polygon points="3,-5 4,-7.5 5,-5" fill="#0e7c2c"/>
+  <polygon points="-9,-2.5 -10,-4 -8,-3.5" fill="#0e7c2c"/>`;
+
+const DINO_VELOFEATHER_PATHS = `
+  <line x1="-1.5" y1="-3" x2="-2" y2="0" stroke="#7c2d12" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="1" y1="-3" x2="0.5" y2="0" stroke="#7c2d12" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M -3 -5 Q -3.5 -3 -1 -3 L 4 -3 Q 5.5 -3 5.5 -4 Q 5.5 -5 4 -5 Z" fill="#92400e"/>
+  <path d="M 5.5 -4.3 L 7.5 -5 L 7.5 -3.8 Z" fill="#92400e"/>
+  <circle cx="6.8" cy="-4.3" r="0.25" fill="#fef9c3"/>
+  <path d="M -3 -4 Q -6 -5 -8 -4 Q -9 -3.5 -8 -3" stroke="#92400e" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+  <polygon points="-1,-5 -0.5,-7 0,-5" fill="#fbbf24"/>
+  <polygon points="1,-5 1.5,-7.3 2,-5" fill="#fbbf24"/>
+  <polygon points="3,-5 3.5,-6.5 4,-5" fill="#fbbf24"/>
+  <polygon points="-4,-4.5 -5,-6.5 -3,-5" fill="#fbbf24"/>
+  <polygon points="-6,-4 -7,-6 -5,-4.5" fill="#fbbf24"/>`;
+
+const DINO_MICRORAPTOR_PATHS = `
+  <ellipse cx="0" cy="-3" rx="2.5" ry="1" fill="#1e3a8a"/>
+  <circle cx="2.5" cy="-3.5" r="0.9" fill="#1e3a8a"/>
+  <circle cx="3" cy="-3.6" r="0.18" fill="#fef9c3"/>
+  <path d="M 0 -3.5 Q -2.5 -7 -5 -6 Q -2 -5 0 -3.5 Z" fill="#3b82f6" opacity="0.85"/>
+  <path d="M 0 -3.5 Q 2.5 -7 5 -6 Q 2 -5 0 -3.5 Z" fill="#3b82f6" opacity="0.85"/>
+  <path d="M -1 -2.5 Q -3 -1 -4.5 -1.7 Q -3 -2.5 -1 -2.5 Z" fill="#60a5fa" opacity="0.75"/>
+  <path d="M 1 -2.5 Q 3 -1 4.5 -1.7 Q 3 -2.5 1 -2.5 Z" fill="#60a5fa" opacity="0.75"/>
+  <line x1="-2.5" y1="-3" x2="-6" y2="-2" stroke="#1e3a8a" stroke-width="0.8" stroke-linecap="round"/>
+  <polygon points="-6,-2 -7.5,-3 -7,-1.5" fill="#fbbf24" opacity="0.85"/>`;
+
+const DINOSAURS = [
+  { id: '🦖', label: 'T-Rex',                  emoji: '🦖' },
+  { id: '🦕', label: 'Бронтозавр',             emoji: '🦕' },
+  { id: '🐉', label: 'Дракон',                  emoji: '🐉' },
+  { id: '🦎', label: 'Велоцираптор',           emoji: '🦎' },
+  { id: '🐊', label: 'Спинозавр',              emoji: '🐊' },
+  { id: '🦅', label: 'Птеродактиль',           emoji: '🦅' },
+  { id: '🐢', label: 'Анкилозавр',             emoji: '🐢' },
+  { id: '🦣', label: 'Трицератопс',            emoji: '🦣' },
+  { id: '🦴', label: 'Окаменелость',           emoji: '🦴' },
+  { id: '🥚', label: 'Яйцо',                    emoji: '🥚' },
+  { id: 'stego',        label: 'Стегозавр',                paths: DINO_STEGO_PATHS },
+  { id: 'velo-feather', label: 'Велоцираптор с перьями', paths: DINO_VELOFEATHER_PATHS },
+  { id: 'microraptor',  label: 'Микрораптор',              paths: DINO_MICRORAPTOR_PATHS },
+];
+
+function dinoCarContent(d) {
+  if (!d) return '';
+  if (d.emoji) return `<text x="0" y="-7" font-size="9" text-anchor="middle" dominant-baseline="alphabetic">${d.emoji}</text>`;
+  if (d.paths) return `<g transform="translate(0,-7)">${d.paths}</g>`;
+  return '';
+}
+
+function dinoButtonContent(d) {
+  if (d.emoji) return d.emoji;
+  return `<svg viewBox="-10 -10 20 10" width="22" height="11" style="display:block">${d.paths}</svg>`;
+}
+
+function buildDinoPicker() {
+  const picker = document.querySelector('.dino-picker');
+  if (!picker) return;
+  for (const d of DINOSAURS) {
+    const btn = document.createElement('button');
+    btn.className = 'dino-swatch';
+    btn.dataset.dino = d.id;
+    btn.title = d.label;
+    btn.innerHTML = dinoButtonContent(d);
+    btn.addEventListener('click', () => {
+      if (startTime) return;
+      const next = d.id === carDino ? '' : d.id;
+      localStorage.setItem(LS_CAR_DINO, next);
+      applyCarDino(next);
+    });
+    picker.appendChild(btn);
+  }
+}
+
 function applyCarDino(dino) {
   carDino = dino;
+  const config = DINOSAURS.find(d => d.id === dino) || null;
+  const content = dinoCarContent(config);
   const trackDino  = document.getElementById('track-car-dino');
   const finishDino = document.getElementById('finish-car-dino');
-  if (trackDino)  trackDino.textContent  = dino;
-  if (finishDino) finishDino.textContent = dino;
+  if (trackDino)  trackDino.innerHTML  = content;
+  if (finishDino) finishDino.innerHTML = content;
   document.querySelectorAll('.dino-swatch').forEach(s => {
     s.classList.toggle('active', s.dataset.dino === dino);
   });
 }
 
-document.querySelectorAll('.dino-swatch').forEach(swatch => {
-  swatch.addEventListener('click', () => {
-    if (startTime) return;
-    const next = swatch.dataset.dino === carDino ? '' : swatch.dataset.dino;
-    localStorage.setItem(LS_CAR_DINO, next);
-    applyCarDino(next);
-  });
-});
-
+buildDinoPicker();
 applyCarDino(carDino);
 
 // ── Track car ─────────────────────────────────────────────────

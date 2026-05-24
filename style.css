@@ -313,7 +313,16 @@ html, body {
   background: #f3f4f6;
   font-size: 17px;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: transform 0.1s;
+}
+
+.dino-swatch svg {
+  width: 22px;
+  height: 11px;
+  display: block;
 }
 
 .dino-swatch:hover {

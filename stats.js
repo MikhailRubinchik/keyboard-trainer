@@ -812,6 +812,25 @@ async function pushToGist({ force = false } = {}) {
       pushToGist({ force: true });
     }
 
+    // One-time backfill: runs 102–116 (1-indexed) were typed on a laptop with stickers.
+    const MIG_KEY = 'klavagonki_migrations';
+    const done = JSON.parse(localStorage.getItem(MIG_KEY) || '[]');
+    if (!done.includes('runs-102-116-stickers')) {
+      let changed = false;
+      for (let i = 101; i <= 115 && i < runs.length; i++) {
+        if (!runs[i].externalFeature) {
+          runs[i].externalFeature = 'laptop-stickers';
+          changed = true;
+        }
+      }
+      if (changed) {
+        lsWrite(runs);
+        pushToGist({ force: true });
+      }
+      done.push('runs-102-116-stickers');
+      localStorage.setItem(MIG_KEY, JSON.stringify(done));
+    }
+
     renderStats(runs);
   }
 
