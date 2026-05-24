@@ -2423,6 +2423,13 @@ async function pushToGist({ force = false } = {}) {
       const tip = `Прогноз #${i + 1}: ${v.toFixed(1)}%`.replace(/"/g, '&quot;');
       return `<circle cx="${x}" cy="${y}" r="4" fill="#b91c1c" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
     }).join('') : '';
+    const midErrTrendVals = errTrendVals ? errTrendVals.map(v => v * 0.9) : null;
+    const midErrNowDot = midErrTrendVals ? (() => {
+      const v = midErrTrendVals[n - 1];
+      const x = xPos(n - 1).toFixed(1), y = yScaleErr(v).toFixed(1);
+      const tip = `Средний тренд ошибок сейчас: ${v.toFixed(1)}%`.replace(/"/g, '&quot;');
+      return `<circle cx="${x}" cy="${y}" r="4" fill="#b91c1c" stroke="#fff" stroke-width="1.5" data-tip="${tip}" style="cursor:pointer"/>`;
+    })() : '';
     const lowerErrTrendVals = errTrendVals ? errTrendVals.map(v => v / 3) : null;
     const lowerErrNowDot = lowerErrTrendVals ? (() => {
       const v = lowerErrTrendVals[n - 1];
@@ -2510,7 +2517,8 @@ async function pushToGist({ force = false } = {}) {
         ${lineGroup(errEmaVals, maxErrForecast, '#f97316', 'chart-group-err-ema', errEmaTips, null, true, null, yScaleErr)}
         ${lineGroup(errRolling10, maxErrForecast, '#a855f7', 'chart-group-err-rolling5', tips, null, true, null, yScaleErr)}
         ${errTrendVals ? smoothLine(errTrendVals, maxErrForecast, '#b91c1c', 'chart-group-err-trend', '6,3', errTrendDots, true, yScaleErr) : ''}
-        ${lowerErrTrendVals ? smoothLine(lowerErrTrendVals, maxErrForecast, '#b91c1c', 'chart-group-lower-err-trend', '3,4', lowerErrNowDot, true, yScaleErr) : ''}
+        ${midErrTrendVals ? smoothLine(midErrTrendVals, maxErrForecast, '#b91c1c', 'chart-group-mid-err-trend', '3,4', midErrNowDot, true, yScaleErr) : ''}
+        ${lowerErrTrendVals ? smoothLine(lowerErrTrendVals, maxErrForecast, '#b91c1c', 'chart-group-lower-err-trend', '2,5', lowerErrNowDot, true, yScaleErr) : ''}
         ${rightAxis}
         ${xLabels}
       </svg>
@@ -2722,7 +2730,7 @@ async function pushToGist({ force = false } = {}) {
         });
         const togErrTrend = document.getElementById('chart-toggle-err-trend');
         if (togErrTrend) togErrTrend.addEventListener('change', () => {
-          ['chart-group-err-trend', 'chart-group-lower-err-trend'].forEach(id => {
+          ['chart-group-err-trend', 'chart-group-mid-err-trend', 'chart-group-lower-err-trend'].forEach(id => {
             const g = document.getElementById(id);
             if (g) g.style.display = togErrTrend.checked ? '' : 'none';
           });
