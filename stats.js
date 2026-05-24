@@ -1580,8 +1580,8 @@ async function pushToGist({ force = false } = {}) {
       .map(({ t, count, pct }, i) => `<div class="interval-row">
         <span class="interval-label">${(t / 10).toFixed(1)}с</span>
         <span class="interval-pct">${Math.round(pct)}% <span class="freq-total">(${count})</span></span>
-        <span class="interval-pct" style="color:var(--text-dim);width:3rem" title="С такой же скоростью или быстрее">≤ ${Math.round(prefixPct[i])}%</span>
-        <span class="interval-pct" style="color:var(--text-dim);width:3rem" title="С такой же скоростью или медленнее">≥ ${Math.round(suffixPct[i])}%</span>
+        <span class="interval-pct" style="color:var(--text-dim);width:3.5rem;white-space:nowrap" title="С такой же скоростью или быстрее">≤ ${Math.round(prefixPct[i])}%</span>
+        <span class="interval-pct" style="color:var(--text-dim);width:3.5rem;white-space:nowrap" title="С такой же скоростью или медленнее">≥ ${Math.round(suffixPct[i])}%</span>
       </div>`).join('');
 
     return svg + list;
