@@ -2570,7 +2570,7 @@ async function pushToGist({ force = false } = {}) {
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-ema"> <span style="color:#f97316">● скользящее</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-rolling5"> <span style="color:#a855f7">● ср-5, зн/мин</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err" checked> <span style="color:#ef4444">● ошибки, %</span></label>
-        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-trend"> <span style="color:#b91c1c">╌ тренд ошибок</span></label>
+        <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-trend" checked> <span style="color:#b91c1c">╌ тренд ошибок</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-ema"> <span style="color:#f97316">● скользящее ошибок</span></label>
         <label class="chart-legend-item"><input type="checkbox" id="chart-toggle-err-rolling5"> <span style="color:#a855f7">● ср-5 ошибок</span></label>
       </div>
@@ -2589,9 +2589,9 @@ async function pushToGist({ force = false } = {}) {
         ${lineGroup(errs, maxErrForecast, '#ef4444', 'chart-group-err', tips, errRecords, false, null, yScaleErr)}
         ${lineGroup(errEmaVals, maxErrForecast, '#f97316', 'chart-group-err-ema', errEmaTips, null, true, null, yScaleErr)}
         ${lineGroup(errRolling10, maxErrForecast, '#a855f7', 'chart-group-err-rolling5', tips, null, true, null, yScaleErr)}
-        ${errTrendVals ? smoothLine(errTrendVals, maxErrForecast, '#b91c1c', 'chart-group-err-trend', '6,3', errTrendDots, true, yScaleErr) : ''}
-        ${midErrTrendVals ? smoothLine(midErrTrendVals, maxErrForecast, '#b91c1c', 'chart-group-mid-err-trend', '3,4', midErrNowDot, true, yScaleErr) : ''}
-        ${lowerErrTrendVals ? smoothLine(lowerErrTrendVals, maxErrForecast, '#b91c1c', 'chart-group-lower-err-trend', '2,5', lowerErrNowDot, true, yScaleErr) : ''}
+        ${errTrendVals ? smoothLine(errTrendVals, maxErrForecast, '#b91c1c', 'chart-group-err-trend', '6,3', errTrendDots, false, yScaleErr) : ''}
+        ${midErrTrendVals ? smoothLine(midErrTrendVals, maxErrForecast, '#b91c1c', 'chart-group-mid-err-trend', '3,4', midErrNowDot, false, yScaleErr) : ''}
+        ${lowerErrTrendVals ? smoothLine(lowerErrTrendVals, maxErrForecast, '#b91c1c', 'chart-group-lower-err-trend', '2,5', lowerErrNowDot, false, yScaleErr) : ''}
         ${rightAxis}
         ${xLabels}
       </svg>
