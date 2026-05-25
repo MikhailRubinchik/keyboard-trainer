@@ -17,7 +17,7 @@ const Stats = (() => {
   let _seenModes = new Set();
   let _seenExternalFeatures = new Set();
 
-  const _TEXT_SET_NAMES = {1:'Незнайка',2:'Винни-Пух',3:'Знаки',4:'Волшебник',5:'Цифры',6:'Годзилла',7:'Правила',8:'Незнайка-подвеска'};
+  const _TEXT_SET_NAMES = {1:'Незнайка',2:'Винни-Пух',3:'Знаки',4:'Волшебник',5:'Цифры',6:'Годзилла',7:'Правила'};
   const _MODE_NAMES = {1:'Палец',2:'Символ',3:'Префикс',4:'Слово',5:'Слово+рамка',6:'Рамка',7:'Слепой',8:'П.слепой'};
   const _EXTERNAL_FEATURE_NAMES = {
     'laptop':               'Ноутбук',
@@ -1566,7 +1566,7 @@ async function pushToGist({ force = false } = {}) {
 
     // Sentence coverage section (runs mode only)
     if (tableMode === 'runs' && typeof SENTENCES !== 'undefined' && SENTENCES.length) {
-      const TEXT_SET_NUM = { neznaika:1, winnie:2, punct:3, wizard:4, numbers:5, godzilla:6, rules:7, neznaika2:8 };
+      const TEXT_SET_NUM = { neznaika:1, winnie:2, punct:3, wizard:4, numbers:5, godzilla:6, rules:7 };
       const currentSetNum = TEXT_SET_NUM[_currentTextSetId] ?? 1;
       const n = SENTENCES.length;
       const counts = new Array(n).fill(0);
@@ -2669,7 +2669,7 @@ async function pushToGist({ force = false } = {}) {
     const usedSets  = [...new Set(allRuns.map(r => r.textSet ?? 1))].sort((a,b) => a-b);
     const usedModes = [...new Set(allRuns.map(_effectiveMode))].sort((a,b) => a-b);
     const usedExternalFeatures = [...new Set(allRuns.map(r => r.externalFeature || 'laptop'))].sort();
-    const currentSetNum = ({ neznaika:1, winnie:2, punct:3, wizard:4, numbers:5, godzilla:6, rules:7, neznaika2:8 })[_currentTextSetId] ?? 1;
+    const currentSetNum = ({ neznaika:1, winnie:2, punct:3, wizard:4, numbers:5, godzilla:6, rules:7 })[_currentTextSetId] ?? 1;
     for (const s of usedSets)  if (!_seenTextSets.has(s)) { _seenTextSets.add(s); if (s === currentSetNum) filterTextSets.add(s); }
     for (const m of usedModes) if (!_seenModes.has(m))    { _seenModes.add(m); if (m <= _currentMode) filterModes.add(m); }
     for (const f of usedExternalFeatures) if (!_seenExternalFeatures.has(f)) { _seenExternalFeatures.add(f); if (f === _currentExternalFeature) filterExternalFeatures.add(f); }
