@@ -2681,10 +2681,9 @@ async function pushToGist({ force = false } = {}) {
     const usedSets  = [...new Set(allRuns.map(r => r.textSet ?? 1))].sort((a,b) => a-b);
     const usedModes = [...new Set(allRuns.map(_effectiveMode))].sort((a,b) => a-b);
     const usedExternalFeatures = [...new Set(allRuns.map(r => r.externalFeature || 'laptop'))].sort();
-    const currentSetNum = ({ neznaika:1, winnie:2, punct:3, wizard:4, numbers:5, godzilla:6, rules:7 })[_currentTextSetId] ?? 1;
-    for (const s of usedSets)  if (!_seenTextSets.has(s)) { _seenTextSets.add(s); if (s === currentSetNum) filterTextSets.add(s); }
+    for (const s of usedSets)  if (!_seenTextSets.has(s)) { _seenTextSets.add(s); filterTextSets.add(s); }
     for (const m of usedModes) if (!_seenModes.has(m))    { _seenModes.add(m); if (m <= _currentMode) filterModes.add(m); }
-    for (const f of usedExternalFeatures) if (!_seenExternalFeatures.has(f)) { _seenExternalFeatures.add(f); if (f === _currentExternalFeature) filterExternalFeatures.add(f); }
+    for (const f of usedExternalFeatures) if (!_seenExternalFeatures.has(f)) { _seenExternalFeatures.add(f); filterExternalFeatures.add(f); }
     const makeRow = (label, items, names, activeSet, attr) => {
       if (!items.length) return '';
       const cbs = items.map(v =>
