@@ -53,7 +53,6 @@ const LS_CAR_COLOR        = 'klavagonki_car_color';
 const LS_CAR_DINO         = 'klavagonki_car_dino';
 const LS_EXTERNAL_FEATURE = 'klavagonki_external_feature';
 const HIGHLIGHT_MODE_NUM  = { finger: 1, full: 2, prefix: 3, 'word-error': 4, 'word-error-blind': 5, none: 6, blind: 7, 'full-blind': 8 };
-const HIGHLIGHT_MODE_NAME = Object.fromEntries(Object.entries(HIGHLIGHT_MODE_NUM).map(([k, v]) => [v, k]));
 const TEXT_SET_NUM        = { neznaika: 1, winnie: 2, punct: 3, wizard: 4, numbers: 5, godzilla: 6, rules: 7 };
 
 let showFinger      = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
@@ -1376,15 +1375,6 @@ function updateLevelProgressHint() {
   if (displayEl) {
     if (recentAvg > 0) {
       const hlLevel = Stats.getHighlightLevel();
-      const targetMode = HIGHLIGHT_MODE_NAME[hlLevel];
-      if (targetMode && targetMode !== highlightMode) {
-        highlightMode = targetMode;
-        localStorage.setItem(LS_HIGHLIGHT_MODE, highlightMode);
-        const sel = document.getElementById('setting-highlight-mode');
-        if (sel) sel.value = highlightMode;
-        Stats.setMode(hlLevel);
-        applyFingerSetting();
-      }
       displayEl.innerHTML = `Уровень ${playerLevel}<br><span class="highlight-level-label">Подсветка: уровень ${hlLevel}</span>`;
     } else {
       displayEl.innerHTML = '';
