@@ -1214,10 +1214,18 @@ async function pushToGist({ force = false } = {}) {
     for (const r of sourceRuns) {
       const cpm = (!r.incomplete && r.cpm != null && !r.lazy) ? r.cpm : null;
       if (cpm !== null) completeCpms.push(cpm);
+      if (cpm === null) {
+        result.set(r, null);
+        continue;
+      }
+      if (_starsMode === 'constants') {
+        if (cpm >= 100)     result.set(r, 3);
+        else if (cpm >= 90) result.set(r, 2);
+        else                result.set(r, 1);
+        continue;
+      }
       if (r.stars != null) {
         result.set(r, r.stars);
-      } else if (cpm === null) {
-        result.set(r, null);
       } else if (completeCpms.length < 3) {
         result.set(r, 3);
       } else {
@@ -3161,6 +3169,11 @@ async function pushToGist({ force = false } = {}) {
   }
 
   function calcStars(cpm) {
+    if (_starsMode === 'constants') {
+      if (cpm >= 100) return 3;
+      if (cpm >= 90)  return 2;
+      return 1;
+    }
     const complete = runs.filter(r => !r.incomplete);
     const window = chartDefaultFrom
       ? complete.filter(r => ruToIso(r.date) >= chartDefaultFrom)
@@ -3209,5 +3222,8 @@ async function pushToGist({ force = false } = {}) {
   let _currentExternalFeature = 'laptop';
   function setExternalFeature(f) { _currentExternalFeature = f; }
 
-  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount, calcStars, setTextSetId, setMode, setExternalFeature, getHighlightLevel, getRuns: () => runs };
+  let _starsMode = 'trend';
+  function setStarsMode(m) { _starsMode = m; }
+
+  return { init, saveRun, renderStats, formatTime, getRecentAvgCpm, getRecordLabel, getTodayRunCount, calcStars, setTextSetId, setMode, setExternalFeature, setStarsMode, getHighlightLevel, getRuns: () => runs };
 })();
