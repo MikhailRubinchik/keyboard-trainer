@@ -1214,18 +1214,10 @@ async function pushToGist({ force = false } = {}) {
     for (const r of sourceRuns) {
       const cpm = (!r.incomplete && r.cpm != null && !r.lazy) ? r.cpm : null;
       if (cpm !== null) completeCpms.push(cpm);
-      if (cpm === null) {
-        result.set(r, null);
-        continue;
-      }
-      if (_starsMode === 'constants') {
-        if (cpm >= 100)     result.set(r, 3);
-        else if (cpm >= 90) result.set(r, 2);
-        else                result.set(r, 1);
-        continue;
-      }
       if (r.stars != null) {
         result.set(r, r.stars);
+      } else if (cpm === null) {
+        result.set(r, null);
       } else if (completeCpms.length < 3) {
         result.set(r, 3);
       } else {

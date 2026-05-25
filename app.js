@@ -70,7 +70,6 @@ function initStarsModeSetting() {
     starsMode = sel.value;
     localStorage.setItem(LS_STARS_MODE, starsMode);
     Stats.setStarsMode(starsMode);
-    Stats.renderStats(Stats.getRuns());
   });
 }
 
