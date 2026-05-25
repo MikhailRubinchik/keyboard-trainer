@@ -831,6 +831,18 @@ async function pushToGist({ force = false } = {}) {
       localStorage.setItem(MIG_KEY, JSON.stringify(done));
     }
 
+    // Follow-up: run #116 might have been saved before the earlier migration ran,
+    // with the new default externalFeature='laptop'. Force-overwrite it.
+    if (!done.includes('run-116-stickers-force')) {
+      if (runs.length > 115 && runs[115].externalFeature !== 'laptop-stickers') {
+        runs[115].externalFeature = 'laptop-stickers';
+        lsWrite(runs);
+        pushToGist({ force: true });
+      }
+      done.push('run-116-stickers-force');
+      localStorage.setItem(MIG_KEY, JSON.stringify(done));
+    }
+
     renderStats(runs);
   }
 
