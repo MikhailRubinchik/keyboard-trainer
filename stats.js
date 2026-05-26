@@ -1302,6 +1302,9 @@ async function pushToGist({ force = false } = {}) {
       const extBadge = ` <span class="run-badge run-badge--mode" title="${_EXTERNAL_FEATURE_NAMES[runExt] ?? runExt}">${runExtNum}</span>`;
       const replayBtn = r.keystrokeLog?.length
         ? ' <button class="btn-replay-run" title="Виртуальный заезд">▶</button>' : '';
+      const realSpeed = (r.keystrokeLog?.length && r.seconds > 0)
+        ? Math.round(r.keystrokeLog.length / (r.seconds / 60)) : null;
+      const cpmTip = realSpeed != null ? ` title="Реальная скорость: ${realSpeed} зн/мин"` : '';
       return `
       <tr${r.lazy ? ' class="row--lazy"' : ''} data-run-key="${r.date}~${r.time ?? ''}">
         <td class="run-num" style="white-space:nowrap">${i + 1}${replayBtn}</td>
@@ -1311,7 +1314,7 @@ async function pushToGist({ force = false } = {}) {
         <td>${r.chars}</td>
         <td style="white-space:nowrap">${fmtErr(r.errors, r.chars)}${errBadge}</td>
         <td${timeTip}>${formatTime(netSecs)}${lazyBadge}</td>
-        <td style="white-space:nowrap">${r.cpm} зн/мин <button class="btn-run-detail" title="Детали заезда"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" style="display:inline;vertical-align:middle"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4.5" y="3" width="3" height="7" fill="currentColor"/><rect x="9" y="0" width="3" height="10" fill="currentColor"/></svg></button>${cpmBadge}</td>
+        <td style="white-space:nowrap"><span${cpmTip}>${r.cpm} зн/мин</span> <button class="btn-run-detail" title="Детали заезда"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" style="display:inline;vertical-align:middle"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4.5" y="3" width="3" height="7" fill="currentColor"/><rect x="9" y="0" width="3" height="10" fill="currentColor"/></svg></button>${cpmBadge}</td>
         <td style="white-space:nowrap">${cs != null ? '<span style="color:#f59e0b">★</span>'.repeat(cs) + '<span style="color:#d1d5db">★</span>'.repeat(3 - cs) : ''}${es != null ? ' ' + '<span style="color:#3b82f6">★</span>'.repeat(es) + '<span style="color:#d1d5db">★</span>'.repeat(3 - es) : ''}</td>
       </tr>`;
     }).join('');
