@@ -3161,8 +3161,8 @@ async function pushToGist({ force = false } = {}) {
 
   function calcStars(cpm) {
     if (_starsMode === 'constants') {
-      if (cpm >= 105) return 3;
-      if (cpm >= 95)  return 2;
+      if (cpm >= 103) return 3;
+      if (cpm >= 93)  return 2;
       return 1;
     }
     const complete = runs.filter(r => !r.incomplete);
