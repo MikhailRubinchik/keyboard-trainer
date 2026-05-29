@@ -208,6 +208,7 @@ document.addEventListener('keydown', (e) => {
   if (e.code === 'KeyF' && e.shiftKey && !e.metaKey && !e.ctrlKey) {
     if (screenList.classList.contains('active')) {
       document.querySelector('.settings-row--main').classList.toggle('visible');
+      document.body.classList.toggle('shift-f-active');
     }
   }
 });

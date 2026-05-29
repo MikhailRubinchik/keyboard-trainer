@@ -1551,6 +1551,11 @@ tr.row--chart-selected td {
   vertical-align: middle;
   margin-left: 3px;
   transition: none;
+  display: none;
+}
+
+body.shift-f-active .btn-continue-run {
+  display: inline-block;
 }
 
 .btn-continue-run:hover {
