@@ -31,8 +31,8 @@ const Stats = (() => {
     'laptop':                  1,
     'laptop-stickers':         2,
     'external':                3,
-    'external-stand':          4,
-    'external-stand-extended': 5,
+    'external-stand-extended': 4,
+    'external-stand':          5,
     'external-stand-towel':    6,
   };
   function _effectiveMode(r) { return r.mode != null ? r.mode : (r.noFinger ? 2 : 1); }
