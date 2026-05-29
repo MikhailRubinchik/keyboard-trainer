@@ -23,7 +23,7 @@ const Stats = (() => {
     'laptop':               'Ноутбук',
     'laptop-stickers':      'Ноутбук + наклейки',
     'external':             'Внешняя',
-    'external-stand':          'Внешняя на подвеске',
+    'external-stand':          'Подвеска задвинутая',
     'external-stand-extended': 'Подвеска выдвинутая',
     'external-stand-towel':    'Внешняя на подвеске + полотенце',
   };
