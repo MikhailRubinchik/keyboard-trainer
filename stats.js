@@ -23,15 +23,17 @@ const Stats = (() => {
     'laptop':               'Ноутбук',
     'laptop-stickers':      'Ноутбук + наклейки',
     'external':             'Внешняя',
-    'external-stand':       'Внешняя на подвеске',
-    'external-stand-towel': 'Внешняя на подвеске + полотенце',
+    'external-stand':          'Внешняя на подвеске',
+    'external-stand-extended': 'Подвеска выдвинутая',
+    'external-stand-towel':    'Внешняя на подвеске + полотенце',
   };
   const _EXTERNAL_FEATURE_NUM = {
-    'laptop':               1,
-    'laptop-stickers':      2,
-    'external':             3,
-    'external-stand':       4,
-    'external-stand-towel': 5,
+    'laptop':                  1,
+    'laptop-stickers':         2,
+    'external':                3,
+    'external-stand':          4,
+    'external-stand-extended': 5,
+    'external-stand-towel':    6,
   };
   function _effectiveMode(r) { return r.mode != null ? r.mode : (r.noFinger ? 2 : 1); }
   let chartFromIso    = '';
