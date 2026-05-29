@@ -1893,12 +1893,26 @@ async function pushToGist({ force = false } = {}) {
     const plotW = W - padL - padR, plotH = H - padT - padB;
     const totalMs = timeAcc;
     const maxCpm = Math.max(...pts.map(p => p.cpm));
+
+    // Cumulative prefix-cpm: at correct char #(i+1) at time t_i, speed-so-far = (i+1)/(t_i/60000)
+    const cumStartMs = 5000;
+    const cumAll = [];
+    for (let i = 0; i < correctTimes.length; i++) {
+      const t = correctTimes[i];
+      if (t < cumStartMs) continue;
+      cumAll.push({ t, cpm: (i + 1) * 60000 / t });
+    }
+    const cumStride = Math.max(1, Math.floor(cumAll.length / 200));
+    const cumPts = cumAll.filter((_, i) => i % cumStride === 0 || i === cumAll.length - 1);
     const fmtMin = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 
     const xp = t => padL + t / totalMs * plotW;
     const yp = c => padT + plotH - c / maxCpm * plotH;
 
     const polyline = pts.map(p => `${xp(p.t).toFixed(1)},${yp(p.cpm).toFixed(1)}`).join(' ');
+    const cumPolyline = cumPts
+      .map(p => `${xp(p.t).toFixed(1)},${yp(Math.min(p.cpm, maxCpm)).toFixed(1)}`)
+      .join(' ');
     const avgCpm = Math.round(pts.reduce((s, p) => s + p.cpm, 0) / pts.length);
     const yAvg = yp(avgCpm).toFixed(1);
 
@@ -1932,6 +1946,7 @@ async function pushToGist({ force = false } = {}) {
       <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
       <line x1="${padL}" y1="${yAvg}" x2="${W - padR}" y2="${yAvg}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
       <text x="${(W - padR - 2).toFixed(1)}" y="${(parseFloat(yAvg) - 2).toFixed(1)}" text-anchor="end" font-size="8" fill="#94a3b8">ср. ${avgCpm}</text>
+      ${cumPolyline ? `<polyline points="${cumPolyline}" fill="none" stroke="#0d9488" stroke-width="1" stroke-linejoin="round" opacity="0.75"/>` : ''}
       <polyline points="${polyline}" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round" opacity="0.9"/>
       ${dots}
     </svg>`;
