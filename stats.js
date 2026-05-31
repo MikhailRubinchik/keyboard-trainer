@@ -1847,33 +1847,26 @@ async function pushToGist({ force = false } = {}) {
   function buildRunSpeedSvg(run) {
     if (!run.keystrokeLog?.length) return '';
     const chars = [...getRunText(run)];
-    let cursor = 0, wordStart = 0, wordSoFar = '', junkBuffer = '';
+    if (!chars.length) return '';
+    // Greedy reconstruction: ignore backspaces, advance cursor whenever a key
+    // matches the next expected char. This stays robust against runs where
+    // the user used non-keydown native edits (Delete, mouse, selection-replace)
+    // which aren't recorded in keystrokeLog and would otherwise desync the
+    // junkBuffer-tracking analyzer.
+    let cursor = 0;
     let timeAcc = 0;
     const BUCKET_MS = 10000;
-    const buckets = {}; // bucketIndex -> charCount
-    const correctTimes = []; // timestamps of each correct char
+    const buckets = {};
+    const correctTimes = [];
     for (const [key, deltaMs] of run.keystrokeLog) {
       if (cursor >= chars.length) break;
       timeAcc += deltaMs;
-      if (key === '⌫⌫') {
-        if (junkBuffer.length > 0) { const sp = junkBuffer.lastIndexOf(' '); junkBuffer = sp >= 0 ? junkBuffer.slice(0, sp) : ''; }
-        else { cursor -= wordSoFar.length; wordSoFar = ''; }
-      } else if (key === '⌫') {
-        if (junkBuffer.length > 0) junkBuffer = junkBuffer.slice(0, -1);
-        else if (cursor > wordStart) { cursor--; wordSoFar = wordSoFar.slice(0, -1); }
-      } else {
-        if (junkBuffer.length > 0) { junkBuffer += key; }
-        else {
-          const expected = chars[cursor];
-          if (key !== expected) { junkBuffer += key; }
-          else {
-            cursor++;
-            if (expected === ' ') { wordStart = cursor; wordSoFar = ''; } else { wordSoFar += expected; }
-            const b = Math.floor(timeAcc / BUCKET_MS);
-            buckets[b] = (buckets[b] || 0) + 1;
-            correctTimes.push(timeAcc);
-          }
-        }
+      if (key === '⌫' || key === '⌫⌫') continue;
+      if (key === chars[cursor]) {
+        cursor++;
+        const b = Math.floor(timeAcc / BUCKET_MS);
+        buckets[b] = (buckets[b] || 0) + 1;
+        correctTimes.push(timeAcc);
       }
     }
 
