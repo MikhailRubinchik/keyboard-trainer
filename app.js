@@ -608,7 +608,15 @@ document.getElementById('screen-exercise').addEventListener('click', () => {
 // click events still fire (buttons/checkboxes still work normally).
 document.addEventListener('mousedown', (e) => {
   if (wordInput.disabled) return;           // exercise not active
-  if (e.target === wordInput) return;
+  // Allow buttons/inputs (color/dino pickers, settings) to receive clicks.
+  if (e.target !== wordInput && (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT')) return;
+  // For the word input itself: refocus but block caret-move-by-click so the
+  // user can't insert mid-text (would desync the input from keystrokeLog).
+  if (e.target === wordInput) {
+    e.preventDefault();
+    wordInput.focus();
+    return;
+  }
   e.preventDefault();
 });
 
@@ -841,7 +849,25 @@ function resetCarPos() {
 // the input field contents manually and can block cursor advance
 // on wrong characters.
 
+// Keys that move the caret, delete forward, or otherwise let the user
+// bypass our keystroke logging path — block them so the input stays a
+// strict append-only stream of printable chars + Backspace.
+const BLOCKED_KEYDOWN_KEYS = new Set([
+  'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+  'Home', 'End', 'Delete', 'Insert', 'PageUp', 'PageDown', 'Tab',
+]);
+
 wordInput.addEventListener('keydown', (e) => {
+  if (!wordInput.disabled) {
+    if (BLOCKED_KEYDOWN_KEYS.has(e.key)) { e.preventDefault(); return; }
+    // Block any ctrl/alt/meta + key combo except Backspace (used as word-erase).
+    if ((e.ctrlKey || e.altKey || e.metaKey) && e.key !== 'Backspace'
+        && e.key !== 'Control' && e.key !== 'Alt' && e.key !== 'Meta' && e.key !== 'Shift') {
+      e.preventDefault();
+      return;
+    }
+  }
+
   // Record keystroke for replay log
   if (!wordInput.disabled) {
     const now = Date.now();
