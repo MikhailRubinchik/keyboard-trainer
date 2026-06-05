@@ -422,10 +422,11 @@ async function pushToGist({ force = false } = {}) {
       if (tenths > 0) intervalMap[tenths] = (intervalMap[tenths] || 0) + 1;
 
       if (key === '⌫⌫') {
-        if (junkBuffer.length > 0) {
-          const sp = junkBuffer.lastIndexOf(' ');
-          junkBuffer = sp >= 0 ? junkBuffer.slice(0, sp) : '';
+        const sp = junkBuffer.lastIndexOf(' ');
+        if (sp >= 0) {
+          junkBuffer = junkBuffer.slice(0, sp);
         } else {
+          junkBuffer = '';
           cursor    -= wordSoFar.length;
           wordSoFar  = '';
         }
