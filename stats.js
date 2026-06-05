@@ -25,6 +25,7 @@ const Stats = (() => {
     'external':             'Внешняя',
     'external-stand':          'Подвеска задвинутая',
     'external-stand-extended': 'Подвеска выдвинутая',
+    'external-stand-deep':     'Подвеска глубоко задвинутая',
     'external-stand-towel':    'Внешняя на подвеске + полотенце',
   };
   const _EXTERNAL_FEATURE_NUM = {
@@ -33,7 +34,8 @@ const Stats = (() => {
     'external':                3,
     'external-stand-extended': 4,
     'external-stand':          5,
-    'external-stand-towel':    6,
+    'external-stand-deep':     6,
+    'external-stand-towel':    7,
   };
   function _effectiveMode(r) { return r.mode != null ? r.mode : (r.noFinger ? 2 : 1); }
   let chartFromIso    = '';
