@@ -3177,7 +3177,8 @@ async function pushToGist({ force = false } = {}) {
     if (_starsMode === 'constants') {
       if (cpm >= 105) return 3;
       if (cpm >= 95)  return 2;
-      return 1;
+      if (cpm >= 90)  return 1;
+      return 0;
     }
     const complete = runs.filter(r => !r.incomplete);
     const window = chartDefaultFrom
