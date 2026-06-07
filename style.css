@@ -194,6 +194,26 @@ html, body {
   color: #c00;
 }
 
+.day-tag {
+  display: inline-block;
+  font-size: 0.75em;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  vertical-align: middle;
+  font-weight: 500;
+}
+
+.day-tag--weekend {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.day-tag--holiday {
+  background: #fed7aa;
+  color: #c2410c;
+}
+
 .text-set-label select {
   margin-left: 6px;
   background: var(--bg-input);

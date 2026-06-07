@@ -1037,14 +1037,23 @@ async function pushToGist({ force = false } = {}) {
       return covered >= threshold;
     }
     const holidays = new Set(getHolidays());
+    const DOW_NAMES = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
     let freeze = 0;
     rows.forEach((row, i) => {
       const date = parseRowDate(row.date);
+      const dow = date.getDay(); // 0=Sun, 6=Sat
+      const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      const isWeekendDow = (dow === 0 || dow === 6);
+      const isHoliday    = holidays.has(iso);
+      row.dayTag = isHoliday
+        ? `<span class="day-tag day-tag--holiday">${DOW_NAMES[dow]} ★</span>`
+        : isWeekendDow
+        ? `<span class="day-tag day-tag--weekend">${DOW_NAMES[dow]}</span>`
+        : '';
+
       if (date >= FREEZE_START) {
         row.freezeBefore = freeze;
-        const dow = date.getDay(); // 0=Sun, 6=Sat
-        const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        const isWeekend = (dow === 0 || dow === 6) || holidays.has(iso);
+        const isWeekend = isWeekendDow || isHoliday;
         const n = row.count;
         const surplus = isWeekend ? 5 : 2;
         if (n > surplus)       freeze += n - surplus;
@@ -1469,7 +1478,7 @@ async function pushToGist({ force = false } = {}) {
         : '';
       return `
       <tr data-run-key="${d.date}">
-        <td class="${d.dateClass}">${d.date}</td>
+        <td class="${d.dateClass}">${d.date}${d.dayTag}</td>
         <td>${d.avgLevel}${lvlBadge ? ' ' + lvlBadge : ''}</td>
         <td class="${d.countClass}">${d.count}</td>
         <td>${d.freeze}</td>
