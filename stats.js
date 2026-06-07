@@ -954,15 +954,35 @@ async function pushToGist({ force = false } = {}) {
 
     // Color flags + record labels — computed on oldest-first array
     const NEW_RULES_START = new Date(2026, 3, 14); // 14 April 2026
+    const FREEZE_START    = new Date(2026, 4, 22); // 22 May 2026
     function parseRowDate(s) {
       const [d, m, y] = s.split('.').map(Number);
       return new Date(y, m - 1, d);
     }
     function isYellowDay(r) {
       const threshold = parseRowDate(r.date) >= NEW_RULES_START ? 2 : 5;
-      return r.count >= threshold;
+      const covered = r.count + Math.min(Math.max(threshold - r.count, 0), r.freezeBefore ?? 0);
+      return covered >= threshold;
     }
+    let freeze = 0;
     rows.forEach((row, i) => {
+      const date = parseRowDate(row.date);
+      if (date >= FREEZE_START) {
+        row.freezeBefore = freeze;
+        const dow = date.getDay(); // 0=Sun, 6=Sat
+        const isWeekend = (dow === 0 || dow === 6);
+        const n = row.count;
+        const surplus = isWeekend ? 5 : 2;
+        if (n > surplus)       freeze += n - surplus;
+        else if (n >= 2)       { /* maintenance — no change */ }
+        else if (n === 1)      freeze = Math.max(0, freeze - 1);
+        else /* n === 0 */     freeze = Math.max(0, freeze - 2);
+        row.freeze = freeze;
+      } else {
+        row.freezeBefore = 0;
+        row.freeze = 0;
+      }
+
       const yellow = isYellowDay(row);
       const green  = yellow && i >= 4 &&
         isYellowDay(rows[i - 1]) &&
@@ -1378,6 +1398,7 @@ async function pushToGist({ force = false } = {}) {
         <td class="${d.dateClass}">${d.date}</td>
         <td>${d.avgLevel}${lvlBadge ? ' ' + lvlBadge : ''}</td>
         <td class="${d.countClass}">${d.count}</td>
+        <td>${d.freeze}</td>
         <td>${d.count ? d.chars : '—'}</td>
         <td>${d.worstErrRun ? fmtErr(d.worstErrRun.errors, d.worstErrRun.chars) : '—'}${dayBadge(d.maxErrLabel, '-sm')}</td>
         <td>${d.avgErrPct !== null ? d.avgErrPct.toFixed(1) + '%' : '—'}${dayBadge(d.avgErrLabel, '-sm')}</td>
@@ -1394,6 +1415,7 @@ async function pushToGist({ force = false } = {}) {
             <th>Дата</th>
             <th>Уровень</th>
             <th>Текстов</th>
+            <th>Заморозка</th>
             <th>Символов</th>
             <th>Ош. макс</th>
             <th>Ош. ср.</th>
