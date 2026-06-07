@@ -954,8 +954,7 @@ tr.row--chart-selected td {
 #stats-table-wrap {
   overflow: visible;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: center;
 }
 
 .stats-table {
