@@ -160,6 +160,40 @@ html, body {
   color: var(--text-dim);
 }
 
+.holidays-list {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.holidays-list li {
+  background: #eef;
+  padding: 2px 4px 2px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.holiday-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+  color: #666;
+  line-height: 1;
+}
+
+.holiday-remove:hover {
+  color: #c00;
+}
+
 .text-set-label select {
   margin-left: 6px;
   background: var(--bg-input);

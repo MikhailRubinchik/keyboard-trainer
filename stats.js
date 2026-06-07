@@ -210,6 +210,48 @@ const Stats = (() => {
   const GIST_ID_KEY           = 'klavogonki_gist_id';
   const GIST_FILE             = 'klavogonki-stats.json';
   const GIST_ACHIEVEMENTS_FILE = 'klavogonki-achievements.json';
+  const GIST_HOLIDAYS_FILE    = 'klavogonki-holidays.json';
+  const HOLIDAYS_KEY          = 'klavogonki_holidays';
+
+  function getHolidays() {
+    try {
+      const arr = JSON.parse(localStorage.getItem(HOLIDAYS_KEY) || '[]');
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  }
+  function saveHolidaysLocal(arr) {
+    const uniq = [...new Set(arr)].sort();
+    localStorage.setItem(HOLIDAYS_KEY, JSON.stringify(uniq));
+    return uniq;
+  }
+  function addHoliday(iso) {
+    if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+    const arr = getHolidays();
+    if (arr.includes(iso)) return;
+    arr.push(iso);
+    saveHolidaysLocal(arr);
+    renderHolidaysList();
+    renderStats(runs);
+    pushToGist({ force: true });
+  }
+  function removeHoliday(iso) {
+    saveHolidaysLocal(getHolidays().filter(x => x !== iso));
+    renderHolidaysList();
+    renderStats(runs);
+    pushToGist({ force: true });
+  }
+  function renderHolidaysList() {
+    const ul = document.getElementById('holidays-list');
+    if (!ul) return;
+    const arr = getHolidays();
+    ul.innerHTML = arr.map(iso => {
+      const [y, m, d] = iso.split('-');
+      return `<li><span>${d}.${m}.${y}</span><button type="button" class="holiday-remove" data-iso="${iso}" title="Удалить">×</button></li>`;
+    }).join('');
+    ul.querySelectorAll('.holiday-remove').forEach(b => {
+      b.addEventListener('click', () => removeHoliday(b.dataset.iso));
+    });
+  }
 
   function getSyncConfig() {
     return {
@@ -280,6 +322,7 @@ async function pushToGist({ force = false } = {}) {
         files: {
           [GIST_FILE]:             { content: serializeRunsForGist(runs) },
           [GIST_ACHIEVEMENTS_FILE]: { content: localStorage.getItem(ACHIEVEMENTS_KEY) || '{}' },
+          [GIST_HOLIDAYS_FILE]:    { content: localStorage.getItem(HOLIDAYS_KEY) || '[]' },
         },
       });
       lsWrite(runs); // apply trim to localStorage
@@ -357,6 +400,19 @@ async function pushToGist({ force = false } = {}) {
           renderAchievements();
         } catch (_) {}
       }
+      const holFile = data.files[GIST_HOLIDAYS_FILE];
+      if (holFile) {
+        const holContent = holFile.truncated
+          ? await (await fetch(holFile.raw_url)).text()
+          : holFile.content;
+        try {
+          const parsed = JSON.parse(holContent);
+          if (Array.isArray(parsed)) {
+            saveHolidaysLocal(parsed);
+            renderHolidaysList();
+          }
+        } catch (_) {}
+      }
       renderStats(runs);
       saveSyncConfig('', gistId);
       document.getElementById('btn-refresh-gist')?.classList.remove('hidden');
@@ -385,6 +441,7 @@ async function pushToGist({ force = false } = {}) {
         files: {
           [GIST_FILE]:             { content: serializeRuns(runs) },
           [GIST_ACHIEVEMENTS_FILE]: { content: localStorage.getItem(ACHIEVEMENTS_KEY) || '{}' },
+          [GIST_HOLIDAYS_FILE]:    { content: localStorage.getItem(HOLIDAYS_KEY) || '[]' },
         },
       });
       const gistId = data.id;
@@ -755,6 +812,17 @@ async function pushToGist({ force = false } = {}) {
       if (e.key === 'Escape') closeSyncPanel();
     });
 
+    const holInput = document.getElementById('setting-add-holiday');
+    if (holInput) {
+      holInput.addEventListener('change', () => {
+        if (holInput.value) {
+          addHoliday(holInput.value);
+          holInput.value = '';
+        }
+      });
+    }
+    renderHolidaysList();
+
     const btnRefresh = document.getElementById('btn-refresh-gist');
     const btnPush    = document.getElementById('btn-push-gist');
     const cfg0 = getSyncConfig();
@@ -964,13 +1032,15 @@ async function pushToGist({ force = false } = {}) {
       const covered = r.count + Math.min(Math.max(threshold - r.count, 0), r.freezeBefore ?? 0);
       return covered >= threshold;
     }
+    const holidays = new Set(getHolidays());
     let freeze = 0;
     rows.forEach((row, i) => {
       const date = parseRowDate(row.date);
       if (date >= FREEZE_START) {
         row.freezeBefore = freeze;
         const dow = date.getDay(); // 0=Sun, 6=Sat
-        const isWeekend = (dow === 0 || dow === 6);
+        const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        const isWeekend = (dow === 0 || dow === 6) || holidays.has(iso);
         const n = row.count;
         const surplus = isWeekend ? 5 : 2;
         if (n > surplus)       freeze += n - surplus;
