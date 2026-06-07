@@ -953,6 +953,8 @@ tr.row--chart-selected td {
 /* Stats table */
 #stats-table-wrap {
   overflow: visible;
+  display: flex;
+  justify-content: center;
 }
 
 .stats-table {
