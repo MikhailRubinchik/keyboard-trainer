@@ -813,7 +813,11 @@ async function pushToGist({ force = false } = {}) {
     });
 
     const holInput = document.getElementById('setting-add-holiday');
-    if (holInput) {
+    const holRow = holInput?.closest('.text-set-row');
+    const cfgForHol = getSyncConfig();
+    const dadView = cfgForHol.gistId && !cfgForHol.token;
+    if (holRow && dadView) holRow.style.display = 'none';
+    if (holInput && !dadView) {
       holInput.addEventListener('change', () => {
         if (holInput.value) {
           addHoliday(holInput.value);
@@ -821,7 +825,7 @@ async function pushToGist({ force = false } = {}) {
         }
       });
     }
-    renderHolidaysList();
+    if (!dadView) renderHolidaysList();
 
     const btnRefresh = document.getElementById('btn-refresh-gist');
     const btnPush    = document.getElementById('btn-push-gist');
