@@ -955,6 +955,17 @@ tr.row--chart-selected td {
   overflow: visible;
 }
 
+/* Centre the main runs/days/weeks table when its content is wider
+   than the surrounding section, so it sticks out evenly on both
+   sides instead of only the right. Targets only the direct table
+   child — the sentence-coverage block that's appended below is a
+   <div> and stays at the wrap's full width. */
+#stats-table-wrap > table.stats-table {
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .stats-table {
   width: 100%;
   min-width: max-content;
