@@ -918,6 +918,19 @@ async function pushToGist({ force = false } = {}) {
       localStorage.setItem(MIG_KEY, JSON.stringify(done));
     }
 
+    // One-off: 07.06.2026 3:10 PM run was tagged 'external-stand' but was
+    // actually 'external-stand-towel'. Re-tag if still in the wrong state.
+    if (!done.includes('run-07062026-3-10pm-towel')) {
+      const bad = runs.find(r => r.date === '07.06.2026' && r.time === '3:10 PM');
+      if (bad && bad.externalFeature === 'external-stand') {
+        bad.externalFeature = 'external-stand-towel';
+        lsWrite(runs);
+        pushToGist({ force: true });
+      }
+      done.push('run-07062026-3-10pm-towel');
+      localStorage.setItem(MIG_KEY, JSON.stringify(done));
+    }
+
     renderStats(runs);
   }
 
