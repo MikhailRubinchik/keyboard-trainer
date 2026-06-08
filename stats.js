@@ -377,17 +377,11 @@ async function pushToGist({ force = false } = {}) {
         content = await rawRes.text();
       }
       const pulled = parseLines(content);
-      let prefixLen = 0;
-      while (
-        prefixLen < runs.length &&
-        prefixLen < pulled.length &&
-        runs[prefixLen].date  === pulled[prefixLen].date &&
-        runs[prefixLen].time  === pulled[prefixLen].time &&
-        runs[prefixLen].cpm   === pulled[prefixLen].cpm  &&
-        runs[prefixLen].chars === pulled[prefixLen].chars &&
-        !runs[prefixLen].incomplete  // чекпоинт может стать завершённым в гисте — не пропускаем
-      ) prefixLen++;
-      runs = runs.slice(0, prefixLen).concat(pulled.slice(prefixLen));
+      // Gist is authoritative on pull: take its version of every entry so
+      // mutable fields like externalFeature (which the prefix-skip used to
+      // ignore) propagate. Local-only entries past pulled.length were
+      // already dropped before; this preserves that behaviour.
+      runs = pulled.slice();
       lsWrite(runs);
       const achFile = data.files[GIST_ACHIEVEMENTS_FILE];
       if (achFile) {
