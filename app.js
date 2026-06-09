@@ -557,7 +557,7 @@ function updateWordDisplay() {
       if (inSel) {
         span.className = 'wchar--selected';
       } else if (i >= wordSoFar.length) {
-        if (highlightMode !== 'word-error-blind' && highlightMode !== 'none' && highlightMode !== 'blind' && highlightMode !== 'full-blind') span.className = 'wchar--wrong';
+        if (highlightMode !== 'word-error-blind' && highlightMode !== 'none' && highlightMode !== 'blind' && highlightMode !== 'full-blind' && highlightMode !== 'klavogonki2') span.className = 'wchar--wrong';
       }
       span.textContent = ch === ' ' ? '\u00A0' : ch;
       wordDisplay.appendChild(span);
