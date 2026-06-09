@@ -452,7 +452,7 @@ function renderText() {
 function updateDisplay() {
   const spans = textDisplay.querySelectorAll('span');
   const inError = junkBuffer.length > 0;
-  const isWordError = highlightMode === 'word-error' || highlightMode === 'word-error-blind' || highlightMode === 'klavogonki' || highlightMode === 'klavogonki_ru';
+  const isWordError = highlightMode === 'word-error' || highlightMode === 'klavogonki' || highlightMode === 'klavogonki_ru';
   const isKlavogonki = highlightMode === 'klavogonki' || highlightMode === 'klavogonki_ru';
   let wordEnd = cursor;
   if ((isWordError && inError) || isKlavogonki) {
@@ -476,7 +476,7 @@ function updateDisplay() {
     } else if (i === cursor && (highlightMode === 'full' || highlightMode === 'finger')) {
       span.classList.add(inError ? 'char--current-error' : 'char--current-ok');
     } else if (i < cursor) {
-      if ((highlightMode === 'none' || highlightMode === 'blind' || highlightMode === 'klavogonki' || highlightMode === 'klavogonki_ru') && i >= wordStart) {
+      if ((highlightMode === 'none' || highlightMode === 'blind' || highlightMode === 'klavogonki' || highlightMode === 'klavogonki_ru' || highlightMode === 'word-error-blind') && i >= wordStart) {
         span.classList.add('char--pending');
       } else {
         span.classList.add('char--correct');
