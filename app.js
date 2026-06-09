@@ -452,7 +452,7 @@ function renderText() {
 function updateDisplay() {
   const spans = textDisplay.querySelectorAll('span');
   const inError = junkBuffer.length > 0;
-  const isWordError = highlightMode === 'word-error' || highlightMode === 'klavogonki' || highlightMode === 'klavogonki_ru';
+  const isWordError = highlightMode === 'word-error' || highlightMode === 'word-error-blind' || highlightMode === 'klavogonki' || highlightMode === 'klavogonki_ru';
   const isKlavogonki = highlightMode === 'klavogonki' || highlightMode === 'klavogonki_ru';
   let wordEnd = cursor;
   if ((isWordError && inError) || isKlavogonki) {
