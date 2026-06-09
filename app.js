@@ -471,7 +471,7 @@ function updateDisplay() {
     } else if (i === cursor && (highlightMode === 'full' || highlightMode === 'finger')) {
       span.classList.add(inError ? 'char--current-error' : 'char--current-ok');
     } else if (i < cursor) {
-      if ((highlightMode === 'none' || highlightMode === 'blind') && i >= wordStart) {
+      if ((highlightMode === 'none' || highlightMode === 'blind' || highlightMode === 'klavogonki') && i >= wordStart) {
         span.classList.add('char--pending');
       } else {
         span.classList.add('char--correct');
