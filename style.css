@@ -486,6 +486,10 @@ html, body {
   text-underline-offset: 3px;
 }
 
+.char--active-word:not(.char--current-error) {
+  color: #1d4ed8;
+}
+
 /* Typed characters — dimmed */
 .char--correct {
   opacity: 0.45;
