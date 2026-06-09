@@ -480,6 +480,12 @@ html, body {
   border-radius: 3px;
 }
 
+.char--active-word {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
 /* Typed characters — dimmed */
 .char--correct {
   opacity: 0.45;

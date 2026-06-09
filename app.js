@@ -452,12 +452,16 @@ function updateDisplay() {
   const spans = textDisplay.querySelectorAll('span');
   const inError = junkBuffer.length > 0;
   const isWordError = highlightMode === 'word-error' || highlightMode === 'word-error-blind' || highlightMode === 'klavogonki';
+  const isKlavogonki = highlightMode === 'klavogonki';
   let wordEnd = cursor;
-  if (isWordError && inError) {
+  if ((isWordError && inError) || isKlavogonki) {
     while (wordEnd < chars.length && chars[wordEnd] !== ' ') wordEnd++;
   }
   spans.forEach((span, i) => {
     span.className = '';
+    if (isKlavogonki && i >= wordStart && i < wordEnd) {
+      span.classList.add('char--active-word');
+    }
     if (isWordError && inError) {
       if (i >= wordStart && i < wordEnd) {
         span.classList.add('char--current-error');
