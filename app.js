@@ -53,11 +53,12 @@ const LS_CAR_COLOR        = 'klavagonki_car_color';
 const LS_CAR_DINO         = 'klavagonki_car_dino';
 const LS_EXTERNAL_FEATURE = 'klavagonki_external_feature';
 const LS_STARS_MODE       = 'klavagonki_stars_mode';
-const HIGHLIGHT_MODE_NUM  = { finger: 1, full: 2, prefix: 3, 'word-error': 4, 'word-error-blind': 5, none: 6, blind: 7, 'full-blind': 8, klavogonki: 9, klavogonki2: 10 };
+const HIGHLIGHT_MODE_NUM  = { finger: 1, full: 2, prefix: 3, 'word-error': 4, 'word-error-blind': 5, none: 6, blind: 7, 'full-blind': 8, klavogonki: 9, klavogonki_ru: 10 };
 const TEXT_SET_NUM        = { neznaika: 1, winnie: 2, punct: 3, wizard: 4, numbers: 5, godzilla: 6, rules: 7 };
 
 let showFinger      = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
 let highlightMode   = localStorage.getItem(LS_HIGHLIGHT_MODE) || 'full'; // 'full' | 'prefix' | 'none'
+if (highlightMode === 'klavogonki2') { highlightMode = 'klavogonki_ru'; localStorage.setItem(LS_HIGHLIGHT_MODE, highlightMode); }
 let externalFeature = localStorage.getItem(LS_EXTERNAL_FEATURE) || 'laptop';
 let starsMode = localStorage.getItem(LS_STARS_MODE) || 'trend';
 
@@ -451,8 +452,8 @@ function renderText() {
 function updateDisplay() {
   const spans = textDisplay.querySelectorAll('span');
   const inError = junkBuffer.length > 0;
-  const isWordError = highlightMode === 'word-error' || highlightMode === 'word-error-blind' || highlightMode === 'klavogonki' || highlightMode === 'klavogonki2';
-  const isKlavogonki = highlightMode === 'klavogonki' || highlightMode === 'klavogonki2';
+  const isWordError = highlightMode === 'word-error' || highlightMode === 'word-error-blind' || highlightMode === 'klavogonki' || highlightMode === 'klavogonki_ru';
+  const isKlavogonki = highlightMode === 'klavogonki' || highlightMode === 'klavogonki_ru';
   let wordEnd = cursor;
   if ((isWordError && inError) || isKlavogonki) {
     while (wordEnd < chars.length && chars[wordEnd] !== ' ') wordEnd++;
@@ -475,7 +476,7 @@ function updateDisplay() {
     } else if (i === cursor && (highlightMode === 'full' || highlightMode === 'finger')) {
       span.classList.add(inError ? 'char--current-error' : 'char--current-ok');
     } else if (i < cursor) {
-      if ((highlightMode === 'none' || highlightMode === 'blind' || highlightMode === 'klavogonki' || highlightMode === 'klavogonki2') && i >= wordStart) {
+      if ((highlightMode === 'none' || highlightMode === 'blind' || highlightMode === 'klavogonki' || highlightMode === 'klavogonki_ru') && i >= wordStart) {
         span.classList.add('char--pending');
       } else {
         span.classList.add('char--correct');
@@ -557,7 +558,7 @@ function updateWordDisplay() {
       if (inSel) {
         span.className = 'wchar--selected';
       } else if (i >= wordSoFar.length) {
-        if (highlightMode !== 'word-error-blind' && highlightMode !== 'none' && highlightMode !== 'blind' && highlightMode !== 'full-blind' && highlightMode !== 'klavogonki2') span.className = 'wchar--wrong';
+        if (highlightMode !== 'word-error-blind' && highlightMode !== 'none' && highlightMode !== 'blind' && highlightMode !== 'full-blind' && highlightMode !== 'klavogonki_ru') span.className = 'wchar--wrong';
       }
       span.textContent = ch === ' ' ? '\u00A0' : ch;
       wordDisplay.appendChild(span);
