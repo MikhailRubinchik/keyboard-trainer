@@ -53,7 +53,7 @@ const LS_CAR_COLOR        = 'klavagonki_car_color';
 const LS_CAR_DINO         = 'klavagonki_car_dino';
 const LS_EXTERNAL_FEATURE = 'klavagonki_external_feature';
 const LS_STARS_MODE       = 'klavagonki_stars_mode';
-const HIGHLIGHT_MODE_NUM  = { finger: 1, full: 2, prefix: 3, 'word-error': 4, 'word-error-blind': 5, none: 6, blind: 7, 'full-blind': 8 };
+const HIGHLIGHT_MODE_NUM  = { finger: 1, full: 2, prefix: 3, 'word-error': 4, 'word-error-blind': 5, none: 6, blind: 7, 'full-blind': 8, klavogonki: 9 };
 const TEXT_SET_NUM        = { neznaika: 1, winnie: 2, punct: 3, wizard: 4, numbers: 5, godzilla: 6, rules: 7 };
 
 let showFinger      = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
@@ -451,7 +451,7 @@ function renderText() {
 function updateDisplay() {
   const spans = textDisplay.querySelectorAll('span');
   const inError = junkBuffer.length > 0;
-  const isWordError = highlightMode === 'word-error' || highlightMode === 'word-error-blind';
+  const isWordError = highlightMode === 'word-error' || highlightMode === 'word-error-blind' || highlightMode === 'klavogonki';
   let wordEnd = cursor;
   if (isWordError && inError) {
     while (wordEnd < chars.length && chars[wordEnd] !== ' ') wordEnd++;
