@@ -925,6 +925,22 @@ async function pushToGist({ force = false } = {}) {
       localStorage.setItem(MIG_KEY, JSON.stringify(done));
     }
 
+    // One-off: 09.06.2026 6:07 PM incomplete run lost its sentenceStart /
+    // sentenceCount because startContinueRun didn't restore those module-level
+    // globals. Recovered (sentenceStart=3, sentenceCount=17) by greedy-matching
+    // its keystrokeLog against NEZNAIKA_SENTENCES.
+    if (!done.includes('run-09062026-6-07pm-resume-sentences')) {
+      const bad = runs.find(r => r.date === '09.06.2026' && r.time === '6:07 PM');
+      if (bad && bad.incomplete && (bad.sentenceStart < 0 || !bad.sentenceCount)) {
+        bad.sentenceStart = 3;
+        bad.sentenceCount = 17;
+        lsWrite(runs);
+        pushToGist({ force: true });
+      }
+      done.push('run-09062026-6-07pm-resume-sentences');
+      localStorage.setItem(MIG_KEY, JSON.stringify(done));
+    }
+
     renderStats(runs);
   }
 

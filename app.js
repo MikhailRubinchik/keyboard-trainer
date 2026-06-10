@@ -355,6 +355,12 @@ window.startContinueRun = function(run) {
   const runText = reconstructText(run.textSet ?? 1, run.sentenceStart, run.sentenceCount);
   if (!runText) return;
 
+  // Restore module-level sentence tracking — without these, the next
+  // checkpoint Stats.saveRun would persist default sentenceStart=-1 /
+  // sentenceCount=0 and corrupt the entry.
+  lastStartIndex       = run.sentenceStart;
+  currentSentenceCount = run.sentenceCount;
+
   // Restore run identity (date/time preserved so saveRun can replace it)
   runStartDate = run.date || '';
   runStartTime = run.time || '';
