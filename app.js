@@ -75,6 +75,12 @@ function initStarsModeSetting() {
   });
 }
 
+function currentHighlightLabel() {
+  const sel = document.getElementById('setting-highlight-mode');
+  if (!sel || sel.selectedIndex < 0) return '';
+  return sel.options[sel.selectedIndex].text;
+}
+
 function initExternalFeatureSetting() {
   const sel = document.getElementById('setting-external-feature');
   if (!sel) return;
@@ -332,7 +338,7 @@ function startExercise(level) {
   clearTimeout(idleAbandonTimer);
   idleAbandonTimer = null;
 
-  exerciseLevelLabel.textContent = `Уровень ${level}`;
+  exerciseLevelLabel.textContent = `Уровень ${level} · Подсветка: ${currentHighlightLabel()}`;
   liveTimer.textContent    = '0:00';
   liveProgress.textContent = '0%';
   liveCpm.textContent      = '— зн/мин';
@@ -408,7 +414,7 @@ window.startContinueRun = function(run) {
   noFinger = highlightMode !== 'finger';
   applyFingerSetting();
 
-  exerciseLevelLabel.textContent = `Уровень ${currentLevel}`;
+  exerciseLevelLabel.textContent = `Уровень ${currentLevel} · Подсветка: ${currentHighlightLabel()}`;
   liveTimer.textContent    = Stats.formatTime(resumeElapsedOffset);
   liveProgress.textContent = chars.length ? Math.round(cursor / chars.length * 100) + '%' : '0%';
   liveCpm.textContent      = '— зн/мин';
