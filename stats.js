@@ -244,13 +244,20 @@ const Stats = (() => {
     const ul = document.getElementById('holidays-list');
     if (!ul) return;
     const arr = getHolidays();
+    const cfg = getSyncConfig();
+    const readOnly = cfg.gistId && !cfg.token;
     ul.innerHTML = arr.map(iso => {
       const [y, m, d] = iso.split('-');
-      return `<li><span>${d}.${m}.${y}</span><button type="button" class="holiday-remove" data-iso="${iso}" title="Удалить">×</button></li>`;
+      const remove = readOnly
+        ? ''
+        : `<button type="button" class="holiday-remove" data-iso="${iso}" title="Удалить">×</button>`;
+      return `<li><span>${d}.${m}.${y}</span>${remove}</li>`;
     }).join('');
-    ul.querySelectorAll('.holiday-remove').forEach(b => {
-      b.addEventListener('click', () => removeHoliday(b.dataset.iso));
-    });
+    if (!readOnly) {
+      ul.querySelectorAll('.holiday-remove').forEach(b => {
+        b.addEventListener('click', () => removeHoliday(b.dataset.iso));
+      });
+    }
   }
 
   function getSyncConfig() {
@@ -807,10 +814,9 @@ async function pushToGist({ force = false } = {}) {
     });
 
     const holInput = document.getElementById('setting-add-holiday');
-    const holRow = holInput?.closest('.text-set-row');
     const cfgForHol = getSyncConfig();
     const dadView = cfgForHol.gistId && !cfgForHol.token;
-    if (holRow && dadView) holRow.style.display = 'none';
+    if (holInput && dadView) holInput.style.display = 'none';
     if (holInput && !dadView) {
       holInput.addEventListener('change', () => {
         if (holInput.value) {
@@ -819,7 +825,7 @@ async function pushToGist({ force = false } = {}) {
         }
       });
     }
-    if (!dadView) renderHolidaysList();
+    renderHolidaysList();
 
     const btnRefresh = document.getElementById('btn-refresh-gist');
     const btnPush    = document.getElementById('btn-push-gist');
