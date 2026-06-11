@@ -3331,7 +3331,13 @@ async function pushToGist({ force = false } = {}) {
   }
 
   function getHighlightLevel() {
-    const complete = runs.filter(r => !r.incomplete);
+    const TEXT_SET_NUM = { neznaika:1, winnie:2, punct:3, wizard:4, numbers:5, godzilla:6, rules:7 };
+    const curTextSet   = TEXT_SET_NUM[_currentTextSetId] ?? 1;
+    const complete = runs.filter(r =>
+      !r.incomplete &&
+      (r.textSet ?? 1) === curTextSet &&
+      (r.externalFeature || 'laptop') === _currentExternalFeature
+    );
     let level = 2;
     while (level < 8) {
       const modeRuns = complete.filter(r => r.mode === level);
