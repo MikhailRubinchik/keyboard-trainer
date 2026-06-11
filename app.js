@@ -53,9 +53,16 @@ const LS_CAR_COLOR        = 'klavagonki_car_color';
 const LS_CAR_DINO         = 'klavagonki_car_dino';
 const LS_EXTERNAL_FEATURE = 'klavagonki_external_feature';
 const LS_STARS_MODE       = 'klavagonki_stars_mode';
-const HIGHLIGHT_MODE_NUM  = { finger: 1, full: 2, prefix: 3, 'word-error': 4, 'word-error-blind': 5, none: 6, blind: 7, 'full-blind': 8, klavogonki: 9, klavogonki_ru: 10, 'prefix-error': 11 };
-const HIGHLIGHT_MODE_NAME = Object.fromEntries(Object.entries(HIGHLIGHT_MODE_NUM).map(([k, v]) => [v, k]));
+// HIGHLIGHT_MODES + derived maps live in modes.js (loaded first).
 const TEXT_SET_NUM        = { neznaika: 1, winnie: 2, punct: 3, wizard: 4, numbers: 5, godzilla: 6, rules: 7 };
+
+function buildHighlightDropdown() {
+  const sel = document.getElementById('setting-highlight-mode');
+  if (!sel) return;
+  sel.innerHTML = HIGHLIGHT_MODES
+    .map((m, i) => `<option value="${m.value}">${i + 1}. ${m.label}</option>`)
+    .join('');
+}
 
 let showFinger      = localStorage.getItem(LS_SHOW_FINGER) !== 'false';
 let highlightMode   = localStorage.getItem(LS_HIGHLIGHT_MODE) || 'full'; // 'full' | 'prefix' | 'none'
@@ -125,7 +132,7 @@ function _computeSentenceVisits(textSetNum) {
 })();
 
 function applyFingerSetting() {
-  const visible = highlightMode === 'finger';
+  const visible = !!HIGHLIGHT_MODE_BY_VALUE[highlightMode]?.finger;
   fingerHint.style.display = visible ? '' : 'none';
   document.querySelector('.hand-image-row').style.display = visible ? '' : 'none';
 }
@@ -302,7 +309,7 @@ function restoreFingerSetting() {
 }
 
 function startExercise(level) {
-  noFinger = highlightMode !== 'finger';
+  noFinger = !HIGHLIGHT_MODE_BY_VALUE[highlightMode]?.finger;
   applyFingerSetting();
   const result = getRandomExercise(LEVEL_SIZES[level - 1], _computeSentenceVisits(TEXT_SET_NUM[currentTextSetId] ?? 1));
   lastStartIndex       = result.startIndex;
@@ -411,7 +418,7 @@ window.startContinueRun = function(run) {
   currentLevel = run.level || currentLevel;
   updateLevelButtonsActive();
 
-  noFinger = highlightMode !== 'finger';
+  noFinger = !HIGHLIGHT_MODE_BY_VALUE[highlightMode]?.finger;
   applyFingerSetting();
 
   exerciseLevelLabel.textContent = `Уровень ${currentLevel} · Подсветка: ${currentHighlightLabel()}`;
@@ -462,43 +469,56 @@ function renderText() {
   });
 }
 
+function applyHighlightPhase(span, phase, i, cursorIdx, wsStart, wEnd) {
+  switch (phase) {
+    case 'cursor':
+      if (i === cursorIdx)      span.classList.add('char--current-ok');
+      else if (i < cursorIdx)   span.classList.add('char--correct');
+      else                      span.classList.add('char--pending');
+      break;
+    case 'cursor-red':
+      if (i === cursorIdx)      span.classList.add('char--current-error');
+      else if (i < cursorIdx)   span.classList.add('char--correct');
+      else                      span.classList.add('char--pending');
+      break;
+    case 'prefix':
+      if (i < cursorIdx)        span.classList.add('char--correct');
+      else                      span.classList.add('char--pending');
+      break;
+    case 'underline':
+    case 'word-end':
+      if (i < wsStart)          span.classList.add('char--correct');
+      else                      span.classList.add('char--pending');
+      break;
+    case 'word-red':
+      if (i >= wsStart && i < wEnd) span.classList.add('char--current-error');
+      else if (i < cursorIdx)       span.classList.add('char--correct');
+      else                          span.classList.add('char--pending');
+      break;
+    case 'all-pending':
+    default:
+      span.classList.add('char--pending');
+  }
+}
+
 function updateDisplay() {
+  const cfg = HIGHLIGHT_MODE_BY_VALUE[highlightMode] || HIGHLIGHT_MODES[0];
   const spans = textDisplay.querySelectorAll('span');
   const inError = junkBuffer.length > 0;
-  const isWordError = highlightMode === 'word-error' || highlightMode === 'word-error-blind' || highlightMode === 'klavogonki' || highlightMode === 'klavogonki_ru';
-  const isKlavogonki = highlightMode === 'klavogonki' || highlightMode === 'klavogonki_ru';
+  const phase = inError ? cfg.error : cfg.normal;
+
+  const needWordEnd = cfg.normal === 'underline' || phase === 'word-red';
   let wordEnd = cursor;
-  if ((isWordError && inError) || isKlavogonki) {
+  if (needWordEnd) {
     while (wordEnd < chars.length && chars[wordEnd] !== ' ') wordEnd++;
   }
+
   spans.forEach((span, i) => {
     span.className = '';
-    if (isKlavogonki && i >= wordStart && i < wordEnd) {
+    if (cfg.normal === 'underline' && i >= wordStart && i < wordEnd) {
       span.classList.add('char--active-word');
     }
-    if (isWordError && inError) {
-      if (i >= wordStart && i < wordEnd) {
-        span.classList.add('char--current-error');
-      } else if (i < cursor) {
-        span.classList.add('char--correct');
-      } else {
-        span.classList.add('char--pending');
-      }
-    } else if (highlightMode === 'full-blind') {
-      span.classList.add('char--pending');
-    } else if (i === cursor && highlightMode === 'prefix-error' && inError) {
-      span.classList.add('char--current-error');
-    } else if (i === cursor && (highlightMode === 'full' || highlightMode === 'finger')) {
-      span.classList.add(inError ? 'char--current-error' : 'char--current-ok');
-    } else if (i < cursor) {
-      if ((highlightMode === 'none' || highlightMode === 'blind' || highlightMode === 'klavogonki' || highlightMode === 'klavogonki_ru' || highlightMode === 'word-error-blind') && i >= wordStart) {
-        span.classList.add('char--pending');
-      } else {
-        span.classList.add('char--correct');
-      }
-    } else {
-      span.classList.add('char--pending');
-    }
+    applyHighlightPhase(span, phase, i, cursor, wordStart, wordEnd);
   });
   updateScroll();
 }
@@ -563,6 +583,9 @@ function updateWordDisplay() {
     return;
   }
 
+  const bottomCfg     = HIGHLIGHT_MODE_BY_VALUE[highlightMode]?.bottom ?? 'chars+frame';
+  const showWrongChars = bottomCfg === 'chars+frame';
+  const showFrame      = bottomCfg !== 'none';
   const typed = wordSoFar + junkBuffer;
   for (let i = 0; i <= typed.length; i++) {
     if (i === localCursor) wordDisplay.appendChild(_cursorSpan);
@@ -572,15 +595,15 @@ function updateWordDisplay() {
       const inSel = _selStart < _selEnd && i >= _selStart && i < _selEnd;
       if (inSel) {
         span.className = 'wchar--selected';
-      } else if (i >= wordSoFar.length) {
-        if (highlightMode !== 'word-error-blind' && highlightMode !== 'none' && highlightMode !== 'blind' && highlightMode !== 'full-blind' && highlightMode !== 'klavogonki_ru') span.className = 'wchar--wrong';
+      } else if (i >= wordSoFar.length && showWrongChars) {
+        span.className = 'wchar--wrong';
       }
       span.textContent = ch === ' ' ? '\u00A0' : ch;
       wordDisplay.appendChild(span);
     }
   }
 
-  wordDisplay.classList.toggle('has-error', junkBuffer.length > 0 && highlightMode !== 'blind' && highlightMode !== 'full-blind');
+  wordDisplay.classList.toggle('has-error', junkBuffer.length > 0 && showFrame);
 }
 
 // Sync browser-native editing (Delete, arrows, mid-text Backspace) back to model
@@ -1479,6 +1502,7 @@ function updateLevelProgressHint() {
 
 async function init() {
   loadLevel();
+  buildHighlightDropdown();
   initHighlightSetting();
   initExternalFeatureSetting();
   initStarsModeSetting();

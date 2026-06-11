@@ -18,7 +18,9 @@ const Stats = (() => {
   let _seenExternalFeatures = new Set();
 
   const _TEXT_SET_NAMES = {1:'Незнайка',2:'Винни-Пух',3:'Знаки',4:'Волшебник',5:'Цифры',6:'Годзилла',7:'Правила'};
-  const _MODE_NAMES = {1:'Палец',2:'Символ',3:'Префикс',4:'Слово',5:'Слово+рамка',6:'Рамка',7:'Слепой',8:'П.слепой',9:'придумать название',10:'klavogonki.ru',11:'Префикс+ош'};
+  // Backed by HIGHLIGHT_MODES in modes.js — see the comment there for the
+  // single-source-of-truth contract.
+  const _MODE_NAMES = HIGHLIGHT_MODE_LABEL_BY_NUM;
   const _EXTERNAL_FEATURE_NAMES = {
     'laptop':               'Ноутбук',
     'laptop-stickers':      'Ноутбук + наклейки',
