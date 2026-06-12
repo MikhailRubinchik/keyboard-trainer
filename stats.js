@@ -621,6 +621,8 @@ async function pushToGist({ force = false } = {}) {
         'Прогулки с динозаврами 3D (2013)',
         'Прогулки с динозаврами (ремейк 2025)',
         'Погонщики динозавров',
+        'Dinosaurs: The Final Day with David Attenborough',
+        'Life on Our Planet',
       ],
     },
     {
