@@ -3397,11 +3397,20 @@ async function pushToGist({ force = false } = {}) {
     let level = 2;
     while (level < 8) {
       const modeRuns = complete.filter(r => r.mode === level);
-      if (modeRuns.length < 5) break;
+      if (modeRuns.length === 0) break;
       let mastered = false;
-      for (let i = 0; i + 5 <= modeRuns.length; i++) {
-        const avg = modeRuns.slice(i, i + 5).reduce((s, r) => s + r.cpm, 0) / 5;
-        if (avg >= 100) { mastered = true; break; }
+      if (modeRuns.length < 5) {
+        // Fast-track: with fewer than 5 runs, advance if the average cpm
+        // across them is already very high (>= 120).
+        const avg = modeRuns.reduce((s, r) => s + r.cpm, 0) / modeRuns.length;
+        if (avg >= 120) mastered = true;
+      } else {
+        // Standard: any sliding window of 5 consecutive runs averaging
+        // >= 100 cpm.
+        for (let i = 0; i + 5 <= modeRuns.length; i++) {
+          const avg = modeRuns.slice(i, i + 5).reduce((s, r) => s + r.cpm, 0) / 5;
+          if (avg >= 100) { mastered = true; break; }
+        }
       }
       if (!mastered) break;
       level++;
