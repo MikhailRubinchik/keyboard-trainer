@@ -31,10 +31,10 @@ const HIGHLIGHT_MODES = [
   { value: 'prefix',           label: 'Набранный префикс',  num: 3,  normal: 'prefix',      error: 'prefix',      bottom: 'chars+frame', finger: false },
   { value: 'word-error',       label: 'Слово и ошибки',     num: 4,  normal: 'prefix',      error: 'word-red',    bottom: 'chars+frame', finger: false },
   { value: 'klavogonki',       label: 'придумать название', num: 9,  normal: 'underline',   error: 'word-red',    bottom: 'chars+frame', finger: false },
-  { value: 'klavogonki_ru',    label: 'klavogonki.ru',      num: 10, normal: 'underline',   error: 'word-red',    bottom: 'frame',       finger: false },
+  { value: 'klavogonki_ru',    label: 'klavogonki.ru light', num: 10, normal: 'underline',  error: 'word-red',    bottom: 'frame',       finger: false },
   { value: 'word-error-blind', label: 'Слово и рамка',      num: 5,  normal: 'word-end',    error: 'word-red',    bottom: 'frame',       finger: false },
   { value: 'none',             label: 'Только рамка',       num: 6,  normal: 'word-end',    error: 'word-end',    bottom: 'frame',       finger: false },
-  { value: 'klavogonki_hard',  label: 'клавогонки.хард',    num: 12, normal: 'all-pending', error: 'all-pending', bottom: 'frame',       finger: false },
+  { value: 'klavogonki_hard',  label: 'klavogonki.ru hard',  num: 12, normal: 'all-pending', error: 'all-pending', bottom: 'frame',       finger: false },
   { value: 'full-blind',       label: 'Полностью слепой',   num: 8,  normal: 'all-pending', error: 'all-pending', bottom: 'none',        finger: false },
 ];
 
