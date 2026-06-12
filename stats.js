@@ -262,6 +262,28 @@ const Stats = (() => {
     }
   }
 
+  function applyLastRunToSettings(run) {
+    if (!run) return;
+    const numToTextId = { 1:'neznaika', 2:'winnie', 3:'punct', 4:'wizard', 5:'numbers', 6:'godzilla', 7:'rules' };
+    const setSel = (id, value) => {
+      const sel = document.getElementById(id);
+      if (!sel || sel.value === value) return;
+      if ([...sel.options].some(o => o.value === value)) {
+        sel.value = value;
+        sel.dispatchEvent(new Event('change'));
+      }
+    };
+    if (run.textSet != null && numToTextId[run.textSet]) {
+      setSel('text-set-select', numToTextId[run.textSet]);
+    }
+    if (run.externalFeature) {
+      setSel('setting-external-feature', run.externalFeature);
+    }
+    if (run.mode != null && typeof HIGHLIGHT_MODE_NAME !== 'undefined' && HIGHLIGHT_MODE_NAME[run.mode]) {
+      setSel('setting-highlight-mode', HIGHLIGHT_MODE_NAME[run.mode]);
+    }
+  }
+
   function getSyncConfig() {
     return {
       token:  localStorage.getItem(GIST_TOKEN_KEY) || '',
@@ -416,6 +438,7 @@ async function pushToGist({ force = false } = {}) {
           }
         } catch (_) {}
       }
+      applyLastRunToSettings(pulled[pulled.length - 1]);
       renderStats(runs);
       saveSyncConfig('', gistId);
       document.getElementById('btn-refresh-gist')?.classList.remove('hidden');
