@@ -441,6 +441,15 @@ async function pushToGist({ force = false } = {}) {
         } catch (_) {}
       }
       applyLastRunToSettings(pulled[pulled.length - 1]);
+      // Drop any filter checkbox state from the previous session/render so
+      // renderFilters re-applies the "default-check only the current
+      // selection" rule against the just-synced home dropdowns.
+      _seenTextSets.clear();
+      _seenModes.clear();
+      _seenExternalFeatures.clear();
+      filterTextSets.clear();
+      filterModes.clear();
+      filterExternalFeatures.clear();
       renderStats(runs);
       saveSyncConfig('', gistId);
       document.getElementById('btn-refresh-gist')?.classList.remove('hidden');
@@ -1743,13 +1752,17 @@ async function pushToGist({ force = false } = {}) {
       });
     }
 
-    // Sentence coverage section (runs mode only)
+    // Sentence coverage section (runs mode only). Drives off the currently
+    // selected text set and the FULL run history (module-level `runs`),
+    // ignoring the mode / external-feature filter checkboxes — coverage of
+    // sentences shouldn't shrink just because a different mode is filtered
+    // out from the table view.
     if (tableMode === 'runs' && typeof SENTENCES !== 'undefined' && SENTENCES.length) {
       const TEXT_SET_NUM = { neznaika:1, winnie:2, punct:3, wizard:4, numbers:5, godzilla:6, rules:7 };
       const currentSetNum = TEXT_SET_NUM[_currentTextSetId] ?? 1;
       const n = SENTENCES.length;
       const counts = new Array(n).fill(0);
-      for (const run of allRuns) {
+      for (const run of runs) {
         if ((run.textSet ?? 1) !== currentSetNum) continue;
         if (run.sentenceStart < 0 || !run.sentenceCount) continue;
         for (let i = 0; i < run.sentenceCount; i++) {
