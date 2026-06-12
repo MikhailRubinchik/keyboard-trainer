@@ -3316,7 +3316,14 @@ async function pushToGist({ force = false } = {}) {
       if (cpm >= 90)  return 1;
       return 0;
     }
-    const complete = runs.filter(r => !r.incomplete);
+    const TEXT_SET_NUM = { neznaika:1, winnie:2, punct:3, wizard:4, numbers:5, godzilla:6, rules:7 };
+    const curTextSet   = TEXT_SET_NUM[_currentTextSetId] ?? 1;
+    const complete = runs.filter(r =>
+      !r.incomplete &&
+      (r.textSet ?? 1) === curTextSet &&
+      (r.mode ?? 1) === _currentMode &&
+      (r.externalFeature || 'laptop') === _currentExternalFeature
+    );
     const window = chartDefaultFrom
       ? complete.filter(r => ruToIso(r.date) >= chartDefaultFrom)
       : complete;
