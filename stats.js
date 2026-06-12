@@ -13,6 +13,8 @@ const Stats = (() => {
   let filterTextSets = new Set();
   let filterModes = new Set();
   let filterExternalFeatures = new Set();
+  // run → global 1-based index across the full visible list (set in renderStats).
+  let _globalRunIdx = new Map();
   let _seenTextSets = new Set();
   let _seenModes = new Set();
   let _seenExternalFeatures = new Set();
@@ -1467,7 +1469,7 @@ async function pushToGist({ force = false } = {}) {
       const cpmTip = realSpeed != null ? ` title="Реальная скорость: ${realSpeed} зн/мин"` : '';
       return `
       <tr${r.lazy ? ' class="row--lazy"' : ''} data-run-key="${r.date}~${r.time ?? ''}">
-        <td class="run-num" style="white-space:nowrap">${i + 1}${replayBtn}</td>
+        <td class="run-num" style="white-space:nowrap">${_globalRunIdx.get(r) ?? (i + 1)}${replayBtn}</td>
         <td title="${r.date}${r.time ? ' · ' + fmtAmPm(r.time) : ''}">${r.date}${modeBadge}${extBadge}</td>
         <td style="white-space:nowrap">${r.textSet ?? 1} · ${r.sentenceStart ?? '?'} · ${r.sentenceCount ?? '?'}</td>
         <td>${r.level ?? r.exercise ?? '—'}${lvlBadge}</td>
@@ -2905,6 +2907,7 @@ async function pushToGist({ force = false } = {}) {
     lastInProgress = inProgress;
 
     allRuns = allRuns.filter(r => !trulyIncomplete(r));
+    _globalRunIdx = new Map(allRuns.map((r, i) => [r, i + 1]));
 
     renderFilters(allRuns);
     const filteredRuns = applyRunFilters(allRuns);
