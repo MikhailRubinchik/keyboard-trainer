@@ -1404,10 +1404,10 @@ async function pushToGist({ force = false } = {}) {
         const b = (n * sxy - sx * sy) / denom;
         const a = (sy - b * sx) / n;
         const trend = a + b * (n - 1);
-        const lower = trend * 0.9;
-        if (cpm >= trend)       result.set(r, 3);
-        else if (cpm >= lower)  result.set(r, 2);
-        else                    result.set(r, 1);
+        if (cpm >= trend)            result.set(r, 3);
+        else if (cpm >= 0.9 * trend) result.set(r, 2);
+        else if (cpm >= 0.8 * trend) result.set(r, 1);
+        else                         result.set(r, 0);
       }
     }
     return result;
@@ -3382,10 +3382,10 @@ async function pushToGist({ force = false } = {}) {
     const b = (n * sxy - sx * sy) / denom;
     const a = (sy - b * sx) / n;
     const trend = a + b * (n - 1);
-    const lower = trend * 0.9;
-    if (cpm >= trend) return 3;
-    if (cpm >= lower) return 2;
-    return 1;
+    if (cpm >= trend)            return 3;
+    if (cpm >= 0.9 * trend)      return 2;
+    if (cpm >= 0.8 * trend)      return 1;
+    return 0;
   }
 
   function getHighlightLevel() {
