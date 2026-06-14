@@ -1485,7 +1485,7 @@ async function pushToGist({ force = false } = {}) {
         <td style="white-space:nowrap">${r.textSet ?? 1} · ${r.sentenceStart ?? '?'} · ${r.sentenceCount ?? '?'}</td>
         <td>${r.level ?? r.exercise ?? '—'}${lvlBadge}</td>
         <td>${r.chars}</td>
-        <td style="white-space:nowrap">${fmtErr(r.errors, r.chars)}${errBadge}</td>
+        <td style="white-space:nowrap">${fmtErr(r.errors, r.chars)} <button class="btn-run-error-detail" title="График ошибок"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" style="display:inline;vertical-align:middle"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4.5" y="3" width="3" height="7" fill="currentColor"/><rect x="9" y="0" width="3" height="10" fill="currentColor"/></svg></button>${errBadge}</td>
         <td${timeTip}>${formatTime(netSecs)}${lazyBadge}</td>
         <td style="white-space:nowrap"><span${cpmTip}>${r.cpm} зн/мин</span> <button class="btn-run-detail" title="Детали заезда"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" style="display:inline;vertical-align:middle"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4.5" y="3" width="3" height="7" fill="currentColor"/><rect x="9" y="0" width="3" height="10" fill="currentColor"/></svg></button>${cpmBadge}</td>
         <td style="white-space:nowrap">${cs != null ? '<span style="color:#f59e0b">★</span>'.repeat(cs) + '<span style="color:#d1d5db">★</span>'.repeat(3 - cs) : ''}${es != null ? ' ' + '<span style="color:#3b82f6">★</span>'.repeat(es) + '<span style="color:#d1d5db">★</span>'.repeat(3 - es) : ''}</td>
@@ -1506,7 +1506,7 @@ async function pushToGist({ force = false } = {}) {
         <td style="white-space:nowrap">${inProgress.textSet ?? 1} · ${inProgress.sentenceStart ?? '?'} · ${inProgress.sentenceCount ?? '?'}</td>
         <td>${inProgress.level ?? '—'}</td>
         <td>${totalChars ?? inProgress.chars} (${pct})</td>
-        <td>${fmtErr(inProgress.errors, inProgress.chars)}</td>
+        <td>${fmtErr(inProgress.errors, inProgress.chars)} <button class="btn-run-error-detail" title="График ошибок"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" style="display:inline;vertical-align:middle"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4.5" y="3" width="3" height="7" fill="currentColor"/><rect x="9" y="0" width="3" height="10" fill="currentColor"/></svg></button></td>
         <td>${formatTime(inProgress.seconds)}</td>
         <td>${inProgress.cpm} зн/мин <button class="btn-run-detail" title="Детали заезда"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" style="display:inline;vertical-align:middle"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4.5" y="3" width="3" height="7" fill="currentColor"/><rect x="9" y="0" width="3" height="10" fill="currentColor"/></svg></button></td>
       </tr>`;
@@ -1707,6 +1707,8 @@ async function pushToGist({ force = false } = {}) {
             tr.addEventListener('click', () => showRunDetail(inProgress, allRuns));
             const db2 = tr.querySelector('.btn-run-detail');
             if (db2) db2.addEventListener('click', e => { e.stopPropagation(); showSpeedChart(inProgress); });
+            const eb2 = tr.querySelector('.btn-run-error-detail');
+            if (eb2) eb2.addEventListener('click', e => { e.stopPropagation(); showErrorsChart(inProgress); });
             const cb = tr.querySelector('.btn-continue-run');
             if (cb) cb.addEventListener('click', e => { e.stopPropagation(); window.startContinueRun?.(inProgress); });
           }
@@ -1717,6 +1719,8 @@ async function pushToGist({ force = false } = {}) {
         tr.addEventListener('click', () => showRunDetail(reversed[idx], allRuns));
         const db = tr.querySelector('.btn-run-detail');
         if (db) db.addEventListener('click', e => { e.stopPropagation(); showSpeedChart(reversed[idx]); });
+        const eb = tr.querySelector('.btn-run-error-detail');
+        if (eb) eb.addEventListener('click', e => { e.stopPropagation(); showErrorsChart(reversed[idx]); });
         const rb = tr.querySelector('.btn-replay-run');
         if (rb) rb.addEventListener('click', e => { e.stopPropagation(); showReplay(reversed[idx]); });
       });
@@ -2122,6 +2126,175 @@ async function pushToGist({ force = false } = {}) {
       <polyline points="${polyline}" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round" opacity="0.9"/>
       ${dots}
     </svg>`;
+  }
+
+  function buildRunErrorSvg(run) {
+    if (!run.keystrokeLog?.length) return '';
+    const chars = [...getRunText(run)];
+    if (!chars.length) return '';
+    let cursor = 0;
+    let timeAcc = 0;
+    const BUCKET_MS = 10000;
+    const correctBuckets = {};
+    const errorBuckets   = {};
+    const correctTimes   = [];
+    const errorTimes     = [];
+    for (const [key, deltaMs] of run.keystrokeLog) {
+      if (cursor >= chars.length) break;
+      timeAcc += deltaMs;
+      if (key === '⌫' || key === '⌫⌫') continue;
+      const b = Math.floor(timeAcc / BUCKET_MS);
+      if (key === chars[cursor]) {
+        cursor++;
+        correctBuckets[b] = (correctBuckets[b] || 0) + 1;
+        correctTimes.push(timeAcc);
+      } else {
+        errorBuckets[b] = (errorBuckets[b] || 0) + 1;
+        errorTimes.push(timeAcc);
+      }
+    }
+
+    const allKeys = [...new Set([
+      ...Object.keys(correctBuckets).map(Number),
+      ...Object.keys(errorBuckets).map(Number),
+    ])].sort((a, b) => a - b);
+    if (!allKeys.length) return '';
+    const maxBucket = allKeys[allKeys.length - 1];
+
+    const pts = allKeys
+      .filter(b => b !== maxBucket)
+      .map(b => {
+        const correct = correctBuckets[b] || 0;
+        const errors  = errorBuckets[b]   || 0;
+        const pct = correct > 0 ? errors / correct * 100 : 0;
+        return { t: (b + 0.5) * BUCKET_MS, pct };
+      });
+
+    const last10Correct = correctTimes.filter(t => t >= timeAcc - BUCKET_MS).length;
+    const last10Errors  = errorTimes.filter(t  => t >= timeAcc - BUCKET_MS).length;
+    if (last10Correct > 0) {
+      pts.push({ t: timeAcc - BUCKET_MS / 2, pct: last10Errors / last10Correct * 100 });
+    }
+
+    if (pts.length < 2) return '';
+
+    // Cumulative prefix error %: at correct char #(i+1) at time correctTimes[i],
+    // errors so far / correct chars so far × 100.
+    const cumStartMs = 5000;
+    const cumAll = [];
+    let errIdx = 0;
+    for (let i = 0; i < correctTimes.length; i++) {
+      const t = correctTimes[i];
+      while (errIdx < errorTimes.length && errorTimes[errIdx] <= t) errIdx++;
+      if (t < cumStartMs) continue;
+      cumAll.push({ t, pct: errIdx / (i + 1) * 100 });
+    }
+    const cumStride = Math.max(1, Math.floor(cumAll.length / 200));
+    const cumPts = cumAll.filter((_, i) => i % cumStride === 0 || i === cumAll.length - 1);
+
+    const W = 500, H = 100, padL = 32, padR = 4, padT = 4, padB = 14;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const totalMs = timeAcc;
+
+    const totalCorrect = correctTimes.length;
+    const totalErrors  = errorTimes.length;
+    const avgPct = totalCorrect > 0 ? totalErrors / totalCorrect * 100 : 0;
+
+    const maxPct = Math.max(
+      ...pts.map(p => p.pct),
+      ...cumPts.map(p => p.pct),
+      avgPct,
+      1,
+    );
+    const fmtMin = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+
+    const xp = t   => padL + t / totalMs * plotW;
+    const yp = pct => padT + plotH - pct / maxPct * plotH;
+
+    const polyline = pts.map(p => `${xp(p.t).toFixed(1)},${yp(p.pct).toFixed(1)}`).join(' ');
+    const cumPolyline = cumPts
+      .map(p => `${xp(p.t).toFixed(1)},${yp(Math.min(p.pct, maxPct)).toFixed(1)}`)
+      .join(' ');
+    const yAvg = yp(avgPct).toFixed(1);
+
+    const dots = pts.map(p => {
+      const x = xp(p.t).toFixed(1), y = yp(p.pct).toFixed(1);
+      const tip = `${fmtMin(p.t / 1000)} — ${p.pct.toFixed(1)}%`.replace(/"/g, '&quot;');
+      return `<circle cx="${x}" cy="${y}" r="3" fill="#dc2626" stroke="#fff" stroke-width="1" data-tip="${tip}" style="cursor:pointer"/>`;
+    }).join('');
+
+    const totalSec = totalMs / 1000;
+    const xStepSec = totalSec <= 120 ? 15 : totalSec <= 300 ? 30 : 60;
+    const xTicks = Array.from({length: Math.floor(totalSec / xStepSec) + 1}, (_, i) => {
+      const sec = i * xStepSec;
+      if (sec > totalSec + 1) return '';
+      const tx = (padL + sec / totalSec * plotW).toFixed(1);
+      return `<line x1="${tx}" y1="${padT}" x2="${tx}" y2="${padT + plotH}" stroke="#e5e7eb" stroke-width="1"/>
+        <line x1="${tx}" y1="${padT + plotH}" x2="${tx}" y2="${padT + plotH + 3}" stroke="#9ca3af" stroke-width="1"/>
+        <text x="${tx}" y="${H - 1}" text-anchor="middle" font-size="8" fill="#9ca3af">${fmtMin(sec)}</text>`;
+    }).join('');
+
+    const yTicks = Array.from({length: 5}, (_, i) => {
+      const v  = maxPct * i / 4;
+      const lbl = maxPct < 10 ? v.toFixed(1) : v.toFixed(0);
+      const ty = yp(v).toFixed(1);
+      return `<line x1="${padL}" y1="${ty}" x2="${W - padR}" y2="${ty}" stroke="#e5e7eb" stroke-width="1"/>
+        <text x="${padL - 2}" y="${(parseFloat(ty) + 3).toFixed(1)}" text-anchor="end" font-size="8" fill="#9ca3af">${lbl}%</text>`;
+    }).join('');
+
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block" id="run-error-svg">
+      ${yTicks}
+      ${xTicks}
+      <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1"/>
+      <line x1="${padL}" y1="${yAvg}" x2="${W - padR}" y2="${yAvg}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
+      <text x="${(W - padR - 2).toFixed(1)}" y="${(parseFloat(yAvg) - 2).toFixed(1)}" text-anchor="end" font-size="8" fill="#94a3b8">ср. ${avgPct.toFixed(1)}%</text>
+      ${cumPolyline ? `<polyline points="${cumPolyline}" fill="none" stroke="#0d9488" stroke-width="1" stroke-linejoin="round" opacity="0.75"/>` : ''}
+      <polyline points="${polyline}" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linejoin="round" opacity="0.9"/>
+      ${dots}
+    </svg>`;
+  }
+
+  function attachChartTooltip(body) {
+    let tip = document.getElementById('chart-tooltip');
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'chart-tooltip';
+      tip.className = 'chart-tooltip';
+      document.body.appendChild(tip);
+    }
+    const svgEl = body.querySelector('svg');
+    if (!svgEl) return;
+    svgEl.addEventListener('mouseover', e => {
+      const el = e.target.closest('[data-tip]');
+      if (!el) return;
+      tip.textContent = el.dataset.tip;
+      tip.classList.add('visible');
+      el.setAttribute('r', '5');
+    });
+    svgEl.addEventListener('mouseout', e => {
+      const el = e.target.closest('[data-tip]');
+      if (!el) return;
+      tip.classList.remove('visible');
+      el.setAttribute('r', '3');
+    });
+    svgEl.addEventListener('mousemove', e => {
+      tip.style.left = (e.clientX + 12) + 'px';
+      tip.style.top  = (e.clientY - 28) + 'px';
+    });
+  }
+
+  function showErrorsChart(run) {
+    const svg = buildRunErrorSvg(run);
+    if (!svg) return;
+    const pct = (run.errors != null && run.chars)
+      ? (run.errors / run.chars * 100).toFixed(1) + '%'
+      : '—';
+    document.getElementById('speed-chart-title').textContent =
+      `${run.date}${run.time ? '  ' + run.time : ''}  —  ошибки ${pct}`;
+    const body = document.getElementById('speed-chart-body');
+    body.innerHTML = svg;
+    document.getElementById('speed-chart-overlay').classList.remove('hidden');
+    attachChartTooltip(body);
   }
 
   function showSpeedChart(run) {
